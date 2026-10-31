@@ -31,62 +31,65 @@ require "game"
 local function step(n) for _=1,n do update() end end
 local start=collectgarbage("count")
 step(1); assert(Game.x==0 and Game.z==0,"released input moves player")
+Game.x,Game.z=1.8,-5
 keys[UP]=true; step(60); keys={}
-assert(math.abs(Game.z-2.7)<0.0001 and Game.moving,"forward movement")
+assert(math.abs(Game.z+0.8)<0.0001 and Game.moving,"forward movement")
 keys[DOWN]=255; step(60); keys={}
-assert(math.abs(Game.z)<0.0001,"backward movement")
+assert(math.abs(Game.z+5)<0.0001,"backward movement")
+Game.x,Game.z=0,-5
 keys[UP],keys[RIGHT]=true,true; step(1); keys={}
-assert(math.abs(math.sqrt(Game.x^2+Game.z^2)-0.045)<0.0001,"diagonal normalization")
+assert(math.abs(math.sqrt(Game.x^2+(Game.z+5)^2)-0.070)<0.0001,"diagonal normalization")
 Game.x,Game.z=0,0
-keys[BTN_G]=true; step(63); keys={}
+keys[BTN_E]=true; step(63); keys={}
 assert(Game.yaw>1.5 and Game.yaw<1.6,"R shoulder camera")
 keys[UP]=true; step(20); keys={}
 assert(Game.x>0.65,"camera-relative forward")
 local yaw=Game.yaw
-keys[BTN_F]=true; step(20); keys={}; assert(Game.yaw<yaw,"L shoulder camera")
+keys[BTN_Q]=true; step(20); keys={}; assert(Game.yaw<yaw,"L shoulder camera")
 Game.x,Game.z,Game.yaw=0,0,0
-keys[UP]=true; step(500); keys={}
-assert(Game.z<=7 and Game.z>6.9,"arena boundary")
+keys[DOWN]=true; step(500); keys={}
+assert(Game.z>=-7 and Game.z< -6.9,"arena boundary")
 Game.x,Game.z,Game.yaw=3.2,-2,0
 keys[UP]=true; step(120); keys={}
 assert(Game.z<-1,"rock collision")
--- Exercise the documented hardware mapping separately from Lupinho's mapping.
+-- Exercise the emulator mapping independently from the default SNES controls.
 local config=require "config"
-config.platform="hardware"
-keys[BTN_E]=true; local before=Game.yaw; step(1); keys={}
-assert(Game.yaw>before,"hardware R shoulder")
-keys[BTN_Q]=true; step(1); keys={}
-assert(math.abs(Game.yaw-before)<0.0001,"hardware L shoulder")
-config.platform="lupinho"
+config.controller="lupinho"
+keys[BTN_G]=true; local before=Game.yaw; step(1); keys={}
+assert(Game.yaw>before,"emulator R shoulder")
+keys[BTN_F]=true; step(1); keys={}
+assert(math.abs(Game.yaw-before)<0.0001,"emulator L shoulder")
+config.controller="snes"
 -- Equal real-time displacement and camera rotation at different update rates.
 for _,fps in ipairs({10,15,30,60,120}) do
-    Game.x,Game.z,Game.yaw,Game.phase=0,-3,0,0
+    Game.x,Game.z,Game.yaw,Game.phase=0,-5,0,0
     keys[UP]=true
     for _=1,fps do Game.step(1/fps) end
     keys={}
-    assert(math.abs(Game.z+0.3)<0.0001,"time-based walking varies with FPS")
+    assert(math.abs(Game.z+0.8)<0.0001,"time-based walking varies with FPS")
     Game.x,Game.z,Game.yaw=0,0,0
-    keys[BTN_G]=true
+    keys[BTN_E]=true
     for _=1,fps do Game.step(1/fps) end
     keys={}
     assert(math.abs(Game.yaw-1.5)<0.0001,"time-based camera varies with FPS")
 end
 ui.stat=function(option) assert(option==7); return 30 end
 for _=1,15 do Game.step() end
-Game.x,Game.z,Game.yaw=0,-3,0
+Game.x,Game.z,Game.yaw=0,-5,0
 keys[UP]=true
 for _=1,30 do Game.step() end
 keys={}
-assert(math.abs(Game.z+0.3)<0.0001,"FPS stat is not used for movement")
+assert(math.abs(Game.z+0.8)<0.0001,"FPS stat is not used for movement")
 ui.stat=function() error("unsupported statistic") end
 for _=1,15 do Game.step() end
 assert(Game.fps==60,"unsupported FPS stat must fall back safely")
 ui.stat=nil
 -- Diagnostic input: one transition per press; BASE submits no triangles.
 for mode=1,4 do
-    keys[BTN_Z]=true
+    keys[BTN_F]=true
     Game.step(); Game.step()
     assert(Game.profile_mode==mode%4,"profile button must trigger once per press")
+    assert(Game.y==0,"SNES Y profile input must not trigger a jump")
     keys={}; Game.step(); Game.draw()
     if mode==3 then assert(Game.triangles==0,"BASE mode must not draw geometry")
     else assert(Game.triangles>0,"diagnostic mode unexpectedly blank") end
@@ -140,5 +143,12 @@ if arg[1]=="views" then
         Game.phase=math.pi/2
         commands={}; capture=true; Game.draw(); capture=false
         out=assert(io.open(".tools/view"..i..".csv","w"));out:write(table.concat(commands,"\n"));out:close()
+    end
+end
+if arg[1]=="jump_views" then
+    for _,scene in ipairs({{"jump",0,1.0,0.9},{"platform",0,3.2,0.55}}) do
+        Game.x,Game.z,Game.y,Game.yaw,Game.facing,Game.phase=scene[2],scene[3],scene[4],0,0,0
+        commands={};capture=true;Game.draw();capture=false
+        out=assert(io.open(".tools/"..scene[1]..".csv","w"));out:write(table.concat(commands,"\n"));out:close()
     end
 end

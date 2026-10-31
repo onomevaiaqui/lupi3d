@@ -1,11 +1,14 @@
 local cfg = require "config"
 local colors = require "colors"
 local models = require "models"
+local platform = require "platform"
 local sin,cos,sqrt,floor = math.sin,math.cos,math.sqrt,math.floor
 local characterFrames=cfg.cached_character and cfg.detail=="fast" and require "character_frames" or nil
 local cacheX,cacheY,cacheZ
 if characterFrames then cacheX,cacheY,cacheZ=characterFrames.xbase,characterFrames.ybase,characterFrames.zbase end
 Game = {x=0,z=0,yaw=0,facing=0,phase=0,moving=false,triangles=0,dropped=0,culled=0}
+Game.y,Game.vy,Game.grounded=0,0,true
+Game.platform=platform
 Game.profile_mode=0
 local profileNames={"COMPLETO","CENARIO","PERSONAGEM","BASE"}
 local objects,obstacles = {},{}
@@ -26,6 +29,7 @@ instance(models.tree,5.0,-4.2,0.75,0.55)
 instance(models.rock,-2.5,1.8,1.5,0.7)
 instance(models.rock,3.2,0.0,1.8,0.8)
 instance(models.rock,1.2,5.8,1.3,0.6)
+instance(platform.mesh,platform.x,platform.z,1)
 local hero=instance(cfg.detail=="fast" and models.knight_fast or models.knight,0,0,0.65)
 local ground={v={},f={}}
 local zmin,zmax=cfg.detail=="fast" and 0 or -1,cfg.detail=="fast" and 0 or 1
@@ -49,15 +53,22 @@ local function held(button)
     local v=ui.btn(button,0)
     return v==true or (type(v)=="number" and v>0)
 end
+local function overPlatform(x,z)
+    local dx=x-math.max(platform.xmin,math.min(x,platform.xmax))
+    local dz=z-math.max(platform.zmin,math.min(z,platform.zmax))
+    return dx*dx+dz*dz<0.23^2
+end
 local function free(x,z)
     if math.abs(x)>cfg.limit or math.abs(z)>cfg.limit then return false end
     for _,o in ipairs(obstacles) do
         if (x-o.x)^2+(z-o.z)^2<(o.r+0.23)^2 then return false end
     end
+    if Game.y<platform.height-0.00001 and overPlatform(x,z) then return false end
     return true
 end
 local timingFrames=0
 local profileHeld=false
+local jumpHeld=false
 Game.fps=cfg.fallback_fps
 local function timestep()
     if timingFrames%15==0 then
@@ -76,41 +87,62 @@ local function timestep()
 end
 function Game.step(dt)
     dt=math.max(0,math.min(dt or timestep(),1/8))
-    local profileButton=held(BTN_Z)
+    local l,r,profileKey=BTN_Q,BTN_E,BTN_F
+    if cfg.controller=="lupinho" then l,r,profileKey=BTN_F,BTN_G,BTN_Q end
+    local profileButton=held(profileKey)
     if profileButton and not profileHeld then
         Game.profile_mode=(Game.profile_mode+1)%4
         Game.reported_fps=nil
         timingFrames=0
     end
     profileHeld=profileButton
-    local l,r=BTN_F,BTN_G
-    if cfg.platform=="hardware" then l,r=BTN_Q,BTN_E end
+    local jump=held(BTN_Z)
+    if jump and not jumpHeld and Game.grounded then
+        Game.vy=cfg.jump_speed
+        Game.grounded=false
+    end
+    jumpHeld=jump
     local turn=(held(r) and 1 or 0)-(held(l) and 1 or 0)
     Game.yaw=(Game.yaw+turn*cfg.camera_speed*dt)%(math.pi*2)
     local forward=(held(UP) and 1 or 0)-(held(DOWN) and 1 or 0)
     local side=(held(RIGHT) and 1 or 0)-(held(LEFT) and 1 or 0)
     local len=sqrt(forward*forward+side*side)
     local ox,oz=Game.x,Game.z
+    local dx,dz=0,0
     if len>0 then
-        local dx=(sin(Game.yaw)*forward+cos(Game.yaw)*side)/len*cfg.speed*dt
-        local dz=(cos(Game.yaw)*forward-sin(Game.yaw)*side)/len*cfg.speed*dt
-        -- Keep collisions stable even when one update represents 100 ms at 10 FPS.
-        local steps=math.max(1,math.ceil(dt*60))
-        local sx,sz=dx/steps,dz/steps
-        for _=1,steps do
+        dx=(sin(Game.yaw)*forward+cos(Game.yaw)*side)/len*cfg.speed*dt
+        dz=(cos(Game.yaw)*forward-sin(Game.yaw)*side)/len*cfg.speed*dt
+        Game.facing=math.atan(dx,dz)
+    end
+    -- Movement and gravity share short substeps, including at low FPS.
+    local steps=math.max(1,math.ceil(dt*60))
+    local sx,sz,subdt=dx/steps,dz/steps,dt/steps
+    for _=1,steps do
+        if len>0 then
             if free(Game.x+sx,Game.z) then Game.x=Game.x+sx end
             if free(Game.x,Game.z+sz) then Game.z=Game.z+sz end
         end
-        Game.facing=math.atan(dx,dz)
+        local oldY=Game.y
+        -- Analytic displacement avoids jump-height drift between update rates.
+        Game.y=Game.y+Game.vy*subdt-0.5*cfg.gravity*subdt*subdt
+        Game.vy=Game.vy-cfg.gravity*subdt
+        local support=0
+        if oldY>=platform.height-0.00001 and overPlatform(Game.x,Game.z) then support=platform.height end
+        if Game.vy<=0 and Game.y<=support then
+            Game.y,Game.vy,Game.grounded=support,0,true
+        else Game.grounded=false end
     end
     Game.moving=math.abs(Game.x-ox)+math.abs(Game.z-oz)>0.00001
-    if Game.moving then Game.phase=(Game.phase+8.4*dt)%(math.pi*2) else Game.phase=0 end
+    if Game.moving and Game.grounded then Game.phase=(Game.phase+8.4*cfg.speed/2.7*dt)%(math.pi*2) else Game.phase=0 end
 end
 local cy,sy,cx,cz
 local cp,sp=cos(0.45),sin(0.45)
 local limbSin,limbCos={},{}
 local function project(obj)
     local v=obj.mesh.v
+    -- Cancel shared vertical movement before adding local vertex coordinates.
+    -- This keeps the cached character projection identical at every jump height.
+    local offsetY=(obj.y or 0)-Game.y-3.55
     local cf,sf
     if obj==hero then cf,sf=cos(Game.facing),sin(Game.facing) end
     for i=1,#v,4 do
@@ -125,7 +157,7 @@ local function project(obj)
             x,z=x*cf+z*sf,-x*sf+z*cf
         end
         x=x*obj.scale+obj.x-cx
-        y=y*obj.scale-3.55
+        y=y*obj.scale+offsetY
         z=z*obj.scale+obj.z-cz
         local depth=x*sy+z*cy
         local k=(i+3)/4
@@ -281,7 +313,7 @@ function Game.draw()
         for g=1,4 do limbCos[g]=ca end
     end
     cx,cz=Game.x-sy*5.5,Game.z-cy*5.5
-    hero.x,hero.z=Game.x,Game.z
+    hero.x,hero.y,hero.z=Game.x,Game.y,Game.z
     -- Ground first: avoids average-depth sorting a large floor over a foot.
     if Game.profile_mode<2 then project(floorobj); emit(floorobj); flush() end
     local packed
@@ -309,5 +341,5 @@ function Game.draw()
         ui.print(Game.reported_fps and ("FPS "..floor(Game.reported_fps+0.5)) or "FPS --",380,6,15)
     end
     ui.rectfill(0,247,480,270,11)
-    ui.print("CRUZ: ANDAR  L/R: CAMERA  Z: PERFIL",10,254,15)
+    ui.print("CRUZ: ANDAR  L/R: CAMERA  B: PULAR  Y: PERFIL",10,254,15)
 end

@@ -31,4 +31,23 @@ for direction=0,frames.angles-1 do
         checked=checked+1
     end
 end
-print("PASS: "..checked.." cached frames match the 3D source projection; depth order and quantization are valid")
+-- The camera follows the same vertical offset as the player, so the packed
+-- projection remains valid while jumping or standing on the raised platform.
+for _,height in ipairs({0.55,0.97}) do
+    for direction=0,frames.angles-1,8 do
+        Game.y=height
+        Game.facing=direction*math.pi*2/frames.angles
+        Game.phase=0
+        raw={}; Game.draw()
+        local packed=frames.data[frames.lookup[direction*frames.poses+1]]
+        assert(#raw==#packed/8,"vertical camera tracking changes triangle visibility")
+        for i,t in ipairs(raw) do
+            local a,b,c,d,e,f,color,z=string.byte(packed,(i-1)*8+1,i*8)
+            assert(math.abs(a+frames.xbase-t[1])<=1 and math.abs(b+frames.ybase-t[2])<=1,"elevated projection differs")
+            assert(math.abs(c+frames.xbase-t[3])<=1 and math.abs(d+frames.ybase-t[4])<=1,"elevated projection differs")
+            assert(math.abs(e+frames.xbase-t[5])<=1 and math.abs(f+frames.ybase-t[6])<=1,"elevated projection differs")
+            assert(color==t[7],"elevated color differs")
+        end
+    end
+end
+print("PASS: "..checked.." cached frames match the 3D source projection; depth order, quantization and elevated camera tracking are valid")

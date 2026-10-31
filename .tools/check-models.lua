@@ -1,4 +1,5 @@
 local models=dofile("models.lua")
+models.platform=require("platform").mesh
 local total=0
 for name,m in pairs(models) do
     assert(#m.v%4==0 and #m.f%4==0,"invalid flat mesh stride")
@@ -22,9 +23,9 @@ for name,m in pairs(models) do
         assert(#m.f/4<=450,"character triangle budget")
         if name=="knight_fast" then assert(#m.f/4<=160,"fast character budget") end
     end
-    total=total+#m.f/4*(name=="tree" and 4 or name=="rock" and 3 or name=="knight" and 1 or 0)
+    total=total+#m.f/4*(name=="tree" and 4 or name=="rock" and 3 or name=="knight" and 1 or name=="platform" and 1 or 0)
 end
 assert(total+18<1000,"scene geometry budget")
-local fast=#models.knight_fast.f/4+#models.tree_far.f+#models.rock_fast.f/4*3+6
+local fast=#models.knight_fast.f/4+#models.tree_far.f+#models.rock_fast.f/4*3+6+#models.platform.f/4
 assert(fast<350,"fast scene budget")
 print("PASS: mesh indices, articulation groups, face areas, palette; quality scene "..(total+18).." / fast scene "..fast.." input triangles")

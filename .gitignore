@@ -4,4 +4,8 @@
 .tools/view*.csv
 .tools/view*.png
 .tools/turntable.png
+.tools/jump*.csv
+.tools/jump*.png
+.tools/platform*.csv
+.tools/platform*.png
 .build/
