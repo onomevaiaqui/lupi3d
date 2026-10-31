@@ -5,7 +5,7 @@ local metadata=yaml:read("*a"); yaml:close()
 assert(metadata:match("public:%s*true"),"game must be public")
 local entry=assert(io.open("game.lua","r"),"game.lua must be at repository root"); entry:close()
 LEFT,RIGHT,UP,DOWN=4,2,1,3
-BTN_F,BTN_G,BTN_Q,BTN_E=9,11,5,8
+BTN_F,BTN_G,BTN_Q,BTN_E,BTN_Z=9,11,5,8,7
 local keys,palette,commands={},{},{}
 local capture=false
 local function record(...)
@@ -59,7 +59,7 @@ keys[BTN_Q]=true; step(1); keys={}
 assert(math.abs(Game.yaw-before)<0.0001,"hardware L shoulder")
 config.platform="lupinho"
 -- Equal real-time displacement and camera rotation at different update rates.
-for _,fps in ipairs({15,30,60,120}) do
+for _,fps in ipairs({10,15,30,60,120}) do
     Game.x,Game.z,Game.yaw,Game.phase=0,-3,0,0
     keys[UP]=true
     for _=1,fps do Game.step(1/fps) end
@@ -82,6 +82,15 @@ ui.stat=function() error("unsupported statistic") end
 for _=1,15 do Game.step() end
 assert(Game.fps==60,"unsupported FPS stat must fall back safely")
 ui.stat=nil
+-- Diagnostic input: one transition per press; BASE submits no triangles.
+for mode=1,4 do
+    keys[BTN_Z]=true
+    Game.step(); Game.step()
+    assert(Game.profile_mode==mode%4,"profile button must trigger once per press")
+    keys={}; Game.step(); Game.draw()
+    if mode==3 then assert(Game.triangles==0,"BASE mode must not draw geometry")
+    else assert(Game.triangles>0,"diagnostic mode unexpectedly blank") end
+end
 -- Walk through full gait cycles while viewing every side of the articulated mesh.
 for direction=0,7 do
     for pose=0,15 do
@@ -119,7 +128,7 @@ collectgarbage("collect")
 local final=collectgarbage("count")
 assert(final<1024,"Lua heap exceeds 1 MiB budget")
 assert(final-base<32,"persistent heap growth")
-print(string.format("PASS: movement, diagonals, shoulders, collision, boundary, viewport clipping, 15/30/60/120 Hz timing, FPS API fallback, 360 camera angles, 128 gait/view combinations\nLua heap %.1f KiB; observed peak %.1f KiB; retained growth %.1f KiB\nMax triangles/frame %d; desktop Lua %.2f ms/frame (not hardware timing)",final,peak,final-base,maxtris,elapsed/360*1000))
+print(string.format("PASS: movement, diagonals, shoulders, collision, boundary, viewport clipping, 10/15/30/60/120 Hz timing, FPS API fallback, profile modes, 360 camera angles, 128 gait/view combinations\nLua heap %.1f KiB; observed peak %.1f KiB; retained growth %.1f KiB\nMax triangles/frame %d; desktop Lua %.2f ms/frame (not hardware timing)",final,peak,final-base,maxtris,elapsed/360*1000))
 Game.x,Game.z,Game.yaw=0,0,0
 capture=true; update(); capture=false
 local out=assert(io.open(".tools/frame.csv","w"));out:write(table.concat(commands,"\n"));out:close()

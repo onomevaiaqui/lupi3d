@@ -2,29 +2,30 @@
 
 Cenário 3D pequeno projetado em Lua sobre `ui.trisfill`, a primitiva 2D do Lupi. Um cavaleiro, quatro árvores, três pedras e um chão de 15 × 15 unidades. Apenas caminhada, câmera e colisão simples; sem combate, pulo, áudio ou dependências de execução externas.
 
-## Versão 0.4: movimento e rasterização
+## Versão 0.5: modo leve e diagnóstico no aparelho
 
-A caminhada e a câmera usam unidades por segundo. Quando o firmware fornece ui.stat(7), o intervalo é estimado pelo FPS informado e atualizado a cada 15 chamadas. Sem essa API, usa-se fallback_fps = 60 em config.lua. Caminhada: 2,7 unidades/s, contra 2,1 da versão 0.3 a 60 FPS. A câmera continua em 1,5 rad/s. O intervalo máximo é 1/15 s para limitar saltos após travamentos; quedas abaixo de 15 FPS não são integralmente compensadas. A animação usa o mesmo intervalo.
+O padrão em config.lua agora é detail = "fast": personagem 3D com 95 vértices / 142 triângulos, árvores com 22 / 32, pedras com 10 / 16 e chão com 6 triângulos. Total: 324 triângulos de entrada. Todos os membros e a cabeça são preservados; o conversor simplifica cada componente separadamente. detail = "quality" restaura as malhas da versão 0.4 e seu LOD de árvores. A biblioteca de conversão continua apenas no computador.
 
-O topo mostra FPS quando fornecido pelo firmware. FPS -- indica indisponibilidade; não é uma medição de 60 FPS. Essa informação ajuda a distinguir baixa taxa de quadros de velocidade de caminhada. show_stats em config.lua desativa o indicador.
+No teste local de giro central, o máximo desenhado caiu de 291 para 143 triângulos; o tempo Lua no mesmo profiler geométrico caiu de aproximadamente 0,51 para 0,26 ms por quadro. A memória Lua retida ficou em cerca de 257 KiB, com pico observado de 309 KiB. Isso não mede o motor nem garante a taxa de quadros no aparelho.
 
-Os triângulos são recortados em Lua para x=0..479 e y=20..246 antes de ui.trisfill. Isso evita que o rasterizador nativo percorra milhares de coordenadas invisíveis: no Lupinho público, a rejeição ocorre dentro de fb_set, depois que os loops por linhas e pixels já começaram. O chão passou de 72 para 18 triângulos. Árvores a mais de 8,5 unidades da câmera usam uma malha de 32 triângulos e retornam à malha de 105 ao chegar a menos de 7,5; essa margem evita alternância contínua na fronteira. O personagem mantém a malha corrigida da versão 0.3.
+O relato de 10 FPS constantes no aparelho motivou quatro perfis. Pressione e solte o botão Z (constante BTN_Z; K no teclado do Lupinho atual) para alternar:
 
-Comparação no computador, sem medir o console:
+| Perfil | O que desenha |
+| --- | --- |
+| COMPLETO | Cenário e personagem, padrão |
+| CENARIO | Chão, árvores e pedras |
+| PERSONAGEM | Só o personagem sobre fundo simples |
+| BASE | Limpeza de tela e interface; nenhum triângulo |
 
-| Medida | 0.3 | 0.4 |
-| --- | ---: | ---: |
-| Máximo de triângulos no giro central de 360 graus | 382 | 291 |
-| Memória Lua retida após os testes | ~321 KiB | ~289 KiB |
-| Pico observado no teste | ~385 KiB | ~347 KiB |
-| Maior área projetada somada de triângulos, em 360 vistas no centro e cantos | 707.616 px | 85.355 px |
-| Tempo Lua por quadro no mesmo profiler geométrico | ~0,61 ms | ~0,51 ms |
+Observe o nome, TRI e FPS no topo. Espere cerca de 5 segundos em cada perfil para estabilizar a estatística. Se BASE também ficar perto de 10 FPS, a taxa pode estar limitada pelo custo básico do motor, apresentação de vídeo ou configuração do firmware; simplificar a malha não basta para concluir a causa. Os perfis apenas isolam grupos de desenho, não são um medidor do tempo interno do firmware. FPS -- significa que ui.stat(7) não está disponível.
 
-A área projetada é uma estimativa de trabalho de rasterização, incluindo áreas invisíveis, e não uma contagem medida de pixels nem uma taxa de FPS. Não inclui todos os custos do motor. As malhas foram inspecionadas em oito ângulos; os testes verificam 128 combinações de orientação/pose, recorte da tela e movimento/câmera com intervalos de 15, 30, 60 e 120 Hz.
+A caminhada permanece em 2,7 unidades/s e a câmera em 1,5 rad/s, usando o FPS informado pelo firmware. A compensação agora inclui 10 FPS: o intervalo máximo passou a 1/8 s, e a colisão divide deslocamentos longos em subpassos de até 1/60 s. Sem ui.stat(7), usa-se fallback_fps = 60 em config.lua. A correção da velocidade não aumenta a taxa de quadros.
+
+O recorte da versão 0.4 é preservado: só chegam a ui.trisfill coordenadas dentro de x=0..479 e y=20..246. As prévias foram inspecionadas em oito ângulos e os testes cobrem 128 combinações de orientação/pose e intervalos de 10, 15, 30, 60 e 120 Hz.
 
 ## Carregamento pelo Lupi
 
-`lupi.yaml`, `game.lua` e todos os módulos Lua estão na raiz, conforme os projetos oficiais. A versão é 0.4 e `public: true`. A estrutura anterior em `src/` foi corrigida porque podia impedir a descoberta pelo catálogo. As pastas `.tools/` e `.assets-source/` ficam ocultas para o codec oficial, que ignora entradas iniciadas com ponto. A saída de build também fica fora da lista de fontes, em `.build/`.
+`lupi.yaml`, `game.lua` e todos os módulos Lua estão na raiz, conforme os projetos oficiais. A versão é 0.5 e `public: true`. A estrutura anterior em `src/` foi corrigida porque podia impedir a descoberta pelo catálogo. As pastas `.tools/` e `.assets-source/` ficam ocultas para o codec oficial, que ignora entradas iniciadas com ponto. A saída de build também fica fora da lista de fontes, em `.build/`.
 
 ## Executar
 
@@ -43,6 +44,7 @@ O SDK pode gerar `palette.lua`, mas este teste usa `colors.lua` para preservar s
 | Cruz: cima / baixo | Caminhar para frente / trás em relação à câmera |
 | Cruz: esquerda / direita | Caminhar lateralmente em relação à câmera |
 | Ombro superior L / R | Girar a câmera ao redor do personagem |
+| Botão Z / K no teclado | Alternar perfis de diagnóstico |
 | Teclado no Lupinho atual | W/A/S/D para andar; G/H para câmera |
 
 Diagonais têm velocidade normalizada. Botões opostos se cancelam. Colisão circular nas pedras/troncos e limite nas bordas. A animação de passos é procedural sobre os membros do modelo, sem carregar esqueleto ou clipes de animação.
@@ -62,10 +64,10 @@ O padrão de **`config.lua` é `platform = "lupinho"`**, conferido contra o cód
 
 - Resolução: **480 × 270**. Paleta: **32 entradas**, canais de 5 bits, abaixo das 256 permitidas.
 - Sem texturas em execução, z-buffer, iluminação dinâmica, física externa ou alocações de objetos por triângulo a cada frame.
-- Geometria compartilhada por instância: cavaleiro 223 vértices / 374 triângulos; árvore próxima 63 / 105; árvore distante 22 / 32; pedra 16 / 28. Chão: 18 triângulos. Total de entrada com todas as árvores próximas: 896 triângulos; triângulos fora da tela e degenerados são descartados antes do desenho.
+- Geometria compartilhada por instância. Modo fast: cavaleiro 95 vértices / 142 triângulos; árvore 22 / 32; pedra 10 / 16; chão 6 triângulos; cena 324 triângulos. Modo quality: cavaleiro 223 / 374, árvore próxima 63 / 105 e distante 22 / 32, pedra 16 / 28; chão 18; cena com árvores próximas 896 triângulos.
 - Fila reutilizável com teto de 768 triângulos, inclusive recortes no plano próximo. `Game.dropped` detecta estouro.
 - Projeção em perspectiva, recorte no plano próximo e ordenação por profundidade média. O chão é desenhado primeiro. A ordenação não substitui um z-buffer: interseções e superfícies próximas podem mostrar artefatos neste protótipo.
-- Alvo de projeto: reservar a maior parte dos **4 MiB informados** ao firmware/motor. Os testes de Lua no computador mediram aproximadamente **289 KiB retidos e 347 KiB de pico observado**; não representam a RAM total do aparelho. Framebuffers, runtime, pilhas e demais estruturas do motor também precisam caber na memória real.
+- Alvo de projeto: reservar a maior parte dos **4 MiB informados** ao firmware/motor. Os testes de Lua no computador mediram aproximadamente **257 KiB retidos e 309 KiB de pico observado**; não representam a RAM total do aparelho. Framebuffers, runtime, pilhas e demais estruturas do motor também precisam caber na memória real.
 - O simulador/código público não fornece aqui uma medição completa do hardware. **Não foi executado no console nem no simulador gráfico nesta máquina. Não há garantia de 60 FPS nem de consumo total abaixo de 4 MiB sem medir nessa versão do aparelho.** A API e a lógica foram verificadas por um harness Lua, e a imagem foi reconstruída das chamadas de desenho.
 
 ## Verificar e gerar o pacote

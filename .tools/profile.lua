@@ -13,6 +13,8 @@ trisfill=function(ax,ay,bx,by,cx,cy,color)
     maxcoord=math.max(maxcoord,math.abs(ax),math.abs(ay),math.abs(bx),math.abs(by),math.abs(cx),math.abs(cy))
 end}
 require "game"
+Game.profile_mode=tonumber(arg[1]) or 0
+assert(Game.profile_mode>=0 and Game.profile_mode<=3,"profile mode must be 0..3")
 local maxtri,maxarea,worstx,worstz,worstyaw=0,0,0,0,0
 local start=os.clock()
 for _,p in ipairs({{0,0},{-7,-7},{7,-7},{7,7},{-7,7}}) do
@@ -25,4 +27,4 @@ for _,p in ipairs({{0,0},{-7,-7},{7,-7},{7,7},{-7,7}}) do
         if area>maxarea then maxarea,worstx,worstz,worstyaw=area,p[1],p[2],degrees end
     end
 end
-print(string.format("max_triangles=%d; max_projected_area=%.0f px; max_absolute_coordinate=%d; worst=(%d,%d,%d deg); Lua %.3f ms/frame",maxtri,maxarea,maxcoord,worstx,worstz,worstyaw,(os.clock()-start)/360*1000))
+print(string.format("mode=%d; max_triangles=%d; max_projected_area=%.0f px; max_absolute_coordinate=%d; worst=(%d,%d,%d deg); Lua %.3f ms/frame",Game.profile_mode,maxtri,maxarea,maxcoord,worstx,worstz,worstyaw,(os.clock()-start)/360*1000))

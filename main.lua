@@ -3,10 +3,15 @@ local colors = require "colors"
 local models = require "models"
 local sin,cos,sqrt,floor = math.sin,math.cos,math.sqrt,math.floor
 Game = {x=0,z=0,yaw=0,facing=0,phase=0,moving=false,triangles=0,dropped=0,culled=0}
+Game.profile_mode=0
+local profileNames={"COMPLETO","CENARIO","PERSONAGEM","BASE"}
 local objects,obstacles = {},{}
 local function instance(mesh,x,z,scale,radius)
     local obj={mesh=mesh,x=x,z=z,scale=scale,px={},py={},pz={},sx={},sy={}}
-    if mesh==models.tree then obj.nearMesh=mesh; obj.farMesh=models.tree_far end
+    if mesh==models.tree then
+        if cfg.detail=="fast" then obj.mesh=models.tree_far
+        else obj.nearMesh=mesh; obj.farMesh=models.tree_far end
+    elseif mesh==models.rock and cfg.detail=="fast" then obj.mesh=models.rock_fast end
     objects[#objects+1]=obj
     if radius then obstacles[#obstacles+1]={x=x,z=z,r=radius} end
     return obj
@@ -18,12 +23,14 @@ instance(models.tree,5.0,-4.2,0.75,0.55)
 instance(models.rock,-2.5,1.8,1.5,0.7)
 instance(models.rock,3.2,0.0,1.8,0.8)
 instance(models.rock,1.2,5.8,1.3,0.6)
-local hero=instance(models.knight,0,0,0.65)
+local hero=instance(cfg.detail=="fast" and models.knight_fast or models.knight,0,0,0.65)
 local ground={v={},f={}}
-for x=-1,1 do for z=-1,1 do
+local zmin,zmax=cfg.detail=="fast" and 0 or -1,cfg.detail=="fast" and 0 or 1
+for x=-1,1 do for z=zmin,zmax do
     local n=#ground.v/4
-    local x0,z0=x*5-2.5,z*5-2.5
-    for _,p in ipairs({{x0,z0},{x0+5,z0},{x0+5,z0+5},{x0,z0+5}}) do
+    local x0,z0=x*5-2.5,cfg.detail=="fast" and -7.5 or z*5-2.5
+    local length=cfg.detail=="fast" and 15 or 5
+    for _,p in ipairs({{x0,z0},{x0+5,z0},{x0+5,z0+length},{x0,z0+length}}) do
         ground.v[#ground.v+1]=p[1]; ground.v[#ground.v+1]=0
         ground.v[#ground.v+1]=p[2]; ground.v[#ground.v+1]=0
     end
@@ -47,6 +54,7 @@ local function free(x,z)
     return true
 end
 local timingFrames=0
+local profileHeld=false
 Game.fps=cfg.fallback_fps
 local function timestep()
     if timingFrames%15==0 then
@@ -61,10 +69,17 @@ local function timestep()
         end
     end
     timingFrames=timingFrames+1
-    return math.min(1/Game.fps,1/15)
+    return math.min(1/Game.fps,1/8)
 end
 function Game.step(dt)
-    dt=math.max(0,math.min(dt or timestep(),1/15))
+    dt=math.max(0,math.min(dt or timestep(),1/8))
+    local profileButton=held(BTN_Z)
+    if profileButton and not profileHeld then
+        Game.profile_mode=(Game.profile_mode+1)%4
+        Game.reported_fps=nil
+        timingFrames=0
+    end
+    profileHeld=profileButton
     local l,r=BTN_F,BTN_G
     if cfg.platform=="hardware" then l,r=BTN_Q,BTN_E end
     local turn=(held(r) and 1 or 0)-(held(l) and 1 or 0)
@@ -76,8 +91,13 @@ function Game.step(dt)
     if len>0 then
         local dx=(sin(Game.yaw)*forward+cos(Game.yaw)*side)/len*cfg.speed*dt
         local dz=(cos(Game.yaw)*forward-sin(Game.yaw)*side)/len*cfg.speed*dt
-        if free(Game.x+dx,Game.z) then Game.x=Game.x+dx end
-        if free(Game.x,Game.z+dz) then Game.z=Game.z+dz end
+        -- Keep collisions stable even when one update represents 100 ms at 10 FPS.
+        local steps=math.max(1,math.ceil(dt*60))
+        local sx,sz=dx/steps,dz/steps
+        for _=1,steps do
+            if free(Game.x+sx,Game.z) then Game.x=Game.x+sx end
+            if free(Game.x,Game.z+sz) then Game.z=Game.z+sz end
+        end
         Game.facing=math.atan(dx,dz)
     end
     Game.moving=math.abs(Game.x-ox)+math.abs(Game.z-oz)>0.00001
@@ -218,7 +238,7 @@ function Game.draw()
     Game.triangles,Game.dropped,Game.culled=0,0,0
     for i=1,#colors do ui.palset(i-1,colors[i]) end
     ui.camera(0,0); ui.clip(0,0,480,270); ui.cls(1)
-    ui.rectfill(0,135,480,270,2)
+    if Game.profile_mode<2 then ui.rectfill(0,135,480,270,2) end
     cy,sy=cos(Game.yaw),sin(Game.yaw)
     local angle=sin(Game.phase)*0.32
     local sa,ca=sin(angle),cos(angle)
@@ -227,21 +247,24 @@ function Game.draw()
     cx,cz=Game.x-sy*5.5,Game.z-cy*5.5
     hero.x,hero.z=Game.x,Game.z
     -- Ground first: avoids average-depth sorting a large floor over a foot.
-    project(floorobj); emit(floorobj); flush()
+    if Game.profile_mode<2 then project(floorobj); emit(floorobj); flush() end
     for _,obj in ipairs(objects) do
+        if (obj==hero and (Game.profile_mode==0 or Game.profile_mode==2)) or (obj~=hero and Game.profile_mode<2) then
         if obj.farMesh then
             local distance2=(obj.x-cx)^2+(obj.z-cz)^2
             if distance2>8.5^2 then obj.mesh=obj.farMesh
             elseif distance2<7.5^2 then obj.mesh=obj.nearMesh end
         end
         project(obj); emit(obj)
+        end
     end
     flush()
     ui.rectfill(0,0,480,20,11)
-    ui.print("LUPI 3D / TESTE DE CAMINHADA",10,6,15)
+    ui.print("LUPI 3D / "..profileNames[Game.profile_mode+1],10,6,15)
+    ui.print("TRI "..Game.triangles,280,6,15)
     if cfg.show_stats then
         ui.print(Game.reported_fps and ("FPS "..floor(Game.reported_fps+0.5)) or "FPS --",380,6,15)
     end
     ui.rectfill(0,247,480,270,11)
-    ui.print("CRUZ: ANDAR    L/R: GIRAR CAMERA",10,254,15)
+    ui.print("CRUZ: ANDAR  L/R: CAMERA  Z: PERFIL",10,254,15)
 end
