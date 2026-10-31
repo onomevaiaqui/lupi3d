@@ -21,4 +21,5 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 Third-party KayKit assets in .assets-source/ and derived geometry in
-models.lua and .build/release/models.lua are CC0, as documented in CREDITS.md.
+models.lua, character_frames.lua and their release copies are CC0, as
+documented in CREDITS.md.

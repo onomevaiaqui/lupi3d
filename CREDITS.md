@@ -10,7 +10,7 @@ Licença dos dois packs: **Creative Commons Zero (CC0 1.0)**. Os arquivos de lic
 - Download gratuito **Free 2.0**, upload itch.io `15363167`, baixado em 31/10/2026.
 - Arquivo selecionado: `Characters/gltf/Knight.glb`, preservado em `.assets-source/Knight.glb`.
 - SHA-256 do ZIP baixado: `ABE48F4763FBA0896BAB486EE9E6D08CA6B5B3884B9601F235C8847AE94DC479`.
-- Derivados: malhas simplificadas quality e fast em `models.lua`, recolorida, sem texturas/esqueleto, braços abaixados, sem capa e com a cabeça interna ao capacete preservada, membros identificados para caminhada procedural.
+- Derivados: malhas simplificadas quality e fast em `models.lua`, recolorida, sem texturas/esqueleto, braços abaixados, sem capa e com a cabeça interna ao capacete preservada, membros identificados para caminhada procedural. Os triângulos projetados derivados são pré-calculados em `character_frames.lua`, também CC0, pelo script `.tools/bake-character.lua`.
 
 ## Cenário
 

@@ -1,14 +1,19 @@
 {
   "files": [
     {
+      "file": "character_frames.lua",
+      "bytes": 437348,
+      "sha256": "3d971764730c20b3a261f2f80b55276622e442a6fa35fb2374f59a4825df5088"
+    },
+    {
       "file": "colors.lua",
       "bytes": 675,
       "sha256": "252a2cb50065b6f5fc57c0448aaee9d865bf38dc444b19bb38ecbed69f7354c0"
     },
     {
       "file": "config.lua",
-      "bytes": 628,
-      "sha256": "a8fbc2abc6f61cb67bca8281cfcf268417745d7b61db40455901628817885de3"
+      "bytes": 712,
+      "sha256": "a208d6a4e0a09fa2b6e3c7b4534f6343725646be7dfba39a41792584b0a0a692"
     },
     {
       "file": "game.lua",
@@ -17,8 +22,8 @@
     },
     {
       "file": "main.lua",
-      "bytes": 11251,
-      "sha256": "91c61e6b1e12ab939b89980a9aab1468165ff5b2630e2e0cd9e429df1b0b6c2f"
+      "bytes": 13121,
+      "sha256": "6388dc050cad9363561af8a16fc23823db56fc30485e6a2c06d32605c2c06ef6"
     },
     {
       "file": "models.lua",
@@ -26,5 +31,5 @@
       "sha256": "2ae95fdce92e33b5a38247ee2d64dac86b8f00c95b6bd2e4283a1ecd25bc7888"
     }
   ],
-  "totalBytes": 32746
+  "totalBytes": 472111
 }

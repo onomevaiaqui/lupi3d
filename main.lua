@@ -2,6 +2,9 @@ local cfg = require "config"
 local colors = require "colors"
 local models = require "models"
 local sin,cos,sqrt,floor = math.sin,math.cos,math.sqrt,math.floor
+local characterFrames=cfg.cached_character and cfg.detail=="fast" and require "character_frames" or nil
+local cacheX,cacheY,cacheZ
+if characterFrames then cacheX,cacheY,cacheZ=characterFrames.xbase,characterFrames.ybase,characterFrames.zbase end
 Game = {x=0,z=0,yaw=0,facing=0,phase=0,moving=false,triangles=0,dropped=0,culled=0}
 Game.profile_mode=0
 local profileNames={"COMPLETO","CENARIO","PERSONAGEM","BASE"}
@@ -108,7 +111,8 @@ local cp,sp=cos(0.45),sin(0.45)
 local limbSin,limbCos={},{}
 local function project(obj)
     local v=obj.mesh.v
-    local cf,sf=cos(Game.facing),sin(Game.facing)
+    local cf,sf
+    if obj==hero then cf,sf=cos(Game.facing),sin(Game.facing) end
     for i=1,#v,4 do
         local x,y,z=v[i],v[i+1],v[i+2]
         if obj==hero then
@@ -137,7 +141,7 @@ local function project(obj)
 end
 local function store(ax,ay,bx,by,dx,dy,color,depth)
     if count>=cfg.max_triangles then Game.dropped=Game.dropped+1; return end
-    if math.max(ax,bx,dx)<0 or math.min(ax,bx,dx)>479 or math.max(ay,by,dy)<0 or math.min(ay,by,dy)>269 then return end
+    -- queue() guarantees that the triangle is already clipped to the viewport.
     if math.abs((bx-ax)*(dy-ay)-(by-ay)*(dx-ax))<0.5 then return end
     count=count+1
     local t=pool[count]
@@ -227,11 +231,41 @@ local function emit(obj)
     end
 end
 local function farfirst(a,b) return a[8]>b[8] end
-local function flush()
+local function flush(packed)
     for i=#list,count+1,-1 do list[i]=nil end
     table.sort(list,farfirst)
-    for i=1,count do local t=list[i]; ui.trisfill(t[1],t[2],t[3],t[4],t[5],t[6],t[7]) end
+    -- Merge the already sorted character with the sorted world, preserving occlusion.
+    local cursor=1
+    local a,b,c,d,e,f,color,z
+    local size=packed and #packed or 0
+    if size>0 then
+        a,b,c,d,e,f,color,z=string.byte(packed,1,8)
+        z=z+cacheZ
+        cursor=9
+    end
+    for i=1,count do
+        local t=list[i]
+        while z and z>=t[8]*32 do
+            ui.trisfill(a+cacheX,b+cacheY,c+cacheX,d+cacheY,e+cacheX,f+cacheY,color)
+            if cursor<=size then
+                a,b,c,d,e,f,color,z=string.byte(packed,cursor,cursor+7)
+                z=z+cacheZ
+                cursor=cursor+8
+            else z=nil end
+        end
+        if Game.capture_triangle then Game.capture_triangle(t) end
+        ui.trisfill(t[1],t[2],t[3],t[4],t[5],t[6],t[7])
+    end
+    while z do
+        ui.trisfill(a+cacheX,b+cacheY,c+cacheX,d+cacheY,e+cacheX,f+cacheY,color)
+        if cursor<=size then
+            a,b,c,d,e,f,color,z=string.byte(packed,cursor,cursor+7)
+            z=z+cacheZ
+            cursor=cursor+8
+        else z=nil end
+    end
     Game.triangles=Game.triangles+count
+    if packed then Game.triangles=Game.triangles+floor(#packed/8) end
     count=0
 end
 function Game.draw()
@@ -240,16 +274,25 @@ function Game.draw()
     ui.camera(0,0); ui.clip(0,0,480,270); ui.cls(1)
     if Game.profile_mode<2 then ui.rectfill(0,135,480,270,2) end
     cy,sy=cos(Game.yaw),sin(Game.yaw)
-    local angle=sin(Game.phase)*0.32
-    local sa,ca=sin(angle),cos(angle)
-    limbSin[1],limbSin[2],limbSin[3],limbSin[4]=sa,-sa,-sa,sa
-    for g=1,4 do limbCos[g]=ca end
+    if not characterFrames and (Game.profile_mode==0 or Game.profile_mode==2) then
+        local angle=sin(Game.phase)*0.32
+        local sa,ca=sin(angle),cos(angle)
+        limbSin[1],limbSin[2],limbSin[3],limbSin[4]=sa,-sa,-sa,sa
+        for g=1,4 do limbCos[g]=ca end
+    end
     cx,cz=Game.x-sy*5.5,Game.z-cy*5.5
     hero.x,hero.z=Game.x,Game.z
     -- Ground first: avoids average-depth sorting a large floor over a foot.
     if Game.profile_mode<2 then project(floorobj); emit(floorobj); flush() end
+    local packed
+    if characterFrames and (Game.profile_mode==0 or Game.profile_mode==2) then
+        local angle=(Game.facing-Game.yaw)%(math.pi*2)
+        local direction=floor(angle*characterFrames.angles/(math.pi*2)+0.5)%characterFrames.angles
+        local pose=floor(Game.phase*characterFrames.poses/(math.pi*2)+0.5)%characterFrames.poses
+        packed=characterFrames.data[characterFrames.lookup[direction*characterFrames.poses+pose+1]]
+    end
     for _,obj in ipairs(objects) do
-        if (obj==hero and (Game.profile_mode==0 or Game.profile_mode==2)) or (obj~=hero and Game.profile_mode<2) then
+        if (obj==hero and not packed and (Game.profile_mode==0 or Game.profile_mode==2)) or (obj~=hero and Game.profile_mode<2) then
         if obj.farMesh then
             local distance2=(obj.x-cx)^2+(obj.z-cz)^2
             if distance2>8.5^2 then obj.mesh=obj.farMesh
@@ -258,7 +301,7 @@ function Game.draw()
         project(obj); emit(obj)
         end
     end
-    flush()
+    flush(packed)
     ui.rectfill(0,0,480,20,11)
     ui.print("LUPI 3D / "..profileNames[Game.profile_mode+1],10,6,15)
     ui.print("TRI "..Game.triangles,280,6,15)

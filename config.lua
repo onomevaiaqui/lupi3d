@@ -4,6 +4,7 @@ return {
     -- Switch this to "hardware" when testing that documented firmware.
     platform = "lupinho",
     detail = "fast", -- "quality" restores the v0.4 character and prop meshes
+    cached_character = true, -- preprojected 3D poses; fixed camera height/distance
     speed = 2.7, -- world units per second (was 2.1 at 60 FPS)
     camera_speed = 1.5, -- radians per second
     fallback_fps = 60, -- used if the firmware does not expose ui.stat(7)

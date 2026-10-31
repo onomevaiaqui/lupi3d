@@ -7,7 +7,7 @@ for(const f of ['lupi.yaml','game.lua','main.lua','models.lua','config.lua','col
 }
 const yaml=fs.readFileSync(path.join(root,'lupi.yaml'),'utf8');
 assert.match(yaml,/^public:\s*true\s*$/m);
-assert.match(yaml,/^version:\s*0\.5\s*$/m);
+assert.match(yaml,/^version:\s*0\.6\s*$/m);
 const requires=names.filter(n=>n.endsWith('.lua'));
 for(const f of requires) {
   const text=fs.readFileSync(path.join(root,f),'utf8');
