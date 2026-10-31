@@ -10,6 +10,8 @@ Game = {x=0,z=0,yaw=0,facing=0,phase=0,moving=false,triangles=0,dropped=0,culled
 Game.y,Game.vy,Game.grounded=0,0,true
 Game.platform=platform
 Game.profile_mode=0
+Game.camera_test=0 -- 0: signed angle, 1: original wrap, 2: original wrap with L/R swapped
+local cameraTests={"CURTO","ANTIGO","TROCADO"}
 local profileNames={"COMPLETO","CENARIO","PERSONAGEM","BASE","CHAO","OBJETOS"}
 local objects,obstacles = {},{}
 local function instance(mesh,x,z,scale,radius)
@@ -69,6 +71,8 @@ end
 local timingFrames=0
 local profileHeld=false
 local jumpHeld=false
+local cameraTestHeld=false
+local previousCameraTurn=0
 Game.fps=cfg.fallback_fps
 local function timestep()
     if timingFrames%15==0 then
@@ -87,8 +91,16 @@ local function timestep()
 end
 function Game.step(dt)
     dt=math.max(0,math.min(dt or timestep(),1/8))
-    local l,r,profileKey=BTN_Q,BTN_E,BTN_F
-    if cfg.controller=="lupinho" then l,r,profileKey=BTN_F,BTN_G,BTN_Q end
+    local l,r,profileKey,testKey=BTN_Q,BTN_E,BTN_F,BTN_G
+    if cfg.controller=="lupinho" then l,r,profileKey,testKey=BTN_F,BTN_G,BTN_Q,BTN_X end
+    local cameraTestButton=held(testKey)
+    if cameraTestButton and not cameraTestHeld then
+        Game.camera_test=(Game.camera_test+1)%#cameraTests
+        Game.yaw,Game.facing=0,0
+        Game.reported_fps=nil
+        timingFrames=0
+    end
+    cameraTestHeld=cameraTestButton
     local profileButton=held(profileKey)
     if profileButton and not profileHeld then
         Game.profile_mode=(Game.profile_mode+1)%#profileNames
@@ -103,7 +115,22 @@ function Game.step(dt)
     end
     jumpHeld=jump
     local turn=(held(r) and 1 or 0)-(held(l) and 1 or 0)
-    Game.yaw=(Game.yaw+turn*cfg.camera_speed*dt)%(math.pi*2)
+    if Game.camera_test==2 then
+        -- Each swapped-button trial starts at zero, so L and R are comparable.
+        if turn~=0 and turn~=previousCameraTurn then Game.yaw,Game.facing=0,0 end
+    end
+    previousCameraTurn=turn
+    if Game.camera_test==2 then turn=-turn end
+    local yaw=Game.yaw+turn*cfg.camera_speed*dt
+    if Game.camera_test==0 then
+        -- Avoid the immediate 0 -> almost 2*pi jump on the first L frame.
+        -- Keep the angle local and signed; the physical camera orientation is identical.
+        if yaw>=math.pi then yaw=yaw-math.pi*2
+        elseif yaw< -math.pi then yaw=yaw+math.pi*2 end
+        Game.yaw=yaw
+    else
+        Game.yaw=yaw%(math.pi*2)
+    end
     local forward=(held(UP) and 1 or 0)-(held(DOWN) and 1 or 0)
     local side=(held(RIGHT) and 1 or 0)-(held(LEFT) and 1 or 0)
     local len=sqrt(forward*forward+side*side)
@@ -370,11 +397,11 @@ function Game.draw()
     end
     flush(packed)
     ui.rectfill(0,0,480,20,11)
-    ui.print("LUPI 0.9 / "..profileNames[Game.profile_mode+1],10,6,15)
+    ui.print("1.0 "..cameraTests[Game.camera_test+1].." / "..profileNames[Game.profile_mode+1],10,6,15)
     ui.print("TRI "..Game.triangles,280,6,15)
     if cfg.show_stats then
         ui.print(Game.reported_fps and ("FPS "..floor(Game.reported_fps+0.5)) or "FPS --",380,6,15)
     end
     ui.rectfill(0,247,480,270,11)
-    ui.print("CRUZ: ANDAR  L/R: CAMERA  B: PULAR  Y: PERFIL",10,254,15)
+    ui.print("L/R: CAMERA  B: PULO  Y: PERFIL  A: TESTE L/R",10,254,15)
 end

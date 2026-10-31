@@ -2,11 +2,27 @@
 
 Cenário 3D pequeno projetado em Lua sobre `ui.trisfill`, a primitiva 2D do Lupi. Um cavaleiro, quatro árvores, três pedras, uma plataforma e um chão de 15 × 15 unidades. Caminhada, pulo, câmera e colisão simples; sem combate, áudio ou dependências de execução externas.
 
-## Versão 0.9: limite de tamanho e isolamento do cenário
+## Versão 1.0: último teste direcionado de L/R
+
+A investigação passa a separar o botão físico, o sentido do giro e a representação numérica do ângulo. A geometria, o recorte e a subdivisão do cenário são os da versão 0.9. O comportamento antigo fazia o primeiro L sair de zero para quase 2π; o novo caminho CURTO mantém o ângulo entre -π e π, começando com um valor negativo pequeno. Isso preserva a orientação matemática e evita essa troca imediata de faixa, mas sua eficácia no aparelho precisa ser confirmada.
+
+A alterna três variantes da câmera (BTN_G no SNES; BTN_X/J no emulador). Cada troca zera a orientação para uma comparação a partir do mesmo ponto:
+
+| Nome no topo | Comportamento |
+| --- | --- |
+| 1.0 CURTO | Padrão: L esquerda/R direita; ângulo entre -π e π |
+| 1.0 ANTIGO | L esquerda/R direita; mesma normalização 0..2π da versão anterior |
+| 1.0 TROCADO | Normalização antiga; L gira para a direita e R para a esquerda |
+
+No TROCADO, cada novo giro também recomeça de zero. Solte o botão entre as tentativas. Mantenha o perfil COMPLETO e observe L e R por alguns segundos. Se CURTO funcionar e ANTIGO falhar com L, a diferença está no caminho numérico do ângulo. Se no TROCADO o problema continuar no botão físico L mesmo girando à direita, a investigação deve ir para a entrada/firmware. Se passar para R ao girar à esquerda, o problema acompanha o sentido/setor renderizado.
+
+O teste local compara 180 quadros: TROCADO com L produz a mesma sequência de triângulos do ANTIGO com R, e TROCADO com R a mesma do ANTIGO com L. Também verifica que CURTO e ANTIGO representam a mesma orientação, além de giros sustentados e soltura nos seis perfis. Isso valida a comparação, não reproduz nem comprova a causa interna do travamento no aparelho.
+
+## Limite de tamanho e isolamento do cenário
 
 O engasgo no giro à esquerda continuou no aparelho após a validação de área/orientação; não ocorre em BASE nem PERSONAGEM. A versão 0.9 acrescenta uma proteção ao desenho do cenário: triângulos grandes são subdivididos pela maior aresta antes de chamar a API nativa. Cada chamada fica limitada a 160 pixels de largura, 128 de altura e produto largura × altura de 16.384. A cobertura da cena é preservada, com mais chamadas menores ao rasterizador. Isso limita o trabalho e as diferenças entre coordenadas por primitiva, sem presumir qual operação interna do firmware causa a pausa.
 
-Essa proteção aumenta a quantidade de triângulos enviados e seu custo Lua. O profiler local do COMPLETO ficou em cerca de 0,18 ms/quadro, contra 0,15 anteriormente; não é uma medição do desempenho no aparelho. A eliminação do engasgo precisa ser confirmada no Lupi. O topo agora mostra LUPI 0.9 para confirmar que o jogo atualizado foi carregado.
+Essa proteção aumenta a quantidade de triângulos enviados e seu custo Lua. O profiler local do COMPLETO ficou em cerca de 0,18 ms/quadro, contra 0,15 anteriormente; não é uma medição do desempenho no aparelho. A eliminação do engasgo precisa ser confirmada no Lupi. O topo agora mostra 1.0 CURTO / COMPLETO ao iniciar esta versão.
 
 O botão Y percorre COMPLETO → CENARIO → PERSONAGEM → BASE → CHAO → OBJETOS. CHAO desenha somente o piso, e OBJETOS somente árvores, pedras e plataforma. Se a pausa persistir, esses dois perfis permitem separar o piso das demais malhas. Os controles L/R, B e a física permanecem com o mapeamento SNES.
 
@@ -57,7 +73,7 @@ A caminhada usa 4,2 unidades/s e a câmera em 1,5 rad/s, usando o FPS informado 
 
 ## Carregamento pelo Lupi
 
-`lupi.yaml`, `game.lua` e todos os módulos Lua estão na raiz, conforme os projetos oficiais. A versão é 0.9 e `public: true`. A estrutura anterior em `src/` foi corrigida porque podia impedir a descoberta pelo catálogo. As pastas `.tools/` e `.assets-source/` ficam ocultas para o codec oficial, que ignora entradas iniciadas com ponto. A saída de build também fica fora da lista de fontes, em `.build/`.
+`lupi.yaml`, `game.lua` e todos os módulos Lua estão na raiz, conforme os projetos oficiais. A versão é 1.0 e `public: true`. A estrutura anterior em `src/` foi corrigida porque podia impedir a descoberta pelo catálogo. As pastas `.tools/` e `.assets-source/` ficam ocultas para o codec oficial, que ignora entradas iniciadas com ponto. A saída de build também fica fora da lista de fontes, em `.build/`.
 
 ## Executar
 
@@ -78,6 +94,7 @@ O SDK pode gerar `palette.lua`, mas este teste usa `colors.lua` para preservar s
 | Ombro superior L / R | Girar a câmera ao redor do personagem |
 | B (BTN_Z) | Pular |
 | Y (BTN_F no perfil SNES) | Alternar perfis de diagnóstico |
+| A (BTN_G no SNES; J no emulador) | Alternar CURTO / ANTIGO / TROCADO |
 | Emulador com controller = "lupinho" | W/A/S/D: andar; G/H: câmera; K: pular; L: perfis |
 
 Diagonais têm velocidade normalizada. Botões opostos se cancelam. Colisão circular nas pedras/troncos e limite nas bordas. A animação de passos é procedural sobre os membros do modelo, sem carregar esqueleto ou clipes de animação.
@@ -100,7 +117,7 @@ Em config.lua, platform = "lupinho" mantém a paleta BGR555 que já estava funci
 - Geometria compartilhada por instância. Modo fast: cavaleiro 95 vértices / 142 triângulos; árvore 22 / 32; pedra 10 / 16; chão 6 triângulos; cena 334 triângulos, incluindo a plataforma. Modo quality: cavaleiro 223 / 374, árvore próxima 63 / 105 e distante 22 / 32, pedra 16 / 28; chão 18; cena com árvores próximas 906 triângulos, incluindo a plataforma.
 - Fila reutilizável com teto de 768 triângulos, inclusive recortes no plano próximo. `Game.dropped` detecta estouro.
 - Projeção em perspectiva, recorte no plano próximo e ordenação por profundidade média. O chão é desenhado primeiro. A ordenação não substitui um z-buffer: interseções e superfícies próximas podem mostrar artefatos neste protótipo.
-- Alvo de projeto: reservar a maior parte dos **4 MiB informados** ao firmware/motor. Os testes de Lua no computador mediram aproximadamente **594 KiB retidos e 713 KiB de pico observado**; não representam a RAM total do aparelho. Framebuffers, runtime, pilhas e demais estruturas do motor também precisam caber na memória real.
+- Alvo de projeto: reservar a maior parte dos **4 MiB informados** ao firmware/motor. Os testes de Lua no computador mediram aproximadamente **596 KiB retidos e 715 KiB de pico observado**; não representam a RAM total do aparelho. Framebuffers, runtime, pilhas e demais estruturas do motor também precisam caber na memória real.
 - O simulador/código público não fornece aqui uma medição completa do hardware. **Não foi executado no console nem no simulador gráfico nesta máquina. Não há garantia de 60 FPS nem de consumo total abaixo de 4 MiB sem medir nessa versão do aparelho.** A API e a lógica foram verificadas por um harness Lua, e a imagem foi reconstruída das chamadas de desenho.
 
 ## Verificar e gerar o pacote

@@ -3,7 +3,7 @@
     {
       "file": "character_frames.lua",
       "bytes": 433187,
-      "sha256": "30fddfea338b6374c9e3f7494d5eae2b72e06ae4321ef4ceb3360dd28f429f63"
+      "sha256": "2fa67bed9be47de426fcfdb7a5677315c1904c9cbac90d8656ca166cfa1e573b"
     },
     {
       "file": "colors.lua",
@@ -22,8 +22,8 @@
     },
     {
       "file": "main.lua",
-      "bytes": 16186,
-      "sha256": "fd28e8121348c3156d7b19d8b07ed33bc63eb99ad871f51e18f85bf37648c848"
+      "bytes": 17356,
+      "sha256": "43c8e944c2b1bab7ea81216c27f8cf78557229b3c76cec7d65f3499c21679d5c"
     },
     {
       "file": "models.lua",
@@ -36,5 +36,5 @@
       "sha256": "610c38b1bfdfa0684373797fec811ca6e0707e9b92f28ba883a8fb25eb2f324f"
     }
   ],
-  "totalBytes": 471669
+  "totalBytes": 472839
 }
