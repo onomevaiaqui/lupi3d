@@ -14,7 +14,7 @@ trisfill=function(ax,ay,bx,by,cx,cy,color)
 end}
 require "game"
 Game.profile_mode=tonumber(arg[1]) or 0
-assert(Game.profile_mode>=0 and Game.profile_mode<=3,"profile mode must be 0..3")
+assert(Game.profile_mode>=0 and Game.profile_mode<=5,"profile mode must be 0..5")
 local maxtri,maxarea,worstx,worstz,worstyaw=0,0,0,0,0
 local start=os.clock()
 for _,p in ipairs({{0,0},{-7,-7},{7,-7},{7,7},{-7,7}}) do

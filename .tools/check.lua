@@ -85,10 +85,10 @@ for _=1,15 do Game.step() end
 assert(Game.fps==60,"unsupported FPS stat must fall back safely")
 ui.stat=nil
 -- Diagnostic input: one transition per press; BASE submits no triangles.
-for mode=1,4 do
+for mode=1,6 do
     keys[BTN_F]=true
     Game.step(); Game.step()
-    assert(Game.profile_mode==mode%4,"profile button must trigger once per press")
+    assert(Game.profile_mode==mode%6,"profile button must trigger once per press")
     assert(Game.y==0,"SNES Y profile input must not trigger a jump")
     keys={}; Game.step(); Game.draw()
     if mode==3 then assert(Game.triangles==0,"BASE mode must not draw geometry")

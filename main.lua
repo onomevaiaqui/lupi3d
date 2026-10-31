@@ -10,7 +10,7 @@ Game = {x=0,z=0,yaw=0,facing=0,phase=0,moving=false,triangles=0,dropped=0,culled
 Game.y,Game.vy,Game.grounded=0,0,true
 Game.platform=platform
 Game.profile_mode=0
-local profileNames={"COMPLETO","CENARIO","PERSONAGEM","BASE"}
+local profileNames={"COMPLETO","CENARIO","PERSONAGEM","BASE","CHAO","OBJETOS"}
 local objects,obstacles = {},{}
 local function instance(mesh,x,z,scale,radius)
     local obj={mesh=mesh,x=x,z=z,scale=scale,px={},py={},pz={},sx={},sy={}}
@@ -91,7 +91,7 @@ function Game.step(dt)
     if cfg.controller=="lupinho" then l,r,profileKey=BTN_F,BTN_G,BTN_Q end
     local profileButton=held(profileKey)
     if profileButton and not profileHeld then
-        Game.profile_mode=(Game.profile_mode+1)%4
+        Game.profile_mode=(Game.profile_mode+1)%#profileNames
         Game.reported_fps=nil
         timingFrames=0
     end
@@ -185,6 +185,29 @@ local function store(ax,ay,bx,by,dx,dy,color,depth)
     local area=(bx-ax)*(dy-ay)-(by-ay)*(dx-ax)
     if area==0 then return end
     if area<0 then bx,by,dx,dy=dx,dy,bx,by end
+    -- Keep native edge arithmetic and scanline spans small, even after clipping
+    -- a near-plane floor polygon to the whole viewport. Split the longest edge.
+    local width=math.max(ax,bx,dx)-math.min(ax,bx,dx)
+    local height=math.max(ay,by,dy)-math.min(ay,by,dy)
+    if width>160 or height>128 or width*height>16384 then
+        local ab=(bx-ax)^2+(by-ay)^2
+        local bc=(dx-bx)^2+(dy-by)^2
+        local ca=(ax-dx)^2+(ay-dy)^2
+        if ab>=bc and ab>=ca then
+            local mx,my=floor((ax+bx)/2),floor((ay+by)/2)
+            store(ax,ay,mx,my,dx,dy,color,depth)
+            store(mx,my,bx,by,dx,dy,color,depth)
+        elseif bc>=ca then
+            local mx,my=floor((bx+dx)/2),floor((by+dy)/2)
+            store(ax,ay,bx,by,mx,my,color,depth)
+            store(ax,ay,mx,my,dx,dy,color,depth)
+        else
+            local mx,my=floor((dx+ax)/2),floor((dy+ay)/2)
+            store(ax,ay,bx,by,mx,my,color,depth)
+            store(mx,my,bx,by,dx,dy,color,depth)
+        end
+        return
+    end
     count=count+1
     local t=pool[count]
     t[1],t[2],t[3],t[4],t[5],t[6]=ax,ay,bx,by,dx,dy
@@ -314,7 +337,9 @@ function Game.draw()
     Game.triangles,Game.dropped,Game.culled=0,0,0
     for i=1,#colors do ui.palset(i-1,colors[i]) end
     ui.camera(0,0); ui.clip(0,0,480,270); ui.cls(1)
-    if Game.profile_mode<2 then ui.rectfill(0,135,480,270,2) end
+    local showGround=Game.profile_mode<2 or Game.profile_mode==4
+    local showObjects=Game.profile_mode<2 or Game.profile_mode==5
+    if showGround then ui.rectfill(0,135,480,270,2) end
     cy,sy=cos(Game.yaw),sin(Game.yaw)
     if not characterFrames and (Game.profile_mode==0 or Game.profile_mode==2) then
         local angle=sin(Game.phase)*0.32
@@ -325,7 +350,7 @@ function Game.draw()
     cx,cz=Game.x-sy*5.5,Game.z-cy*5.5
     hero.x,hero.y,hero.z=Game.x,Game.y,Game.z
     -- Ground first: avoids average-depth sorting a large floor over a foot.
-    if Game.profile_mode<2 then project(floorobj); emit(floorobj); flush() end
+    if showGround then project(floorobj); emit(floorobj); flush() end
     local packed
     if characterFrames and (Game.profile_mode==0 or Game.profile_mode==2) then
         local angle=(Game.facing-Game.yaw)%(math.pi*2)
@@ -334,7 +359,7 @@ function Game.draw()
         packed=characterFrames.data[characterFrames.lookup[direction*characterFrames.poses+pose+1]]
     end
     for _,obj in ipairs(objects) do
-        if (obj==hero and not packed and (Game.profile_mode==0 or Game.profile_mode==2)) or (obj~=hero and Game.profile_mode<2) then
+        if (obj==hero and not packed and (Game.profile_mode==0 or Game.profile_mode==2)) or (obj~=hero and showObjects) then
         if obj.farMesh then
             local distance2=(obj.x-cx)^2+(obj.z-cz)^2
             if distance2>8.5^2 then obj.mesh=obj.farMesh
@@ -345,7 +370,7 @@ function Game.draw()
     end
     flush(packed)
     ui.rectfill(0,0,480,20,11)
-    ui.print("LUPI 3D / "..profileNames[Game.profile_mode+1],10,6,15)
+    ui.print("LUPI 0.9 / "..profileNames[Game.profile_mode+1],10,6,15)
     ui.print("TRI "..Game.triangles,280,6,15)
     if cfg.show_stats then
         ui.print(Game.reported_fps and ("FPS "..floor(Game.reported_fps+0.5)) or "FPS --",380,6,15)

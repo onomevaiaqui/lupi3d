@@ -7,6 +7,9 @@ clip=function() end,cls=function() end,rectfill=function() end,print=function() 
 trisfill=function(ax,ay,bx,by,cx,cy)
     assert(ax>=0 and ax<=479 and bx>=0 and bx<=479 and cx>=0 and cx<=479,"raster X outside viewport")
     assert(ay>=20 and ay<=246 and by>=20 and by<=246 and cy>=20 and cy<=246,"raster Y outside viewport")
+    local width=math.max(ax,bx,cx)-math.min(ax,bx,cx)
+    local height=math.max(ay,by,cy)-math.min(ay,by,cy)
+    assert(width<=160 and height<=128 and width*height<=16384,"native triangle exceeds edge budget")
     total=total+1
     local cross=(bx-ax)*(cy-ay)-(by-ay)*(cx-ax)
     if cross==0 then
@@ -22,6 +25,7 @@ for _,sign in ipairs({-1,1}) do
         degrees=sign*angle/10
         Game.yaw=(degrees*math.pi/180)%(math.pi*2)
         Game.draw()
+        assert(Game.dropped==0,"native subdivision exceeds triangle pool")
     end
 end
 for _,position in ipairs({{0,0},{-7,-7},{7,-7},{7,7},{-7,7}}) do
@@ -32,6 +36,7 @@ for _,position in ipairs({{0,0},{-7,-7},{7,-7},{7,7},{-7,7}}) do
             degrees=angle
             Game.yaw=angle*math.pi/180
             Game.draw()
+            assert(Game.dropped==0,"native subdivision exceeds triangle pool")
         end
     end
 end

@@ -2,7 +2,15 @@
 
 Cenário 3D pequeno projetado em Lua sobre `ui.trisfill`, a primitiva 2D do Lupi. Um cavaleiro, quatro árvores, três pedras, uma plataforma e um chão de 15 × 15 unidades. Caminhada, pulo, câmera e colisão simples; sem combate, áudio ou dependências de execução externas.
 
-## Versão 0.8: triângulos válidos no rasterizador
+## Versão 0.9: limite de tamanho e isolamento do cenário
+
+O engasgo no giro à esquerda continuou no aparelho após a validação de área/orientação; não ocorre em BASE nem PERSONAGEM. A versão 0.9 acrescenta uma proteção ao desenho do cenário: triângulos grandes são subdivididos pela maior aresta antes de chamar a API nativa. Cada chamada fica limitada a 160 pixels de largura, 128 de altura e produto largura × altura de 16.384. A cobertura da cena é preservada, com mais chamadas menores ao rasterizador. Isso limita o trabalho e as diferenças entre coordenadas por primitiva, sem presumir qual operação interna do firmware causa a pausa.
+
+Essa proteção aumenta a quantidade de triângulos enviados e seu custo Lua. O profiler local do COMPLETO ficou em cerca de 0,18 ms/quadro, contra 0,15 anteriormente; não é uma medição do desempenho no aparelho. A eliminação do engasgo precisa ser confirmada no Lupi. O topo agora mostra LUPI 0.9 para confirmar que o jogo atualizado foi carregado.
+
+O botão Y percorre COMPLETO → CENARIO → PERSONAGEM → BASE → CHAO → OBJETOS. CHAO desenha somente o piso, e OBJETOS somente árvores, pedras e plataforma. Se a pausa persistir, esses dois perfis permitem separar o piso das demais malhas. Os controles L/R, B e a física permanecem com o mapeamento SNES.
+
+## Validação dos triângulos inteiros
 
 A investigação do travamento temporário ao girar L encontrou triângulos que tinham área em coordenadas fracionárias, mas viravam pontos repetidos/área zero ou invertiam a orientação depois do arredondamento para pixels. A validação agora ocorre depois da conversão para inteiros e da limitação final à tela. Triângulos de área zero são descartados; os demais são enviados com orientação consistente. As poses pré-calculadas foram regeneradas com a mesma regra.
 
@@ -40,6 +48,8 @@ Pressione e solte Y (BTN_F no perfil SNES; BTN_Q no perfil do emulador Lupinho) 
 | CENARIO | Chão, árvores e pedras |
 | PERSONAGEM | Só o personagem sobre fundo simples |
 | BASE | Limpeza de tela e interface; nenhum triângulo |
+| CHAO | Apenas o piso |
+| OBJETOS | Árvores, pedras e plataforma |
 
 Observe o nome, TRI e FPS no topo e espere cerca de 5 segundos por perfil. FPS -- significa que ui.stat(7) não está disponível. Os perfis isolam grupos de desenho, sem medir os tempos internos do firmware.
 
@@ -47,7 +57,7 @@ A caminhada usa 4,2 unidades/s e a câmera em 1,5 rad/s, usando o FPS informado 
 
 ## Carregamento pelo Lupi
 
-`lupi.yaml`, `game.lua` e todos os módulos Lua estão na raiz, conforme os projetos oficiais. A versão é 0.8 e `public: true`. A estrutura anterior em `src/` foi corrigida porque podia impedir a descoberta pelo catálogo. As pastas `.tools/` e `.assets-source/` ficam ocultas para o codec oficial, que ignora entradas iniciadas com ponto. A saída de build também fica fora da lista de fontes, em `.build/`.
+`lupi.yaml`, `game.lua` e todos os módulos Lua estão na raiz, conforme os projetos oficiais. A versão é 0.9 e `public: true`. A estrutura anterior em `src/` foi corrigida porque podia impedir a descoberta pelo catálogo. As pastas `.tools/` e `.assets-source/` ficam ocultas para o codec oficial, que ignora entradas iniciadas com ponto. A saída de build também fica fora da lista de fontes, em `.build/`.
 
 ## Executar
 
@@ -90,7 +100,7 @@ Em config.lua, platform = "lupinho" mantém a paleta BGR555 que já estava funci
 - Geometria compartilhada por instância. Modo fast: cavaleiro 95 vértices / 142 triângulos; árvore 22 / 32; pedra 10 / 16; chão 6 triângulos; cena 334 triângulos, incluindo a plataforma. Modo quality: cavaleiro 223 / 374, árvore próxima 63 / 105 e distante 22 / 32, pedra 16 / 28; chão 18; cena com árvores próximas 906 triângulos, incluindo a plataforma.
 - Fila reutilizável com teto de 768 triângulos, inclusive recortes no plano próximo. `Game.dropped` detecta estouro.
 - Projeção em perspectiva, recorte no plano próximo e ordenação por profundidade média. O chão é desenhado primeiro. A ordenação não substitui um z-buffer: interseções e superfícies próximas podem mostrar artefatos neste protótipo.
-- Alvo de projeto: reservar a maior parte dos **4 MiB informados** ao firmware/motor. Os testes de Lua no computador mediram aproximadamente **591 KiB retidos e 710 KiB de pico observado**; não representam a RAM total do aparelho. Framebuffers, runtime, pilhas e demais estruturas do motor também precisam caber na memória real.
+- Alvo de projeto: reservar a maior parte dos **4 MiB informados** ao firmware/motor. Os testes de Lua no computador mediram aproximadamente **594 KiB retidos e 713 KiB de pico observado**; não representam a RAM total do aparelho. Framebuffers, runtime, pilhas e demais estruturas do motor também precisam caber na memória real.
 - O simulador/código público não fornece aqui uma medição completa do hardware. **Não foi executado no console nem no simulador gráfico nesta máquina. Não há garantia de 60 FPS nem de consumo total abaixo de 4 MiB sem medir nessa versão do aparelho.** A API e a lógica foram verificadas por um harness Lua, e a imagem foi reconstruída das chamadas de desenho.
 
 ## Verificar e gerar o pacote

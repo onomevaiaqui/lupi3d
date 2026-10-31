@@ -10,7 +10,7 @@ trisfill=function(a,b,c,d,e,f)
     triangles=triangles+1
 end}
 require "game"
-for mode=0,3 do
+for mode=0,5 do
     for _,button in ipairs({BTN_Q,BTN_E}) do
         Game.x,Game.z,Game.y,Game.vy,Game.yaw,Game.phase=0,0,0,0,0,0
         Game.profile_mode=mode
@@ -35,4 +35,4 @@ for _,button in ipairs({BTN_Q,BTN_E}) do
     for _=1,120 do Game.step(1/30);Game.draw();assert(Game.dropped==0) end
     keys={};Game.step(1/30)
 end
-print("PASS: 20-second L/R holds from yaw zero in all four profiles, wraps, release and finite projection")
+print("PASS: 20-second L/R holds from yaw zero in all six profiles, wraps, release and finite projection")
