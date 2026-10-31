@@ -1,0 +1,85 @@
+-- Run from repository root: lua tools/check.lua
+package.path="src/?.lua;"..package.path
+LEFT,RIGHT,UP,DOWN=4,2,1,3
+BTN_F,BTN_G,BTN_Q,BTN_E=9,11,5,8
+local keys,palette,commands={},{},{}
+local capture=false
+local function record(...)
+    if capture then commands[#commands+1]=table.concat({...},",") end
+end
+local function finite(n) assert(type(n)=="number" and n==n and math.abs(n)<1000000,"invalid coordinate") end
+ui={
+    btn=function(k) return keys[k] or 0 end, -- tests numeric zero as released
+    palset=function(i,c) assert(i>=0 and i<256 and c>=0 and c<32768);palette[i]=c end,
+    camera=function() end,clip=function() end,
+    cls=function(c) record("rect",0,0,480,270,c) end,
+    rectfill=function(a,b,c,d,e) record("rect",a,b,c,d,e) end,
+    print=function(s,x,y,c) record("text",x,y,c,s) end,
+    trisfill=function(a,b,c,d,e,f,g)
+        for _,n in ipairs({a,b,c,d,e,f}) do finite(n) end
+        assert(g>=0 and g<32)
+        record("tri",a,b,c,d,e,f,g)
+    end,
+}
+require "game"
+local function step(n) for _=1,n do update() end end
+local start=collectgarbage("count")
+step(1); assert(Game.x==0 and Game.z==0,"released input moves player")
+keys[UP]=true; step(60); keys={}
+assert(math.abs(Game.z-2.1)<0.0001 and Game.moving,"forward movement")
+keys[DOWN]=255; step(60); keys={}
+assert(math.abs(Game.z)<0.0001,"backward movement")
+keys[UP],keys[RIGHT]=true,true; step(1); keys={}
+assert(math.abs(math.sqrt(Game.x^2+Game.z^2)-0.035)<0.0001,"diagonal normalization")
+Game.x,Game.z=0,0
+keys[BTN_G]=true; step(63); keys={}
+assert(Game.yaw>1.5 and Game.yaw<1.6,"R shoulder camera")
+keys[UP]=true; step(20); keys={}
+assert(Game.x>0.65,"camera-relative forward")
+local yaw=Game.yaw
+keys[BTN_F]=true; step(20); keys={}; assert(Game.yaw<yaw,"L shoulder camera")
+Game.x,Game.z,Game.yaw=0,0,0
+keys[UP]=true; step(500); keys={}
+assert(Game.z<=7 and Game.z>6.9,"arena boundary")
+Game.x,Game.z,Game.yaw=3.2,-2,0
+keys[UP]=true; step(120); keys={}
+assert(Game.z<-1,"rock collision")
+-- Exercise the documented hardware mapping separately from Lupinho's mapping.
+local config=require "config"
+config.platform="hardware"
+keys[BTN_E]=true; local before=Game.yaw; step(1); keys={}
+assert(Game.yaw>before,"hardware R shoulder")
+keys[BTN_Q]=true; step(1); keys={}
+assert(math.abs(Game.yaw-before)<0.0001,"hardware L shoulder")
+config.platform="lupinho"
+-- Camera near objects and arena corners: near-plane clipping must remain finite.
+for _,p in ipairs({{-7,-7},{7,-7},{7,7},{-7,7},{3.2,1.1}}) do
+    Game.x,Game.z=p[1],p[2]
+    for angle=0,350,10 do
+        Game.yaw=angle*math.pi/180; update()
+        assert(Game.dropped==0,"clipped geometry exceeds pool")
+    end
+end
+Game.x,Game.z,Game.yaw=0,0,0
+collectgarbage("collect")
+local base=collectgarbage("count")
+local peak,maxtris=base,0
+local t=os.clock()
+for i=1,360 do
+    Game.yaw=i*math.pi/180
+    update()
+    assert(Game.dropped==0,"triangle capacity exceeded")
+    maxtris=math.max(maxtris,Game.triangles)
+    peak=math.max(peak,collectgarbage("count"))
+end
+local elapsed=os.clock()-t
+collectgarbage("collect")
+local final=collectgarbage("count")
+assert(final<1024,"Lua heap exceeds 1 MiB budget")
+assert(final-base<32,"persistent heap growth")
+print(string.format("PASS: movement, diagonals, shoulders, collision, boundary, 360 camera angles\nLua heap %.1f KiB; observed peak %.1f KiB; retained growth %.1f KiB\nMax triangles/frame %d; desktop Lua %.2f ms/frame (not hardware timing)",final,peak,final-base,maxtris,elapsed/360*1000))
+Game.x,Game.z,Game.yaw=0,0,0
+capture=true; update(); capture=false
+local out=assert(io.open("tools/frame.csv","w"));out:write(table.concat(commands,"\n"));out:close()
+out=assert(io.open("tools/palette.csv","w"))
+for i=0,31 do out:write(i,",",palette[i],"\n") end; out:close()

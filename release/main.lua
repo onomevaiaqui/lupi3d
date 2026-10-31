@@ -1,0 +1,151 @@
+local cfg = require "config"
+local colors = require "colors"
+local models = require "models"
+local sin,cos,sqrt,floor = math.sin,math.cos,math.sqrt,math.floor
+Game = {x=0,z=0,yaw=0,facing=0,phase=0,moving=false,triangles=0,dropped=0}
+local objects,obstacles = {},{}
+local function instance(mesh,x,z,scale,radius)
+    local obj={mesh=mesh,x=x,z=z,scale=scale,px={},py={},pz={}}
+    objects[#objects+1]=obj
+    if radius then obstacles[#obstacles+1]={x=x,z=z,r=radius} end
+    return obj
+end
+instance(models.tree,-4.8,4.2,0.9,0.55)
+instance(models.tree,4.6,4.8,0.8,0.55)
+instance(models.tree,-5.5,-3.8,0.85,0.55)
+instance(models.tree,5.0,-4.2,0.75,0.55)
+instance(models.rock,-2.5,1.8,1.5,0.7)
+instance(models.rock,3.2,0.0,1.8,0.8)
+instance(models.rock,1.2,5.8,1.3,0.6)
+local hero=instance(models.knight,0,0,0.65)
+local ground={v={},f={}}
+for x=-3,2 do for z=-3,2 do
+    local n=#ground.v/4
+    local x0,z0=x*2.5,z*2.5
+    for _,p in ipairs({{x0,z0},{x0+2.5,z0},{x0+2.5,z0+2.5},{x0,z0+2.5}}) do
+        ground.v[#ground.v+1]=p[1]; ground.v[#ground.v+1]=0
+        ground.v[#ground.v+1]=p[2]; ground.v[#ground.v+1]=0
+    end
+    local c=(x==0 or x==-1) and 4 or (2+(x+z)%2)
+    for _,i in ipairs({n+1,n+3,n+2,c,n+1,n+4,n+3,c}) do ground.f[#ground.f+1]=i end
+end end
+local floorobj={mesh=ground,x=0,z=0,scale=1,px={},py={},pz={}}
+local pool,list={},{}
+for i=1,cfg.max_triangles do pool[i]={} end
+local count=0
+local function held(button)
+    if button==nil then return false end
+    local v=ui.btn(button,0)
+    return v==true or (type(v)=="number" and v>0)
+end
+local function free(x,z)
+    if math.abs(x)>cfg.limit or math.abs(z)>cfg.limit then return false end
+    for _,o in ipairs(obstacles) do
+        if (x-o.x)^2+(z-o.z)^2<(o.r+0.23)^2 then return false end
+    end
+    return true
+end
+function Game.step()
+    local l,r=BTN_F,BTN_G
+    if cfg.platform=="hardware" then l,r=BTN_Q,BTN_E end
+    local turn=(held(r) and 1 or 0)-(held(l) and 1 or 0)
+    Game.yaw=(Game.yaw+turn*cfg.camera_speed)%(math.pi*2)
+    local forward=(held(UP) and 1 or 0)-(held(DOWN) and 1 or 0)
+    local side=(held(RIGHT) and 1 or 0)-(held(LEFT) and 1 or 0)
+    local len=sqrt(forward*forward+side*side)
+    local ox,oz=Game.x,Game.z
+    if len>0 then
+        local dx=(sin(Game.yaw)*forward+cos(Game.yaw)*side)/len*cfg.speed
+        local dz=(cos(Game.yaw)*forward-sin(Game.yaw)*side)/len*cfg.speed
+        if free(Game.x+dx,Game.z) then Game.x=Game.x+dx end
+        if free(Game.x,Game.z+dz) then Game.z=Game.z+dz end
+        Game.facing=math.atan(dx,dz)
+    end
+    Game.moving=math.abs(Game.x-ox)+math.abs(Game.z-oz)>0.00001
+    if Game.moving then Game.phase=(Game.phase+0.14)%(math.pi*2) else Game.phase=0 end
+end
+local cy,sy,cp,sp,cx,cz
+local function project(obj)
+    local v=obj.mesh.v
+    local cf,sf=cos(Game.facing),sin(Game.facing)
+    for i=1,#v,4 do
+        local x,y,z=v[i],v[i+1],v[i+2]
+        if obj==hero then
+            local g=v[i+3]
+            if g>0 then
+                local a=sin(Game.phase)*0.32*((g==1 or g==4) and 1 or -1)
+                local pivot=g<=2 and 0.48 or 1.10
+                local dy=y-pivot
+                y=pivot+dy*cos(a)-z*sin(a); z=dy*sin(a)+z*cos(a)
+            end
+            x,z=x*cf+z*sf,-x*sf+z*cf
+        end
+        x=x*obj.scale+obj.x-cx
+        y=y*obj.scale-3.55
+        z=z*obj.scale+obj.z-cz
+        local depth=x*sy+z*cy
+        local k=(i+3)/4
+        obj.px[k]=x*cy-z*sy
+        obj.py[k]=y*cp+depth*sp
+        obj.pz[k]=depth*cp-y*sp
+    end
+end
+local function submit(ax,ay,az,bx,by,bz,dx,dy,dz,color)
+    if count>=cfg.max_triangles then Game.dropped=Game.dropped+1; return end
+    ax,ay=240+ax*250/az,135-ay*250/az
+    bx,by=240+bx*250/bz,135-by*250/bz
+    dx,dy=240+dx*250/dz,135-dy*250/dz
+    if math.max(ax,bx,dx)<0 or math.min(ax,bx,dx)>479 or math.max(ay,by,dy)<0 or math.min(ay,by,dy)>269 then return end
+    if math.abs((bx-ax)*(dy-ay)-(by-ay)*(dx-ax))<0.5 then return end
+    count=count+1
+    local t=pool[count]
+    t[1],t[2],t[3],t[4],t[5],t[6]=floor(ax),floor(ay),floor(bx),floor(by),floor(dx),floor(dy)
+    t[7],t[8]=color,(az+bz+dz)/3
+    list[count]=t
+end
+-- Sutherland-Hodgman clipping against the near plane. Reused scratch arrays.
+local ix,iy,iz,ox,oy,oz={},{},{},{},{},{}
+local function emit(obj)
+    local f=obj.mesh.f
+    for i=1,#f,4 do
+        for k=1,3 do local id=f[i+k-1]; ix[k]=obj.px[id]; iy[k]=obj.py[id]; iz[k]=obj.pz[id] end
+        local n=0
+        for k=1,3 do
+            local prev=k==1 and 3 or k-1
+            local a,b=iz[prev]>=0.25,iz[k]>=0.25
+            if a~=b then
+                local t=(0.25-iz[prev])/(iz[k]-iz[prev])
+                n=n+1; ox[n]=ix[prev]+(ix[k]-ix[prev])*t; oy[n]=iy[prev]+(iy[k]-iy[prev])*t; oz[n]=0.25
+            end
+            if b then n=n+1; ox[n]=ix[k]; oy[n]=iy[k]; oz[n]=iz[k] end
+        end
+        local color=f[i+3]
+        for k=2,n-1 do submit(ox[1],oy[1],oz[1],ox[k],oy[k],oz[k],ox[k+1],oy[k+1],oz[k+1],color) end
+    end
+end
+local function farfirst(a,b) return a[8]>b[8] end
+local function flush()
+    for i=#list,count+1,-1 do list[i]=nil end
+    table.sort(list,farfirst)
+    for i=1,count do local t=list[i]; ui.trisfill(t[1],t[2],t[3],t[4],t[5],t[6],t[7]) end
+    Game.triangles=Game.triangles+count
+    count=0
+end
+function Game.draw()
+    Game.triangles,Game.dropped=0,0
+    for i=1,#colors do ui.palset(i-1,colors[i]) end
+    ui.camera(0,0); ui.clip(0,0,480,270); ui.cls(1)
+    ui.rectfill(0,135,480,270,2)
+    cy,sy=cos(Game.yaw),sin(Game.yaw)
+    cp,sp=cos(0.45),sin(0.45)
+    cx,cz=Game.x-sy*5.5,Game.z-cy*5.5
+    hero.x,hero.z=Game.x,Game.z
+    -- Ground first: avoids average-depth sorting a large floor over a foot.
+    project(floorobj); emit(floorobj); flush()
+    for _,obj in ipairs(objects) do project(obj); emit(obj) end
+    flush()
+    ui.rectfill(0,0,480,20,11)
+    ui.print("LUPI 3D / TESTE DE CAMINHADA",10,6,15)
+    ui.rectfill(0,247,480,270,11)
+    ui.print("CRUZ: ANDAR    L/R: GIRAR CAMERA",10,254,15)
+end

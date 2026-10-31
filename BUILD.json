@@ -1,0 +1,30 @@
+{
+  "files": [
+    {
+      "file": "colors.lua",
+      "bytes": 675,
+      "sha256": "252a2cb50065b6f5fc57c0448aaee9d865bf38dc444b19bb38ecbed69f7354c0"
+    },
+    {
+      "file": "config.lua",
+      "bytes": 368,
+      "sha256": "7baaf38e746f182d06c0ea57fba12bfdc7b1b28dbfb62c5d4dcfdec4afa10b01"
+    },
+    {
+      "file": "game.lua",
+      "bytes": 75,
+      "sha256": "a0405204356040ae66ac9139fc20509fdae716cbd1ee3ce8753b4d17817fe58a"
+    },
+    {
+      "file": "main.lua",
+      "bytes": 5965,
+      "sha256": "824cc5afe56e7ec4f4cc198ed21b444fadaf5f9df95a1d5b5a9c5799d745ba67"
+    },
+    {
+      "file": "models.lua",
+      "bytes": 24491,
+      "sha256": "7b00341c9a24f7f3749489b2326ba8bb4b9be59ce413fad82b4a05ecdca127bc"
+    }
+  ],
+  "totalBytes": 31822
+}
