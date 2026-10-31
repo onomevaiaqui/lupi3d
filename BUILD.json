@@ -7,8 +7,8 @@
     },
     {
       "file": "config.lua",
-      "bytes": 368,
-      "sha256": "7baaf38e746f182d06c0ea57fba12bfdc7b1b28dbfb62c5d4dcfdec4afa10b01"
+      "bytes": 367,
+      "sha256": "bb9e51204fba89a01a8926c5fc655b6659e0edfe1649d29c0aabd85eaed53456"
     },
     {
       "file": "game.lua",
@@ -17,14 +17,14 @@
     },
     {
       "file": "main.lua",
-      "bytes": 5965,
-      "sha256": "824cc5afe56e7ec4f4cc198ed21b444fadaf5f9df95a1d5b5a9c5799d745ba67"
+      "bytes": 7144,
+      "sha256": "9abe3b0f557f26a90970c3f6d611dc599c9a547f5c5704cb59957090e43f3527"
     },
     {
       "file": "models.lua",
-      "bytes": 24492,
-      "sha256": "a99d5e688db2d74105e9814804b25e6bbdce15d2071726798fbcc2008f9572b7"
+      "bytes": 14434,
+      "sha256": "2898dca00caac6fbb0b71214e0b4a5852144fc0a9b8bfddb436e461abc24158e"
     }
   ],
-  "totalBytes": 31823
+  "totalBytes": 22943
 }

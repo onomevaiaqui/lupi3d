@@ -1,6 +1,7 @@
 * text=auto
 *.lua text eol=lf
 *.cjs text eol=lf
+*.mjs text eol=lf
 *.txt text eol=lf
 *.obj text eol=lf
 *.json text eol=lf

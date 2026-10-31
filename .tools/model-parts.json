@@ -1,0 +1,58 @@
+[
+  {
+    "name": "Knight_ArmLeft",
+    "group": 3,
+    "start": 1,
+    "end": 16,
+    "faces": 28
+  },
+  {
+    "name": "Knight_ArmRight",
+    "group": 4,
+    "start": 17,
+    "end": 33,
+    "faces": 30
+  },
+  {
+    "name": "Knight_Body",
+    "group": 0,
+    "start": 34,
+    "end": 72,
+    "faces": 68
+  },
+  {
+    "name": "Knight_Head",
+    "group": 0,
+    "start": 73,
+    "end": 112,
+    "faces": 53
+  },
+  {
+    "name": "Knight_Helmet",
+    "group": 0,
+    "start": 113,
+    "end": 155,
+    "faces": 71
+  },
+  {
+    "name": "Knight_HelmetVisor",
+    "group": 0,
+    "start": 156,
+    "end": 173,
+    "faces": 32
+  },
+  {
+    "name": "Knight_LegLeft",
+    "group": 1,
+    "start": 174,
+    "end": 199,
+    "faces": 48
+  },
+  {
+    "name": "Knight_LegRight",
+    "group": 2,
+    "start": 200,
+    "end": 223,
+    "faces": 44
+  }
+]

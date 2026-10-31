@@ -1,4 +1,7 @@
 .tools/frame.csv
 .tools/palette.csv
 .tools/preview.png
+.tools/view*.csv
+.tools/view*.png
+.tools/turntable.png
 .build/

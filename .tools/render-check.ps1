@@ -1,3 +1,4 @@
+param([string]$Frame='frame')
 $ErrorActionPreference='Stop'
 Add-Type -AssemblyName System.Drawing
 $image=New-Object System.Drawing.Bitmap 480,270
@@ -9,7 +10,7 @@ foreach($line in Get-Content "$PSScriptRoot/palette.csv") {
     $brushes[$p[0]]=New-Object System.Drawing.SolidBrush ([System.Drawing.Color]::FromArgb([int]$r,[int]$green,[int]$b))
 }
 $font=New-Object System.Drawing.Font 'Consolas',7
-foreach($line in Get-Content "$PSScriptRoot/frame.csv") {
+foreach($line in Get-Content "$PSScriptRoot/$Frame.csv") {
     $p=$line.Split(',')
     switch($p[0]) {
         'tri' {
@@ -20,6 +21,7 @@ foreach($line in Get-Content "$PSScriptRoot/frame.csv") {
         'text' { $g.DrawString($p[4],$font,$brushes[$p[3]],[single]$p[1],[single]$p[2]) }
     }
 }
-$image.Save("$PSScriptRoot/preview.png",[System.Drawing.Imaging.ImageFormat]::Png)
+$output=if($Frame -eq 'frame') { 'preview' } else { $Frame }
+$image.Save("$PSScriptRoot/$output.png",[System.Drawing.Imaging.ImageFormat]::Png)
 $font.Dispose(); $g.Dispose(); $image.Dispose()
 foreach($brush in $brushes.Values) { $brush.Dispose() }

@@ -2,9 +2,26 @@
 
 Cenário 3D pequeno projetado em Lua sobre `ui.trisfill`, a primitiva 2D do Lupi. Um cavaleiro, quatro árvores, três pedras e um chão de 15 × 15 unidades. Apenas caminhada, câmera e colisão simples; sem combate, pulo, áudio ou dependências de execução externas.
 
+## Versão 0.3: personagem e renderização
+
+A conversão anterior agrupava vértices em uma grade e removia a cabeça interna ao capacete, o que podia abrir falhas e deixar superfícies sobrepostas visíveis. Agora a malha é simplificada por componente com meshoptimizer, a cabeça é preservada e as faces traseiras são descartadas antes de desenhar. Os membros mantêm grupos separados durante a caminhada.
+
+O renderizador calcula o seno/cosseno dos membros uma vez por quadro e a perspectiva uma vez por vértice. A fila de triângulos é reutilizada com limite de 768 entradas. A biblioteca meshoptimizer está incluída em .tools/vendor/ apenas para a conversão no computador; não é carregada no jogo.
+
+Comparação no harness Lua local, sem medir o console:
+
+| Medida | 0.2 | 0.3 |
+| --- | ---: | ---: |
+| Máximo de triângulos desenhados no giro central de 360 graus | 1.407 | 382 |
+| Memória Lua retida após os testes | ~708 KiB | ~321 KiB |
+| Pico observado no teste | ~849 KiB | ~385 KiB |
+| Tempo por quadro no computador usado | ~3,1 ms | ~0,9 ms |
+
+Esses números não incluem o motor nem demonstram a taxa de quadros no aparelho. As prévias de diagnóstico foram inspecionadas em oito ângulos e os testes exercitam 128 combinações de orientação e pose de caminhada.
+
 ## Carregamento pelo Lupi
 
-`lupi.yaml`, `game.lua` e todos os módulos Lua estão na raiz, conforme os projetos oficiais. A versão é 0.2 e `public: true`. A estrutura anterior em `src/` foi corrigida porque podia impedir a descoberta pelo catálogo. As pastas `.tools/` e `.assets-source/` ficam ocultas para o codec oficial, que ignora entradas iniciadas com ponto. A saída de build também fica fora da lista de fontes, em `.build/`.
+`lupi.yaml`, `game.lua` e todos os módulos Lua estão na raiz, conforme os projetos oficiais. A versão é 0.3 e `public: true`. A estrutura anterior em `src/` foi corrigida porque podia impedir a descoberta pelo catálogo. As pastas `.tools/` e `.assets-source/` ficam ocultas para o codec oficial, que ignora entradas iniciadas com ponto. A saída de build também fica fora da lista de fontes, em `.build/`.
 
 ## Executar
 
@@ -42,10 +59,10 @@ O padrão de **`config.lua` é `platform = "lupinho"`**, conferido contra o cód
 
 - Resolução: **480 × 270**. Paleta: **32 entradas**, canais de 5 bits, abaixo das 256 permitidas.
 - Sem texturas em execução, z-buffer, iluminação dinâmica, física externa ou alocações de objetos por triângulo a cada frame.
-- Geometria compartilhada por instância: cavaleiro 358 vértices / 814 triângulos; árvore 112 / 221; pedra 22 / 40. Chão: 72 triângulos. Total de entrada da cena: 1.890 triângulos; triângulos fora da tela e degenerados são descartados antes do desenho.
-- Fila reutilizável com teto de 2.600 triângulos, inclusive recortes no plano próximo. `Game.dropped` detecta estouro.
+- Geometria compartilhada por instância: cavaleiro 223 vértices / 374 triângulos; árvore 63 / 105; pedra 16 / 28. Chão: 72 triângulos. Total de entrada da cena: 950 triângulos; triângulos fora da tela e degenerados são descartados antes do desenho.
+- Fila reutilizável com teto de 768 triângulos, inclusive recortes no plano próximo. `Game.dropped` detecta estouro.
 - Projeção em perspectiva, recorte no plano próximo e ordenação por profundidade média. O chão é desenhado primeiro. A ordenação não substitui um z-buffer: interseções e superfícies próximas podem mostrar artefatos neste protótipo.
-- Alvo de projeto: reservar a maior parte dos **4 MiB informados** ao firmware/motor. Os testes de Lua no computador mediram aproximadamente **707 KiB retidos e 849 KiB de pico observado**; não representam a RAM total do aparelho. Framebuffers, runtime, pilhas e demais estruturas do motor também precisam caber na memória real.
+- Alvo de projeto: reservar a maior parte dos **4 MiB informados** ao firmware/motor. Os testes de Lua no computador mediram aproximadamente **321 KiB retidos e 385 KiB de pico observado**; não representam a RAM total do aparelho. Framebuffers, runtime, pilhas e demais estruturas do motor também precisam caber na memória real.
 - O simulador/código público não fornece aqui uma medição completa do hardware. **Não foi executado no console nem no simulador gráfico nesta máquina. Não há garantia de 60 FPS nem de consumo total abaixo de 4 MiB sem medir nessa versão do aparelho.** A API e a lógica foram verificadas por um harness Lua, e a imagem foi reconstruída das chamadas de desenho.
 
 ## Verificar e gerar o pacote
@@ -54,6 +71,7 @@ Na raiz do repositório, com Lua 5.4+ e Node.js:
 
 ```sh
 lua .tools/check.lua
+lua .tools/check-models.lua
 node .tools/build.cjs
 node .tools/check-discovery.cjs
 ```
@@ -67,7 +85,7 @@ node .tools/convert-assets.cjs
 node .tools/build.cjs
 ```
 
-O conversor usa agrupamento de vértices, elimina triângulos repetidos/degenerados, abaixa os braços da pose original e aplica cores chapadas com duas intensidades de iluminação. Não precisa de Blender, npm ou bibliotecas externas.
+O conversor usa meshoptimizer 1.3.0 (MIT, incluído em .tools/vendor/) para simplificar cada componente com limite de erro. Vértices coincidentes são soldados sem agrupamento espacial em grade. A cabeça é mantida dentro do capacete, os braços são abaixados e as cores são chapadas com duas intensidades. Não precisa instalar Blender ou pacotes npm.
 
 Prévia de diagnóstico no Windows, após o teste:
 

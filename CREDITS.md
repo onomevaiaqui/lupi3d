@@ -10,7 +10,7 @@ Licença dos dois packs: **Creative Commons Zero (CC0 1.0)**. Os arquivos de lic
 - Download gratuito **Free 2.0**, upload itch.io `15363167`, baixado em 31/10/2026.
 - Arquivo selecionado: `Characters/gltf/Knight.glb`, preservado em `.assets-source/Knight.glb`.
 - SHA-256 do ZIP baixado: `ABE48F4763FBA0896BAB486EE9E6D08CA6B5B3884B9601F235C8847AE94DC479`.
-- Derivado: malha simplificada em `models.lua`, recolorida, sem texturas/esqueleto, braços abaixados, sem capa/cabeça interna ao capacete, membros identificados para caminhada procedural.
+- Derivado: malha simplificada em `models.lua`, recolorida, sem texturas/esqueleto, braços abaixados, sem capa e com a cabeça interna ao capacete preservada, membros identificados para caminhada procedural.
 
 ## Cenário
 
@@ -21,3 +21,7 @@ Licença dos dois packs: **Creative Commons Zero (CC0 1.0)**. Os arquivos de lic
 - Derivados: malhas simplificadas e cores chapadas em `models.lua`. Materiais e atlas originais não são usados.
 
 Chão e código de projeção/controle foram criados para este teste. Não fazem parte dos packs.
+
+## Ferramenta de conversão
+
+meshoptimizer 1.3.0, Arseny Kapoulkine, licença MIT. Apenas no computador, em `.tools/vendor/meshopt_simplifier.mjs`. Licença incluída em `.tools/vendor/LICENSE-meshoptimizer.txt`. Origem: https://www.npmjs.com/package/meshoptimizer/v/1.3.0 e https://github.com/zeux/meshoptimizer. A biblioteca não faz parte da execução no Lupi.

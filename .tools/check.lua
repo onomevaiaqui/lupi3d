@@ -56,6 +56,18 @@ assert(Game.yaw>before,"hardware R shoulder")
 keys[BTN_Q]=true; step(1); keys={}
 assert(math.abs(Game.yaw-before)<0.0001,"hardware L shoulder")
 config.platform="lupinho"
+-- Walk through full gait cycles while viewing every side of the articulated mesh.
+for direction=0,7 do
+    for pose=0,15 do
+        Game.yaw=direction*math.pi/4
+        Game.facing=(7-direction)*math.pi/4
+        Game.phase=pose*math.pi/8
+        Game.draw()
+        assert(Game.dropped==0,"walking pose exceeds triangle pool")
+        assert(Game.culled>0,"backface culling is inactive")
+        assert(Game.triangles<500,"scene exceeds optimized draw budget")
+    end
+end
 -- Camera near objects and arena corners: near-plane clipping must remain finite.
 for _,p in ipairs({{-7,-7},{7,-7},{7,7},{-7,7},{3.2,1.1}}) do
     Game.x,Game.z=p[1],p[2]
@@ -81,9 +93,17 @@ collectgarbage("collect")
 local final=collectgarbage("count")
 assert(final<1024,"Lua heap exceeds 1 MiB budget")
 assert(final-base<32,"persistent heap growth")
-print(string.format("PASS: movement, diagonals, shoulders, collision, boundary, 360 camera angles\nLua heap %.1f KiB; observed peak %.1f KiB; retained growth %.1f KiB\nMax triangles/frame %d; desktop Lua %.2f ms/frame (not hardware timing)",final,peak,final-base,maxtris,elapsed/360*1000))
+print(string.format("PASS: movement, diagonals, shoulders, collision, boundary, 360 camera angles, 128 gait/view combinations\nLua heap %.1f KiB; observed peak %.1f KiB; retained growth %.1f KiB\nMax triangles/frame %d; desktop Lua %.2f ms/frame (not hardware timing)",final,peak,final-base,maxtris,elapsed/360*1000))
 Game.x,Game.z,Game.yaw=0,0,0
 capture=true; update(); capture=false
 local out=assert(io.open(".tools/frame.csv","w"));out:write(table.concat(commands,"\n"));out:close()
 out=assert(io.open(".tools/palette.csv","w"))
 for i=0,31 do out:write(i,",",palette[i],"\n") end; out:close()
+if arg[1]=="views" then
+    for i=0,7 do
+        Game.x,Game.z,Game.yaw,Game.facing=0,0,i*math.pi/4,0
+        Game.phase=math.pi/2
+        commands={}; capture=true; Game.draw(); capture=false
+        out=assert(io.open(".tools/view"..i..".csv","w"));out:write(table.concat(commands,"\n"));out:close()
+    end
+end
