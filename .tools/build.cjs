@@ -1,32 +1,26 @@
-// Deterministic Lua-only release: no textures, desktop renderer or source GLB.
-const fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypto');
-const root=path.resolve(__dirname,'..'),out=path.join(root,'.build/release');
-function fingerprint(name) {
-  let hash=2166136261;
-  const bytes=Buffer.from(fs.readFileSync(path.join(root,name),'utf8').replace(/\r\n/g,'\n'));
-  for(const byte of bytes) hash=Math.imul(hash^byte,16777619)>>>0;
-  return hash.toString(16).padStart(8,'0');
-}
-const frames=fs.readFileSync(path.join(root,'character_frames.lua'),'utf8');
-for(const [field,name] of [['model_hash','models.lua'],['renderer_hash','main.lua']]) {
-  const expected=frames.match(new RegExp(field+'="([0-9a-f]+)"'))?.[1];
-  if(expected!==fingerprint(name)) throw new Error('Stale character frames: run lua .tools/bake-character.lua after changing '+name);
-}
+const fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypto'),cp=require('node:child_process');
+const root=path.resolve(__dirname,'..'),out=path.join(root,'.build/fps-release');
 fs.mkdirSync(out,{recursive:true});
-const files=fs.readdirSync(root).filter(f=>f.endsWith('.lua')).sort();
-for(const required of ['game.lua','main.lua','config.lua','colors.lua','models.lua','lupi.yaml']) {
-  if(!fs.existsSync(path.join(root,required))) throw new Error('Missing root file: '+required);
+const runtime=['colors.lua','config.lua','game.lua','gun.lua','level.lua','main.lua'];
+const entries=[];
+for(const file of runtime) {
+  const code=fs.readFileSync(path.join(root,file),'utf8').replace(/\r\n/g,'\n');
+  fs.writeFileSync(path.join(out,file),code);
+  entries.push({file,metadata:{type:'lua_code'}});
 }
+const result=cp.spawnSync(process.env.LUPI_PYTHON||'python',[path.join(__dirname,'build-images.py'),out],{encoding:'utf8'});
+if(result.status!==0) throw new Error(result.stderr||'Python with Pillow is required; set LUPI_PYTHON to its executable');
+process.stdout.write(result.stdout);
+entries.push(...JSON.parse(fs.readFileSync(path.join(out,'image-metadata.json'),'utf8')));
+fs.unlinkSync(path.join(out,'image-metadata.json'));
 let manifest='';
-for(const [i,name] of files.entries()) {
-  const data=fs.readFileSync(path.join(root,name));
-  fs.writeFileSync(path.join(out,name),data);
-  manifest+=`${17934048000000+i} ${data.length} ${name} {"type":"lua_code"}\n`;
-}
-fs.writeFileSync(path.join(out,'lupi_manifest.txt'),manifest);
-const details=files.map(name=>{
-  const b=fs.readFileSync(path.join(out,name));
-  return {file:name,bytes:b.length,sha256:crypto.createHash('sha256').update(b).digest('hex')};
+const cursorBase=Math.floor(Date.now()/1000)*10000;
+const files=entries.map((entry,i)=>{
+  const data=fs.readFileSync(path.join(out,entry.file));
+  manifest+=`${cursorBase+i} ${data.length} ${entry.file} ${JSON.stringify(entry.metadata)}\n`;
+  return {...entry,bytes:data.length,sha256:crypto.createHash('sha256').update(data).digest('hex')};
 });
-fs.writeFileSync(path.join(root,'BUILD.json'),JSON.stringify({files:details,totalBytes:details.reduce((s,f)=>s+f.bytes,Buffer.byteLength(manifest))},null,2)+'\n');
-console.log('Release ready:',out,details.reduce((s,f)=>s+f.bytes,Buffer.byteLength(manifest)),'bytes');
+fs.writeFileSync(path.join(out,'lupi_manifest.txt'),manifest);
+const totalBytes=files.reduce((sum,f)=>sum+f.bytes,Buffer.byteLength(manifest));
+fs.writeFileSync(path.join(root,'BUILD.json'),JSON.stringify({project:'Lupi FPS 1.1',files,totalBytes},null,2)+'\n');
+console.log('FPS release ready:',out,totalBytes,'bytes');

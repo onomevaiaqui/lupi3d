@@ -1,0 +1,10 @@
+FPS Gun Sprites by Rekkimaru
+Source and author permission:
+https://rekkimaru.itch.io/fps-gun-sprites
+
+The page offers these sprites free for FPS projects. In the author's response
+to GGBotNet, Rekkimaru explicitly permits commercial/non-commercial use and
+modification. Attribution is optional; this project credits the author.
+
+This records the author's project-use permission, not an asserted CC0 license.
+Downloaded 2026-10-31. Original selected file: PIST1.png.

@@ -1,40 +1,73 @@
 {
+  "project": "Lupi FPS 1.1",
   "files": [
     {
-      "file": "character_frames.lua",
-      "bytes": 433187,
-      "sha256": "2fa67bed9be47de426fcfdb7a5677315c1904c9cbac90d8656ca166cfa1e573b"
-    },
-    {
       "file": "colors.lua",
-      "bytes": 675,
-      "sha256": "252a2cb50065b6f5fc57c0448aaee9d865bf38dc444b19bb38ecbed69f7354c0"
+      "metadata": {
+        "type": "lua_code"
+      },
+      "bytes": 2017,
+      "sha256": "dff98ae9a1f41e3751c4e449feeb4dbc7a97b8e3a733802d4ea730b88346ceec"
     },
     {
       "file": "config.lua",
-      "bytes": 823,
-      "sha256": "21093deecea34944195f58f1e10121267ac0f99da9012f38b24d1044e7744491"
+      "metadata": {
+        "type": "lua_code"
+      },
+      "bytes": 433,
+      "sha256": "8a9e416297d12362896423595263ec7416bedc4d1904a016d19dc93af41403e2"
     },
     {
       "file": "game.lua",
+      "metadata": {
+        "type": "lua_code"
+      },
       "bytes": 75,
       "sha256": "a0405204356040ae66ac9139fc20509fdae716cbd1ee3ce8753b4d17817fe58a"
     },
     {
+      "file": "gun.lua",
+      "metadata": {
+        "type": "lua_code"
+      },
+      "bytes": 1914,
+      "sha256": "2b061ef444e7922b31c05a7852aeaf33698e948036d7f38708e9b7d9909b5db3"
+    },
+    {
+      "file": "level.lua",
+      "metadata": {
+        "type": "lua_code"
+      },
+      "bytes": 1081,
+      "sha256": "36643d2aa3d9e483bca0dcf748ee085b6ebef8ad8a531f752f4bafc64099ffec"
+    },
+    {
       "file": "main.lua",
-      "bytes": 17356,
-      "sha256": "43c8e944c2b1bab7ea81216c27f8cf78557229b3c76cec7d65f3499c21679d5c"
+      "metadata": {
+        "type": "lua_code"
+      },
+      "bytes": 10006,
+      "sha256": "ca1c96b8755af703fa93b439037c619993057ac413d43add84ef928f2d88ed0e"
     },
     {
-      "file": "models.lua",
-      "bytes": 19868,
-      "sha256": "2ae95fdce92e33b5a38247ee2d64dac86b8f00c95b6bd2e4283a1ecd25bc7888"
+      "file": "img/gun",
+      "metadata": {
+        "type": "bitmap",
+        "width": 72,
+        "height": 96,
+        "tiles": 1
+      },
+      "bytes": 6912,
+      "sha256": "6012b6dffaf7b12da9e9f6ec7814ce7a3c6357183d70d103cca5a54f96e9feaa"
     },
     {
-      "file": "platform.lua",
-      "bytes": 491,
-      "sha256": "610c38b1bfdfa0684373797fec811ca6e0707e9b92f28ba883a8fb25eb2f324f"
+      "file": "palette.lua",
+      "metadata": {
+        "type": "lua_code"
+      },
+      "bytes": 189,
+      "sha256": "2cabddf0ec95600b9ffc619b0a9545ee61934496a0fcd95d20b7b061a25b9470"
     }
   ],
-  "totalBytes": 472839
+  "totalBytes": 23053
 }

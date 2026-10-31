@@ -1,168 +1,79 @@
-# Lupi 3D — teste de caminhada
+# Lupi FPS — estande de tiro (1.1)
 
-Cenário 3D pequeno projetado em Lua sobre `ui.trisfill`, a primitiva 2D do Lupi. Um cavaleiro, quatro árvores, três pedras, uma plataforma e um chão de 15 × 15 unidades. Caminhada, pulo, câmera e colisão simples; sem combate, áudio ou dependências de execução externas.
+Teste em primeira pessoa inspirado nos FPS dos anos 90: arma na tela, mira e seis alvos em uma sala com divisórias e passagens. O cenário usa raycasting em grade e paredes em faixas verticais de seis pixels. Toda a cena usa retângulos e um sprite nativo para a arma; nenhuma chamada a `ui.trisfill` é feita.
 
-## Versão 1.0: último teste direcionado de L/R
-
-A investigação passa a separar o botão físico, o sentido do giro e a representação numérica do ângulo. A geometria, o recorte e a subdivisão do cenário são os da versão 0.9. O comportamento antigo fazia o primeiro L sair de zero para quase 2π; o novo caminho CURTO mantém o ângulo entre -π e π, começando com um valor negativo pequeno. Isso preserva a orientação matemática e evita essa troca imediata de faixa, mas sua eficácia no aparelho precisa ser confirmada.
-
-A alterna três variantes da câmera (BTN_G no SNES; BTN_X/J no emulador). Cada troca zera a orientação para uma comparação a partir do mesmo ponto:
-
-| Nome no topo | Comportamento |
-| --- | --- |
-| 1.0 CURTO | Padrão: L esquerda/R direita; ângulo entre -π e π |
-| 1.0 ANTIGO | L esquerda/R direita; mesma normalização 0..2π da versão anterior |
-| 1.0 TROCADO | Normalização antiga; L gira para a direita e R para a esquerda |
-
-No TROCADO, cada novo giro também recomeça de zero. Solte o botão entre as tentativas. Mantenha o perfil COMPLETO e observe L e R por alguns segundos. Se CURTO funcionar e ANTIGO falhar com L, a diferença está no caminho numérico do ângulo. Se no TROCADO o problema continuar no botão físico L mesmo girando à direita, a investigação deve ir para a entrada/firmware. Se passar para R ao girar à esquerda, o problema acompanha o sentido/setor renderizado.
-
-O teste local compara 180 quadros: TROCADO com L produz a mesma sequência de triângulos do ANTIGO com R, e TROCADO com R a mesma do ANTIGO com L. Também verifica que CURTO e ANTIGO representam a mesma orientação, além de giros sustentados e soltura nos seis perfis. Isso valida a comparação, não reproduz nem comprova a causa interna do travamento no aparelho.
-
-## Limite de tamanho e isolamento do cenário
-
-O engasgo no giro à esquerda continuou no aparelho após a validação de área/orientação; não ocorre em BASE nem PERSONAGEM. A versão 0.9 acrescenta uma proteção ao desenho do cenário: triângulos grandes são subdivididos pela maior aresta antes de chamar a API nativa. Cada chamada fica limitada a 160 pixels de largura, 128 de altura e produto largura × altura de 16.384. A cobertura da cena é preservada, com mais chamadas menores ao rasterizador. Isso limita o trabalho e as diferenças entre coordenadas por primitiva, sem presumir qual operação interna do firmware causa a pausa.
-
-Essa proteção aumenta a quantidade de triângulos enviados e seu custo Lua. O profiler local do COMPLETO ficou em cerca de 0,18 ms/quadro, contra 0,15 anteriormente; não é uma medição do desempenho no aparelho. A eliminação do engasgo precisa ser confirmada no Lupi. O topo agora mostra 1.0 CURTO / COMPLETO ao iniciar esta versão.
-
-O botão Y percorre COMPLETO → CENARIO → PERSONAGEM → BASE → CHAO → OBJETOS. CHAO desenha somente o piso, e OBJETOS somente árvores, pedras e plataforma. Se a pausa persistir, esses dois perfis permitem separar o piso das demais malhas. Os controles L/R, B e a física permanecem com o mapeamento SNES.
-
-## Validação dos triângulos inteiros
-
-A investigação do travamento temporário ao girar L encontrou triângulos que tinham área em coordenadas fracionárias, mas viravam pontos repetidos/área zero ou invertiam a orientação depois do arredondamento para pixels. A validação agora ocorre depois da conversão para inteiros e da limitação final à tela. Triângulos de área zero são descartados; os demais são enviados com orientação consistente. As poses pré-calculadas foram regeneradas com a mesma regra.
-
-O teste de regressão verifica 402.378 triângulos do cenário em giros positivos/negativos, cantos do mapa e alturas de pulo: nenhum com área zero ou orientação invertida chegou à API nativa. Outro teste mantém L e R pressionados por 20 segundos em cada perfil e verifica soltura, voltas completas, caminhada e pulo. Os 1.024 quadros de cache continuam correspondendo à projeção de referência. A correção é voltada aos dados enviados ao motor; a eliminação do travamento precisa ser confirmada no aparelho.
-
-## Controle SNES, pulo e plataforma
-
-Velocidade aumentada de 2,7 para 4,2 unidades/s. O perfil padrão de controle agora é controller = "snes", independente do formato da paleta. Conforme os nomes publicados na documentação do Lupi: L = BTN_Q, R = BTN_E, B = BTN_Z e Y = BTN_F. L/R giram a câmera, B pula e Y alterna os perfis de diagnóstico. O B não é mais usado para diagnóstico.
-
-A plataforma está à frente da posição inicial, em x=0, z=3,2, com 2,4 × 2,4 unidades e altura 0,55. Tem topo e paredes sólidos e apenas 10 triângulos. Caminhar contra a lateral não permite atravessar nem subir automaticamente: use B e o direcional. É possível pousar, permanecer no topo, pular novamente ou sair pela borda e cair. Segurar B não repete o pulo; solte e aperte novamente.
-
-O impulso vertical é 5,4 unidades/s e a gravidade 15 unidades/s², com ápice de aproximadamente 0,97 unidade acima do apoio. Movimento e gravidade são integrados em subpassos de até 1/60 s. Os testes verificam altura do pulo, colisões laterais, pouso, apoio e queda da borda a 10, 15, 30, 60 e 120 FPS.
-
-A câmera acompanha também a altura dos pés, mantendo o enquadramento relativo ao personagem. Isso permite reutilizar as mesmas poses pré-calculadas durante o pulo e sobre a plataforma, sem adicionar níveis de altura ao cache. O cenário se desloca verticalmente no enquadramento durante a subida/descida. A invariância da projeção foi verificada em diferentes alturas e ângulos.
-
-## Poses 3D pré-calculadas
-
-O teste informado pelo usuário na versão 0.5 mostrou COMPLETO a 20 FPS, CENARIO a 60, PERSONAGEM a 35–40 e BASE a 60. A versão 0.6 concentra a otimização nos cálculos do personagem, mantendo a malha leve de 95 vértices / 142 triângulos. A meta de 30 FPS no aparelho ainda precisa ser confirmada.
-
-A câmera mantém altura relativa aos pés, distância e inclinação fixas. Por isso, sua projeção depende apenas do ângulo relativo à câmera e da pose. O computador gera 64 direções e 16 fases de caminhada, com 576 quadros únicos após deduplicação. No Lupi, o personagem usa esses triângulos já projetados e ordenados, sem refazer a articulação, transformação, projeção, descarte de faces e ordenação interna a cada quadro. A cena continua em 3D: os triângulos do personagem têm profundidade e são intercalados com os objetos do cenário na ordem de desenho.
-
-Os quadros são dados compactados em strings, não tabelas de números por vértice nem imagens. São 307.920 bytes de dados compactados; o módulo Lua gerado ocupa aproximadamente 433 KB em disco. A profundidade é quantizada a 1/32 de unidade, e o ângulo/pose são selecionados pelo vizinho mais próximo; a rotação tem passos de 5,625 graus. Câmera com outra altura, distância, inclinação, zoom ou outra resolução exige regenerar os dados e pode exigir outro formato. O build recusa quadros que não correspondam às versões de models.lua e main.lua.
-
-No mesmo profiler geométrico local, o tempo Lua do PERSONAGEM caiu de cerca de 0,12 para 0,03 ms/quadro; no COMPLETO, de cerca de 0,24 para 0,15 ms. A quantidade de triângulos desenhados não diminuiu nesta versão. Os números não incluem o rasterizador nativo nem garantem 30 FPS no console. Memória Lua retida: aproximadamente 582 KiB; pico observado no teste: 698 KiB. Há uma troca explícita de memória por cálculos por quadro.
-
-O padrão é cached_character = true em config.lua, aplicado apenas a detail = "fast". cached_character = false restaura os cálculos em tempo real para comparar ou modificar a câmera. detail = "quality" continua disponível com o personagem mais detalhado e processamento em tempo real. O cenário e os controles são os mesmos.
-
-## Diagnóstico no aparelho
-
-Pressione e solte Y (BTN_F no perfil SNES; BTN_Q no perfil do emulador Lupinho) para alternar:
-
-| Perfil | O que desenha |
-| --- | --- |
-| COMPLETO | Cenário e personagem, padrão |
-| CENARIO | Chão, árvores e pedras |
-| PERSONAGEM | Só o personagem sobre fundo simples |
-| BASE | Limpeza de tela e interface; nenhum triângulo |
-| CHAO | Apenas o piso |
-| OBJETOS | Árvores, pedras e plataforma |
-
-Observe o nome, TRI e FPS no topo e espere cerca de 5 segundos por perfil. FPS -- significa que ui.stat(7) não está disponível. Os perfis isolam grupos de desenho, sem medir os tempos internos do firmware.
-
-A caminhada usa 4,2 unidades/s e a câmera em 1,5 rad/s, usando o FPS informado pelo firmware. O intervalo máximo é 1/8 s, com subpassos de colisão de até 1/60 s. Sem ui.stat(7), usa-se fallback_fps = 60. Corrigir a velocidade não aumenta a taxa de quadros. O recorte da tela e os testes de movimento em 10, 15, 30, 60 e 120 Hz são preservados.
-
-## Carregamento pelo Lupi
-
-`lupi.yaml`, `game.lua` e todos os módulos Lua estão na raiz, conforme os projetos oficiais. A versão é 1.0 e `public: true`. A estrutura anterior em `src/` foi corrigida porque podia impedir a descoberta pelo catálogo. As pastas `.tools/` e `.assets-source/` ficam ocultas para o codec oficial, que ignora entradas iniciadas com ponto. A saída de build também fica fora da lista de fontes, em `.build/`.
-
-## Executar
-
-1. Instale o [Lupinho SDK para VS Code](https://github.com/lupi-org-br/lupinho-sdk-vsc) e o Docker exigido pela extensão.
-2. Execute **Lupinho SDK: Run**, escolhendo **a raiz deste repositório** (a pasta que contém `lupi.yaml` e `game.lua`) como entrada e uma pasta externa como destino.
-3. A extensão compila e abre o simulador. `game.lua` é o ponto de entrada, seguindo o projeto oficial `primeiro-jogo`.
-
-Alternativa para um simulador já compilado: execute `node .tools/build.cjs`; a pasta **`.build/release/`** contém `game.lua`, os módulos e `lupi_manifest.txt`. Use essa pasta como diretório do jogo no carregador do seu simulador. Ela não contém um executável do Lupi/Lupinho.
-
-O SDK pode gerar `palette.lua`, mas este teste usa `colors.lua` para preservar sua paleta própria de 32 entradas. Não requer imagens, sprites, mapas ou importador 3D no console. Os arquivos GLB/OBJ de origem ficam na pasta oculta `.assets-source/` e não vão para a RAM do jogo.
-
-## Controles
+## Controles SNES
 
 | Controle | Ação |
 | --- | --- |
-| Cruz: cima / baixo | Caminhar para frente / trás em relação à câmera |
-| Cruz: esquerda / direita | Caminhar lateralmente em relação à câmera |
-| Ombro superior L / R | Girar a câmera ao redor do personagem |
-| B (BTN_Z) | Pular |
-| Y (BTN_F no perfil SNES) | Alternar perfis de diagnóstico |
-| A (BTN_G no SNES; J no emulador) | Alternar CURTO / ANTIGO / TROCADO |
-| Emulador com controller = "lupinho" | W/A/S/D: andar; G/H: câmera; K: pular; L: perfis |
+| Cruz: cima / baixo | Avançar / recuar |
+| Cruz: esquerda / direita | Movimento lateral |
+| L / R | Virar a câmera |
+| B | Pular |
+| Y | Atirar; segurar repete com intervalo entre disparos |
+| A | Rearmar todos os alvos e zerar os contadores |
 
-Diagonais têm velocidade normalizada. Botões opostos se cancelam. Colisão circular nas pedras/troncos e limite nas bordas. A animação de passos é procedural sobre os membros do modelo, sem carregar esqueleto ou clipes de animação.
+O perfil padrão é `controller="snes"`: L=`BTN_Q`, R=`BTN_E`, B=`BTN_Z`, Y=`BTN_F`, A=`BTN_G`, conforme os nomes documentados pelo Lupi. O formato de cor é configurado separadamente por `platform="lupinho"`, preservando BGR555.
 
-## Simulador e aparelho: ajuste explícito
+Para teclado/gamepad direto no simulador Raylib, use `controller="lupinho"`: W/A/S/D movem, G/H viram, K pula, L atira e J rearma os alvos.
 
-Há divergências nas referências oficiais consultadas em 31/10/2026:
+Velocidade de 4,2 unidades/s e giro de 1,5 rad/s. Diagonais normalizadas e colisão com paredes em subpassos. B dispara um pulo por aperto, sem repetição enquanto fica pressionado. O intervalo de movimento usa `ui.stat(7)` quando disponível, com fallback de 60 FPS e limite de 1/8 s por atualização.
 
-| Referência | Ombros superiores | Formato da paleta |
-| --- | --- | --- |
-| Código atual do Lupinho | `BTN_F` / `BTN_G` | BGR555: vermelho nos bits 0–4 |
-| Documentação publicada do Lupi | `BTN_Q` / `BTN_E` | RGB555: vermelho nos bits 10–14 |
+## Atirar nos alvos
 
-Em config.lua, platform = "lupinho" mantém a paleta BGR555 que já estava funcionando. Esse campo não escolhe os botões. O campo controller = "snes" usa os ombros BTN_Q/BTN_E da documentação do Lupi. Para usar gamepad/teclado diretamente no emulador Raylib, controller = "lupinho" seleciona BTN_F/BTN_G para os ombros e BTN_Q para o diagnóstico; o pulo continua em BTN_Z. Não há mudança automática de cores ao trocar o perfil de controle.
+O alvo à frente da posição inicial já pode ser acertado. Outros ficam nas laterais e atrás das divisórias; explore as passagens. O disparo é instantâneo, escolhe o alvo mais próximo alinhado horizontalmente e para na primeira parede. Há assistência vertical para tiros durante o pulo. Os alvos acertados desaparecem; o HUD conta acertos e disparos. Use A para repetir o teste. Munição ilimitada, feedback visual de tiro e acerto, sem áudio nesta versão.
 
-## Limites e memória
+## Executar no Lupi
 
-- Resolução: **480 × 270**. Paleta: **32 entradas**, canais de 5 bits, abaixo das 256 permitidas.
-- Sem texturas em execução, z-buffer, iluminação dinâmica, física externa ou alocações de objetos por triângulo a cada frame.
-- Geometria compartilhada por instância. Modo fast: cavaleiro 95 vértices / 142 triângulos; árvore 22 / 32; pedra 10 / 16; chão 6 triângulos; cena 334 triângulos, incluindo a plataforma. Modo quality: cavaleiro 223 / 374, árvore próxima 63 / 105 e distante 22 / 32, pedra 16 / 28; chão 18; cena com árvores próximas 906 triângulos, incluindo a plataforma.
-- Fila reutilizável com teto de 768 triângulos, inclusive recortes no plano próximo. `Game.dropped` detecta estouro.
-- Projeção em perspectiva, recorte no plano próximo e ordenação por profundidade média. O chão é desenhado primeiro. A ordenação não substitui um z-buffer: interseções e superfícies próximas podem mostrar artefatos neste protótipo.
-- Alvo de projeto: reservar a maior parte dos **4 MiB informados** ao firmware/motor. Os testes de Lua no computador mediram aproximadamente **596 KiB retidos e 715 KiB de pico observado**; não representam a RAM total do aparelho. Framebuffers, runtime, pilhas e demais estruturas do motor também precisam caber na memória real.
-- O simulador/código público não fornece aqui uma medição completa do hardware. **Não foi executado no console nem no simulador gráfico nesta máquina. Não há garantia de 60 FPS nem de consumo total abaixo de 4 MiB sem medir nessa versão do aparelho.** A API e a lógica foram verificadas por um harness Lua, e a imagem foi reconstruída das chamadas de desenho.
+`lupi.yaml` e `game.lua` estão na raiz para descoberta pelo catálogo. Atualize o jogo pelo mesmo repositório; o topo deve mostrar **LUPI FPS 1.1 / ESTANDE**.
 
-## Verificar e gerar o pacote
+No [Lupinho SDK para VS Code](https://github.com/lupi-org-br/lupinho-sdk-vsc), execute **Lupinho SDK: Run** e selecione a raiz do repositório como entrada. O codec oficial processa `img/gun.png` e `img/palette.png`, gerando a paleta, bitmap e descritores de sprites. As pastas iniciadas com ponto ficam fora dessa entrada.
 
-Na raiz do repositório, com Lua 5.4+ e Node.js:
+A imagem de paleta garante a presença de todas as cores usadas pela cena. `colors.lua` resolve seus índices na paleta gerada, mesmo que o codec mude a ordem. A arma usa `ui.spr` quando o descritor nativo estiver disponível; há um fallback de retângulos com o mesmo desenho para diagnóstico e execução sem o codec.
+
+### Pacote de execução independente
+
+Com Node.js, Python 3 e Pillow:
+
+```sh
+node .tools/build.cjs
+```
+
+Defina `LUPI_PYTHON` se o executável Python não estiver no PATH. O resultado fica em **`.build/fps-release/`**, com os scripts, `palette.lua`, bitmap `img/gun` e `lupi_manifest.txt` no formato do simulador. O pacote não inclui um executável do motor. Os identificadores do manifesto são renovados em cada build.
+
+## Recursos e verificação
+
+- Tela: 480 × 270; cena entre y=20 e y=227; paleta de 32 entradas.
+- Mapa: 14 × 14 células; 80 raios por quadro, com número limitado de passos por raio.
+- Arma: sprite 72 × 96, 6.912 bytes, transparência no índice zero. Dados derivados da arma gratuita da itch.io em [CREDITS.md](CREDITS.md).
+- O personagem em terceira pessoa e seu cache de poses não são carregados. O pacote atual tem cerca de 23 KB.
+- Nos testes locais, o heap Lua ficou em cerca de 86 KiB no harness funcional e 76 KiB no profiler com sprite nativo simulado. Não inclui os custos do motor, framebuffer ou sistema.
+- Não houve execução gráfica no Lupi nesta máquina. FPS real e o comportamento de L/R precisam ser verificados no aparelho. `FPS --` indica que o firmware não forneceu a medição.
 
 ```sh
 lua .tools/check.lua
-lua .tools/check-models.lua
-lua .tools/check-jump.lua
-lua .tools/check-camera.lua
-lua .tools/check-raster.lua
-lua .tools/check-cache.lua
-lua .tools/profile.lua
 node .tools/build.cjs
 node .tools/check-discovery.cjs
+lua .tools/check-release.lua
+lua .tools/profile.lua
 ```
 
-O teste cobre botões liberados retornando zero, avanço/recuo, diagonais, ambos os mapeamentos L/R, movimento relativo à câmera, colisão, borda, giros completos e câmera nas bordas/próxima aos objetos. Mede o heap Lua e verifica crescimento persistente. O build copia apenas os módulos Lua da raiz e gera o manifesto e `BUILD.json` com tamanhos e SHA-256.
+Os testes cobrem limites dos raios, colisão, movimento e pulo em 10/15/30/60/120 FPS, L/R sustentados, acertos, erros, bloqueio de tiro por parede, prioridade do alvo mais próximo, Y para tiro, A para reposição, recorte dos retângulos, paleta reordenada, carregamento do bitmap e ausência de chamadas de triângulos.
 
-Para reconstruir as malhas derivadas dos arquivos de origem CC0:
+Com ImageMagick instalado, `node .tools/check-codec.cjs` também reproduz a extração de cores em profundidade de 5 bits do codec oficial e verifica que o sprite nativo continua ativo após o arredondamento das cores.
 
-```sh
-node .tools/convert-assets.cjs
-lua .tools/bake-character.lua
-node .tools/build.cjs
-```
-
-O teste check-cache compara os 1.024 quadros de direção/pose com a projeção em tempo real, verifica coordenadas/cores e limita o erro de profundidade a 1/64 de unidade.
-
-O conversor usa meshoptimizer 1.3.0 (MIT, incluído em .tools/vendor/) para simplificar cada componente com limite de erro. Vértices coincidentes são soldados sem agrupamento espacial em grade. A cabeça é mantida dentro do capacete, os braços são abaixados e as cores são chapadas com duas intensidades. Não precisa instalar Blender ou pacotes npm.
-
-Prévia de diagnóstico no Windows, após o teste:
+Para visualizar o registro de desenho no Windows após `check.lua`:
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File .tools/render-check.ps1
 ```
 
-Isso gera `.tools/preview.png` usando as chamadas reais do código Lua com um substituto de `ui`. A fonte/rasterização da prévia pode diferir do Lupinho.
+Essa prévia reconstrói as chamadas Lua usando o fallback da arma. Não mede o tempo do aparelho.
 
-## Referências oficiais
+Para regenerar os derivados da arma, com Pillow:
 
-- [Lupi: documentação](https://lupi.api.br/docs/) e [entrada de controles](https://lupi.api.br/docs/system.html).
-- [Lupinho, revisão c2eb503](https://github.com/lupi-org-br/lupinho/tree/c2eb503e6842766458bd3cad4556aa0c1a57daa3): funções, cores e mapeamento real do simulador.
-- [Projeto inicial, revisão fd769b1](https://github.com/lupi-org-br/primeiro-jogo/tree/fd769b1eec35cf1e77c221887966a22716c3e7e2): estrutura e entrada.
-- [Codec, revisão 3e8c662](https://github.com/lupi-org-br/lupi-codec/tree/3e8c66299a4606b36b9f490212acc44e084a6aa2): estrutura do manifesto Lua.
+```sh
+python .tools/convert-gun.py
+```
 
-Assets e licenças: veja [CREDITS.md](CREDITS.md).
+O teste anterior em terceira pessoa permanece no histórico, por exemplo no [commit 195b53b](https://github.com/onomevaiaqui/lupi3d/tree/195b53b6ccadfcca13e0a48659332d9d836a83fc). As instruções anteriores de CURTO/ANTIGO/TROCADO não se aplicam ao FPS.

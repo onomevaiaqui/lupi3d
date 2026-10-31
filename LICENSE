@@ -20,6 +20,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
-Third-party KayKit assets in .assets-source/ and derived geometry in
-models.lua, character_frames.lua and their release copies are CC0, as
-documented in CREDITS.md.
+Third-party assets retain their own permissions. Rekkimaru's weapon artwork
+in .assets-source/fps/PIST1.png, img/gun.png, gun.lua and the derived bitmap
+is covered by the author's permission documented in CREDITS.md. Historical
+KayKit assets in .assets-source/ remain CC0 under their included licenses.
