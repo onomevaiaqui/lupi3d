@@ -2,7 +2,13 @@
 
 Cenário 3D pequeno projetado em Lua sobre `ui.trisfill`, a primitiva 2D do Lupi. Um cavaleiro, quatro árvores, três pedras, uma plataforma e um chão de 15 × 15 unidades. Caminhada, pulo, câmera e colisão simples; sem combate, áudio ou dependências de execução externas.
 
-## Versão 0.7: controle SNES, pulo e plataforma
+## Versão 0.8: triângulos válidos no rasterizador
+
+A investigação do travamento temporário ao girar L encontrou triângulos que tinham área em coordenadas fracionárias, mas viravam pontos repetidos/área zero ou invertiam a orientação depois do arredondamento para pixels. A validação agora ocorre depois da conversão para inteiros e da limitação final à tela. Triângulos de área zero são descartados; os demais são enviados com orientação consistente. As poses pré-calculadas foram regeneradas com a mesma regra.
+
+O teste de regressão verifica 402.378 triângulos do cenário em giros positivos/negativos, cantos do mapa e alturas de pulo: nenhum com área zero ou orientação invertida chegou à API nativa. Outro teste mantém L e R pressionados por 20 segundos em cada perfil e verifica soltura, voltas completas, caminhada e pulo. Os 1.024 quadros de cache continuam correspondendo à projeção de referência. A correção é voltada aos dados enviados ao motor; a eliminação do travamento precisa ser confirmada no aparelho.
+
+## Controle SNES, pulo e plataforma
 
 Velocidade aumentada de 2,7 para 4,2 unidades/s. O perfil padrão de controle agora é controller = "snes", independente do formato da paleta. Conforme os nomes publicados na documentação do Lupi: L = BTN_Q, R = BTN_E, B = BTN_Z e Y = BTN_F. L/R giram a câmera, B pula e Y alterna os perfis de diagnóstico. O B não é mais usado para diagnóstico.
 
@@ -18,7 +24,7 @@ O teste informado pelo usuário na versão 0.5 mostrou COMPLETO a 20 FPS, CENARI
 
 A câmera mantém altura relativa aos pés, distância e inclinação fixas. Por isso, sua projeção depende apenas do ângulo relativo à câmera e da pose. O computador gera 64 direções e 16 fases de caminhada, com 576 quadros únicos após deduplicação. No Lupi, o personagem usa esses triângulos já projetados e ordenados, sem refazer a articulação, transformação, projeção, descarte de faces e ordenação interna a cada quadro. A cena continua em 3D: os triângulos do personagem têm profundidade e são intercalados com os objetos do cenário na ordem de desenho.
 
-Os quadros são dados compactados em strings, não tabelas de números por vértice nem imagens. São 310.944 bytes de dados compactados; o módulo Lua gerado ocupa aproximadamente 437 KB em disco. A profundidade é quantizada a 1/32 de unidade, e o ângulo/pose são selecionados pelo vizinho mais próximo; a rotação tem passos de 5,625 graus. Câmera com outra altura, distância, inclinação, zoom ou outra resolução exige regenerar os dados e pode exigir outro formato. O build recusa quadros que não correspondam às versões de models.lua e main.lua.
+Os quadros são dados compactados em strings, não tabelas de números por vértice nem imagens. São 307.920 bytes de dados compactados; o módulo Lua gerado ocupa aproximadamente 433 KB em disco. A profundidade é quantizada a 1/32 de unidade, e o ângulo/pose são selecionados pelo vizinho mais próximo; a rotação tem passos de 5,625 graus. Câmera com outra altura, distância, inclinação, zoom ou outra resolução exige regenerar os dados e pode exigir outro formato. O build recusa quadros que não correspondam às versões de models.lua e main.lua.
 
 No mesmo profiler geométrico local, o tempo Lua do PERSONAGEM caiu de cerca de 0,12 para 0,03 ms/quadro; no COMPLETO, de cerca de 0,24 para 0,15 ms. A quantidade de triângulos desenhados não diminuiu nesta versão. Os números não incluem o rasterizador nativo nem garantem 30 FPS no console. Memória Lua retida: aproximadamente 582 KiB; pico observado no teste: 698 KiB. Há uma troca explícita de memória por cálculos por quadro.
 
@@ -41,7 +47,7 @@ A caminhada usa 4,2 unidades/s e a câmera em 1,5 rad/s, usando o FPS informado 
 
 ## Carregamento pelo Lupi
 
-`lupi.yaml`, `game.lua` e todos os módulos Lua estão na raiz, conforme os projetos oficiais. A versão é 0.7 e `public: true`. A estrutura anterior em `src/` foi corrigida porque podia impedir a descoberta pelo catálogo. As pastas `.tools/` e `.assets-source/` ficam ocultas para o codec oficial, que ignora entradas iniciadas com ponto. A saída de build também fica fora da lista de fontes, em `.build/`.
+`lupi.yaml`, `game.lua` e todos os módulos Lua estão na raiz, conforme os projetos oficiais. A versão é 0.8 e `public: true`. A estrutura anterior em `src/` foi corrigida porque podia impedir a descoberta pelo catálogo. As pastas `.tools/` e `.assets-source/` ficam ocultas para o codec oficial, que ignora entradas iniciadas com ponto. A saída de build também fica fora da lista de fontes, em `.build/`.
 
 ## Executar
 
@@ -84,7 +90,7 @@ Em config.lua, platform = "lupinho" mantém a paleta BGR555 que já estava funci
 - Geometria compartilhada por instância. Modo fast: cavaleiro 95 vértices / 142 triângulos; árvore 22 / 32; pedra 10 / 16; chão 6 triângulos; cena 334 triângulos, incluindo a plataforma. Modo quality: cavaleiro 223 / 374, árvore próxima 63 / 105 e distante 22 / 32, pedra 16 / 28; chão 18; cena com árvores próximas 906 triângulos, incluindo a plataforma.
 - Fila reutilizável com teto de 768 triângulos, inclusive recortes no plano próximo. `Game.dropped` detecta estouro.
 - Projeção em perspectiva, recorte no plano próximo e ordenação por profundidade média. O chão é desenhado primeiro. A ordenação não substitui um z-buffer: interseções e superfícies próximas podem mostrar artefatos neste protótipo.
-- Alvo de projeto: reservar a maior parte dos **4 MiB informados** ao firmware/motor. Os testes de Lua no computador mediram aproximadamente **594 KiB retidos e 713 KiB de pico observado**; não representam a RAM total do aparelho. Framebuffers, runtime, pilhas e demais estruturas do motor também precisam caber na memória real.
+- Alvo de projeto: reservar a maior parte dos **4 MiB informados** ao firmware/motor. Os testes de Lua no computador mediram aproximadamente **591 KiB retidos e 710 KiB de pico observado**; não representam a RAM total do aparelho. Framebuffers, runtime, pilhas e demais estruturas do motor também precisam caber na memória real.
 - O simulador/código público não fornece aqui uma medição completa do hardware. **Não foi executado no console nem no simulador gráfico nesta máquina. Não há garantia de 60 FPS nem de consumo total abaixo de 4 MiB sem medir nessa versão do aparelho.** A API e a lógica foram verificadas por um harness Lua, e a imagem foi reconstruída das chamadas de desenho.
 
 ## Verificar e gerar o pacote
@@ -95,6 +101,8 @@ Na raiz do repositório, com Lua 5.4+ e Node.js:
 lua .tools/check.lua
 lua .tools/check-models.lua
 lua .tools/check-jump.lua
+lua .tools/check-camera.lua
+lua .tools/check-raster.lua
 lua .tools/check-cache.lua
 lua .tools/profile.lua
 node .tools/build.cjs

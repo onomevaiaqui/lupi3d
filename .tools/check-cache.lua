@@ -22,6 +22,7 @@ for direction=0,frames.angles-1 do
         for i=1,#raw do
             local t=raw[i]
             local a,b,c,d,e,f,color,z=string.byte(packed,(i-1)*8+1,i*8)
+            assert((c-a)*(f-b)-(d-b)*(e-a)>0,"invalid integer winding/area in cached triangle")
             assert(a+frames.xbase==t[1] and b+frames.ybase==t[2] and c+frames.xbase==t[3] and d+frames.ybase==t[4] and e+frames.xbase==t[5] and f+frames.ybase==t[6],"cached screen coordinates differ")
             assert(color==t[7],"cached color differs")
             assert(math.abs((z+frames.zbase)/32-t[8])<=1/64+1e-9,"cached depth error exceeds quantization")

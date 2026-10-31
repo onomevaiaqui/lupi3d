@@ -173,11 +173,21 @@ local function project(obj)
 end
 local function store(ax,ay,bx,by,dx,dy,color,depth)
     if count>=cfg.max_triangles then Game.dropped=Game.dropped+1; return end
-    -- queue() guarantees that the triangle is already clipped to the viewport.
-    if math.abs((bx-ax)*(dy-ay)-(by-ay)*(dx-ax))<0.5 then return end
+    -- Validate the actual integer geometry sent to the native rasterizer.
+    -- A valid floating triangle may collapse or reverse winding after flooring.
+    ax,ay,bx,by,dx,dy=floor(ax),floor(ay),floor(bx),floor(by),floor(dx),floor(dy)
+    if ax<0 then ax=0 elseif ax>479 then ax=479 end
+    if bx<0 then bx=0 elseif bx>479 then bx=479 end
+    if dx<0 then dx=0 elseif dx>479 then dx=479 end
+    if ay<20 then ay=20 elseif ay>246 then ay=246 end
+    if by<20 then by=20 elseif by>246 then by=246 end
+    if dy<20 then dy=20 elseif dy>246 then dy=246 end
+    local area=(bx-ax)*(dy-ay)-(by-ay)*(dx-ax)
+    if area==0 then return end
+    if area<0 then bx,by,dx,dy=dx,dy,bx,by end
     count=count+1
     local t=pool[count]
-    t[1],t[2],t[3],t[4],t[5],t[6]=floor(ax),floor(ay),floor(bx),floor(by),floor(dx),floor(dy)
+    t[1],t[2],t[3],t[4],t[5],t[6]=ax,ay,bx,by,dx,dy
     t[7],t[8]=color,depth
     list[count]=t
 end
