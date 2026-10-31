@@ -18,7 +18,7 @@ Licença dos dois packs: **Creative Commons Zero (CC0 1.0)**. Os arquivos de lic
 - Download gratuito **Free / Forest Nature Pack 1.0**, upload itch.io `13520330`, baixado em 31/10/2026.
 - Arquivos selecionados: `Assets/obj/Tree_1_A_Color1.obj` e `Assets/obj/Rock_1_A_Color1.obj`, preservados em `.assets-source/`.
 - SHA-256 do ZIP baixado: `2EE83E63BB7695F2D884EC27DDF6FCE020789A452E7D5C5B0BBDFC4F6EA1FC8C`.
-- Derivados: malhas simplificadas e cores chapadas em `models.lua`. Materiais e atlas originais não são usados.
+- Derivados: malhas simplificadas (incluindo uma versão distante de árvore com 32 triângulos) e cores chapadas em `models.lua`. Materiais e atlas originais não são usados.
 
 Chão e código de projeção/controle foram criados para este teste. Não fazem parte dos packs.
 

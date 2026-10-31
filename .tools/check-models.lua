@@ -21,7 +21,7 @@ for name,m in pairs(models) do
         for g=0,4 do assert(groups[g],"missing body/limb group") end
         assert(#m.f/4<=450,"character triangle budget")
     end
-    total=total+#m.f/4*(name=="tree" and 4 or name=="rock" and 3 or 1)
+    total=total+#m.f/4*(name=="tree" and 4 or name=="rock" and 3 or name=="knight" and 1 or 0)
 end
-assert(total+72<1000,"scene geometry budget")
-print("PASS: mesh indices, articulation groups, face areas, palette and scene budget ("..(total+72).." input triangles)")
+assert(total+18<1000,"scene geometry budget")
+print("PASS: mesh indices, articulation groups, face areas, palette and scene budget ("..(total+18).." input triangles)")

@@ -21,6 +21,8 @@ ui={
     print=function(s,x,y,c) record("text",x,y,c,s) end,
     trisfill=function(a,b,c,d,e,f,g)
         for _,n in ipairs({a,b,c,d,e,f}) do finite(n) end
+        assert(a>=0 and a<=479 and c>=0 and c<=479 and e>=0 and e<=479,"unclipped X reaches native rasterizer")
+        assert(b>=20 and b<=246 and d>=20 and d<=246 and f>=20 and f<=246,"unclipped Y reaches native rasterizer")
         assert(g>=0 and g<32)
         record("tri",a,b,c,d,e,f,g)
     end,
@@ -30,11 +32,11 @@ local function step(n) for _=1,n do update() end end
 local start=collectgarbage("count")
 step(1); assert(Game.x==0 and Game.z==0,"released input moves player")
 keys[UP]=true; step(60); keys={}
-assert(math.abs(Game.z-2.1)<0.0001 and Game.moving,"forward movement")
+assert(math.abs(Game.z-2.7)<0.0001 and Game.moving,"forward movement")
 keys[DOWN]=255; step(60); keys={}
 assert(math.abs(Game.z)<0.0001,"backward movement")
 keys[UP],keys[RIGHT]=true,true; step(1); keys={}
-assert(math.abs(math.sqrt(Game.x^2+Game.z^2)-0.035)<0.0001,"diagonal normalization")
+assert(math.abs(math.sqrt(Game.x^2+Game.z^2)-0.045)<0.0001,"diagonal normalization")
 Game.x,Game.z=0,0
 keys[BTN_G]=true; step(63); keys={}
 assert(Game.yaw>1.5 and Game.yaw<1.6,"R shoulder camera")
@@ -56,6 +58,30 @@ assert(Game.yaw>before,"hardware R shoulder")
 keys[BTN_Q]=true; step(1); keys={}
 assert(math.abs(Game.yaw-before)<0.0001,"hardware L shoulder")
 config.platform="lupinho"
+-- Equal real-time displacement and camera rotation at different update rates.
+for _,fps in ipairs({15,30,60,120}) do
+    Game.x,Game.z,Game.yaw,Game.phase=0,-3,0,0
+    keys[UP]=true
+    for _=1,fps do Game.step(1/fps) end
+    keys={}
+    assert(math.abs(Game.z+0.3)<0.0001,"time-based walking varies with FPS")
+    Game.x,Game.z,Game.yaw=0,0,0
+    keys[BTN_G]=true
+    for _=1,fps do Game.step(1/fps) end
+    keys={}
+    assert(math.abs(Game.yaw-1.5)<0.0001,"time-based camera varies with FPS")
+end
+ui.stat=function(option) assert(option==7); return 30 end
+for _=1,15 do Game.step() end
+Game.x,Game.z,Game.yaw=0,-3,0
+keys[UP]=true
+for _=1,30 do Game.step() end
+keys={}
+assert(math.abs(Game.z+0.3)<0.0001,"FPS stat is not used for movement")
+ui.stat=function() error("unsupported statistic") end
+for _=1,15 do Game.step() end
+assert(Game.fps==60,"unsupported FPS stat must fall back safely")
+ui.stat=nil
 -- Walk through full gait cycles while viewing every side of the articulated mesh.
 for direction=0,7 do
     for pose=0,15 do
@@ -93,7 +119,7 @@ collectgarbage("collect")
 local final=collectgarbage("count")
 assert(final<1024,"Lua heap exceeds 1 MiB budget")
 assert(final-base<32,"persistent heap growth")
-print(string.format("PASS: movement, diagonals, shoulders, collision, boundary, 360 camera angles, 128 gait/view combinations\nLua heap %.1f KiB; observed peak %.1f KiB; retained growth %.1f KiB\nMax triangles/frame %d; desktop Lua %.2f ms/frame (not hardware timing)",final,peak,final-base,maxtris,elapsed/360*1000))
+print(string.format("PASS: movement, diagonals, shoulders, collision, boundary, viewport clipping, 15/30/60/120 Hz timing, FPS API fallback, 360 camera angles, 128 gait/view combinations\nLua heap %.1f KiB; observed peak %.1f KiB; retained growth %.1f KiB\nMax triangles/frame %d; desktop Lua %.2f ms/frame (not hardware timing)",final,peak,final-base,maxtris,elapsed/360*1000))
 Game.x,Game.z,Game.yaw=0,0,0
 capture=true; update(); capture=false
 local out=assert(io.open(".tools/frame.csv","w"));out:write(table.concat(commands,"\n"));out:close()

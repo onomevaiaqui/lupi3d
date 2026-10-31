@@ -6,6 +6,7 @@ Game = {x=0,z=0,yaw=0,facing=0,phase=0,moving=false,triangles=0,dropped=0,culled
 local objects,obstacles = {},{}
 local function instance(mesh,x,z,scale,radius)
     local obj={mesh=mesh,x=x,z=z,scale=scale,px={},py={},pz={},sx={},sy={}}
+    if mesh==models.tree then obj.nearMesh=mesh; obj.farMesh=models.tree_far end
     objects[#objects+1]=obj
     if radius then obstacles[#obstacles+1]={x=x,z=z,r=radius} end
     return obj
@@ -19,14 +20,14 @@ instance(models.rock,3.2,0.0,1.8,0.8)
 instance(models.rock,1.2,5.8,1.3,0.6)
 local hero=instance(models.knight,0,0,0.65)
 local ground={v={},f={}}
-for x=-3,2 do for z=-3,2 do
+for x=-1,1 do for z=-1,1 do
     local n=#ground.v/4
-    local x0,z0=x*2.5,z*2.5
-    for _,p in ipairs({{x0,z0},{x0+2.5,z0},{x0+2.5,z0+2.5},{x0,z0+2.5}}) do
+    local x0,z0=x*5-2.5,z*5-2.5
+    for _,p in ipairs({{x0,z0},{x0+5,z0},{x0+5,z0+5},{x0,z0+5}}) do
         ground.v[#ground.v+1]=p[1]; ground.v[#ground.v+1]=0
         ground.v[#ground.v+1]=p[2]; ground.v[#ground.v+1]=0
     end
-    local c=(x==0 or x==-1) and 4 or (2+(x+z)%2)
+    local c=x==0 and 4 or (2+(x+z)%2)
     for _,i in ipairs({n+1,n+3,n+2,c,n+1,n+4,n+3,c}) do ground.f[#ground.f+1]=i end
 end end
 local floorobj={mesh=ground,x=0,z=0,scale=1,px={},py={},pz={},sx={},sy={}}
@@ -45,24 +46,42 @@ local function free(x,z)
     end
     return true
 end
-function Game.step()
+local timingFrames=0
+Game.fps=cfg.fallback_fps
+local function timestep()
+    if timingFrames%15==0 then
+        Game.fps=cfg.fallback_fps
+        Game.reported_fps=nil
+        if type(ui.stat)=="function" then
+            local ok,fps=pcall(ui.stat,7)
+            if ok and type(fps)=="number" and fps==fps and fps>=5 and fps<=240 then
+                Game.fps=fps
+                Game.reported_fps=fps
+            end
+        end
+    end
+    timingFrames=timingFrames+1
+    return math.min(1/Game.fps,1/15)
+end
+function Game.step(dt)
+    dt=math.max(0,math.min(dt or timestep(),1/15))
     local l,r=BTN_F,BTN_G
     if cfg.platform=="hardware" then l,r=BTN_Q,BTN_E end
     local turn=(held(r) and 1 or 0)-(held(l) and 1 or 0)
-    Game.yaw=(Game.yaw+turn*cfg.camera_speed)%(math.pi*2)
+    Game.yaw=(Game.yaw+turn*cfg.camera_speed*dt)%(math.pi*2)
     local forward=(held(UP) and 1 or 0)-(held(DOWN) and 1 or 0)
     local side=(held(RIGHT) and 1 or 0)-(held(LEFT) and 1 or 0)
     local len=sqrt(forward*forward+side*side)
     local ox,oz=Game.x,Game.z
     if len>0 then
-        local dx=(sin(Game.yaw)*forward+cos(Game.yaw)*side)/len*cfg.speed
-        local dz=(cos(Game.yaw)*forward-sin(Game.yaw)*side)/len*cfg.speed
+        local dx=(sin(Game.yaw)*forward+cos(Game.yaw)*side)/len*cfg.speed*dt
+        local dz=(cos(Game.yaw)*forward-sin(Game.yaw)*side)/len*cfg.speed*dt
         if free(Game.x+dx,Game.z) then Game.x=Game.x+dx end
         if free(Game.x,Game.z+dz) then Game.z=Game.z+dz end
         Game.facing=math.atan(dx,dz)
     end
     Game.moving=math.abs(Game.x-ox)+math.abs(Game.z-oz)>0.00001
-    if Game.moving then Game.phase=(Game.phase+0.14)%(math.pi*2) else Game.phase=0 end
+    if Game.moving then Game.phase=(Game.phase+8.4*dt)%(math.pi*2) else Game.phase=0 end
 end
 local cy,sy,cx,cz
 local cp,sp=cos(0.45),sin(0.45)
@@ -96,7 +115,7 @@ local function project(obj)
         end
     end
 end
-local function queue(ax,ay,bx,by,dx,dy,color,depth)
+local function store(ax,ay,bx,by,dx,dy,color,depth)
     if count>=cfg.max_triangles then Game.dropped=Game.dropped+1; return end
     if math.max(ax,bx,dx)<0 or math.min(ax,bx,dx)>479 or math.max(ay,by,dy)<0 or math.min(ay,by,dy)>269 then return end
     if math.abs((bx-ax)*(dy-ay)-(by-ay)*(dx-ax))<0.5 then return end
@@ -105,6 +124,48 @@ local function queue(ax,ay,bx,by,dx,dy,color,depth)
     t[1],t[2],t[3],t[4],t[5],t[6]=floor(ax),floor(ay),floor(bx),floor(by),floor(dx),floor(dy)
     t[7],t[8]=color,depth
     list[count]=t
+end
+-- The native rasterizer loops over off-screen pixels before rejecting them.
+-- Clip to the visible world rectangle before calling ui.trisfill.
+local screenX,screenY,outX,outY={},{},{},{}
+local function queue(ax,ay,bx,by,dx,dy,color,depth)
+    if (ax<0 and bx<0 and dx<0) or (ax>479 and bx>479 and dx>479)
+        or (ay<20 and by<20 and dy<20) or (ay>246 and by>246 and dy>246) then return end
+    if ax>=0 and ax<=479 and bx>=0 and bx<=479 and dx>=0 and dx<=479
+        and ay>=20 and ay<=246 and by>=20 and by<=246 and dy>=20 and dy<=246 then
+        store(ax,ay,bx,by,dx,dy,color,depth)
+        return
+    end
+    screenX[1],screenY[1],screenX[2],screenY[2],screenX[3],screenY[3]=ax,ay,bx,by,dx,dy
+    local n=3
+    for edge=1,4 do
+        local horizontal=edge<=2
+        local boundary=edge==1 and 0 or edge==2 and 479 or edge==3 and 20 or 246
+        local greater=edge==1 or edge==3
+        local m=0
+        local prev=n
+        for i=1,n do
+            local p=horizontal and screenX[prev] or screenY[prev]
+            local q=horizontal and screenX[i] or screenY[i]
+            local insideP=greater and p>=boundary or (not greater and p<=boundary)
+            local insideQ=greater and q>=boundary or (not greater and q<=boundary)
+            if insideP~=insideQ then
+                local t=(boundary-p)/(q-p)
+                m=m+1
+                outX[m]=screenX[prev]+(screenX[i]-screenX[prev])*t
+                outY[m]=screenY[prev]+(screenY[i]-screenY[prev])*t
+                if horizontal then outX[m]=boundary else outY[m]=boundary end
+            end
+            if insideQ then m=m+1; outX[m]=screenX[i]; outY[m]=screenY[i] end
+            prev=i
+        end
+        screenX,outX=outX,screenX; screenY,outY=outY,screenY
+        n=m
+        if n<3 then return end
+    end
+    for i=2,n-1 do
+        store(screenX[1],screenY[1],screenX[i],screenY[i],screenX[i+1],screenY[i+1],color,depth)
+    end
 end
 local function submit(ax,ay,az,bx,by,bz,dx,dy,dz,color)
     queue(240+ax*250/az,135-ay*250/az,240+bx*250/bz,135-by*250/bz,240+dx*250/dz,135-dy*250/dz,color,(az+bz+dz)/3)
@@ -167,10 +228,20 @@ function Game.draw()
     hero.x,hero.z=Game.x,Game.z
     -- Ground first: avoids average-depth sorting a large floor over a foot.
     project(floorobj); emit(floorobj); flush()
-    for _,obj in ipairs(objects) do project(obj); emit(obj) end
+    for _,obj in ipairs(objects) do
+        if obj.farMesh then
+            local distance2=(obj.x-cx)^2+(obj.z-cz)^2
+            if distance2>8.5^2 then obj.mesh=obj.farMesh
+            elseif distance2<7.5^2 then obj.mesh=obj.nearMesh end
+        end
+        project(obj); emit(obj)
+    end
     flush()
     ui.rectfill(0,0,480,20,11)
     ui.print("LUPI 3D / TESTE DE CAMINHADA",10,6,15)
+    if cfg.show_stats then
+        ui.print(Game.reported_fps and ("FPS "..floor(Game.reported_fps+0.5)) or "FPS --",380,6,15)
+    end
     ui.rectfill(0,247,480,270,11)
     ui.print("CRUZ: ANDAR    L/R: GIRAR CAMERA",10,254,15)
 end
