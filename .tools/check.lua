@@ -1,5 +1,9 @@
--- Run from repository root: lua tools/check.lua
-package.path="src/?.lua;"..package.path
+-- Run from repository root: lua .tools/check.lua
+package.path="./?.lua;"..package.path
+local yaml=assert(io.open("lupi.yaml","r"),"lupi.yaml must be at repository root")
+local metadata=yaml:read("*a"); yaml:close()
+assert(metadata:match("public:%s*true"),"game must be public")
+local entry=assert(io.open("game.lua","r"),"game.lua must be at repository root"); entry:close()
 LEFT,RIGHT,UP,DOWN=4,2,1,3
 BTN_F,BTN_G,BTN_Q,BTN_E=9,11,5,8
 local keys,palette,commands={},{},{}
@@ -80,6 +84,6 @@ assert(final-base<32,"persistent heap growth")
 print(string.format("PASS: movement, diagonals, shoulders, collision, boundary, 360 camera angles\nLua heap %.1f KiB; observed peak %.1f KiB; retained growth %.1f KiB\nMax triangles/frame %d; desktop Lua %.2f ms/frame (not hardware timing)",final,peak,final-base,maxtris,elapsed/360*1000))
 Game.x,Game.z,Game.yaw=0,0,0
 capture=true; update(); capture=false
-local out=assert(io.open("tools/frame.csv","w"));out:write(table.concat(commands,"\n"));out:close()
-out=assert(io.open("tools/palette.csv","w"))
+local out=assert(io.open(".tools/frame.csv","w"));out:write(table.concat(commands,"\n"));out:close()
+out=assert(io.open(".tools/palette.csv","w"))
 for i=0,31 do out:write(i,",",palette[i],"\n") end; out:close()

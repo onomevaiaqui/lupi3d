@@ -1,3 +1,4 @@
-tools/frame.csv
-tools/palette.csv
-tools/preview.png
+.tools/frame.csv
+.tools/palette.csv
+.tools/preview.png
+.build/

@@ -2,15 +2,19 @@
 
 Cenário 3D pequeno projetado em Lua sobre `ui.trisfill`, a primitiva 2D do Lupi. Um cavaleiro, quatro árvores, três pedras e um chão de 15 × 15 unidades. Apenas caminhada, câmera e colisão simples; sem combate, pulo, áudio ou dependências de execução externas.
 
+## Carregamento pelo Lupi
+
+`lupi.yaml`, `game.lua` e todos os módulos Lua estão na raiz, conforme os projetos oficiais. A versão é 0.2 e `public: true`. A estrutura anterior em `src/` foi corrigida porque podia impedir a descoberta pelo catálogo. As pastas `.tools/` e `.assets-source/` ficam ocultas para o codec oficial, que ignora entradas iniciadas com ponto. A saída de build também fica fora da lista de fontes, em `.build/`.
+
 ## Executar
 
 1. Instale o [Lupinho SDK para VS Code](https://github.com/lupi-org-br/lupinho-sdk-vsc) e o Docker exigido pela extensão.
-2. Execute **Lupinho SDK: Run**, escolhendo **`src/`** deste repositório como entrada e uma pasta externa como destino.
-3. A extensão compila e abre o simulador. `src/game.lua` é o ponto de entrada, seguindo o projeto oficial `primeiro-jogo`.
+2. Execute **Lupinho SDK: Run**, escolhendo **a raiz deste repositório** (a pasta que contém `lupi.yaml` e `game.lua`) como entrada e uma pasta externa como destino.
+3. A extensão compila e abre o simulador. `game.lua` é o ponto de entrada, seguindo o projeto oficial `primeiro-jogo`.
 
-Alternativa para um simulador já compilado: a pasta **`release/`** contém `game.lua`, os módulos e `lupi_manifest.txt`. Use essa pasta como diretório do jogo no carregador do seu simulador. Ela não contém um executável do Lupi/Lupinho.
+Alternativa para um simulador já compilado: execute `node .tools/build.cjs`; a pasta **`.build/release/`** contém `game.lua`, os módulos e `lupi_manifest.txt`. Use essa pasta como diretório do jogo no carregador do seu simulador. Ela não contém um executável do Lupi/Lupinho.
 
-O SDK pode gerar `palette.lua`, mas este teste usa `colors.lua` para preservar sua paleta própria de 32 entradas. Não requer imagens, sprites, mapas ou importador 3D no console. Os arquivos GLB/OBJ de origem ficam fora de `src/` e não vão para a RAM do jogo.
+O SDK pode gerar `palette.lua`, mas este teste usa `colors.lua` para preservar sua paleta própria de 32 entradas. Não requer imagens, sprites, mapas ou importador 3D no console. Os arquivos GLB/OBJ de origem ficam na pasta oculta `.assets-source/` e não vão para a RAM do jogo.
 
 ## Controles
 
@@ -32,7 +36,7 @@ Há divergências nas referências oficiais consultadas em 31/10/2026:
 | Código atual do Lupinho | `BTN_F` / `BTN_G` | BGR555: vermelho nos bits 0–4 |
 | Documentação publicada do Lupi | `BTN_Q` / `BTN_E` | RGB555: vermelho nos bits 10–14 |
 
-O padrão de **`src/config.lua` é `platform = "lupinho"`**, conferido contra o código do simulador. Para testar o firmware descrito na documentação, altere para **`platform = "hardware"`** e recompile. Se o seu firmware usar outro mapeamento, ajuste `Game.step()` em `src/main.lua` conforme essa versão. Não usamos números fixos de botões nem supomos que os dois ambientes são idênticos.
+O padrão de **`config.lua` é `platform = "lupinho"`**, conferido contra o código do simulador. Para testar o firmware descrito na documentação, altere para **`platform = "hardware"`** e recompile. Se o seu firmware usar outro mapeamento, ajuste `Game.step()` em `main.lua` conforme essa versão. Não usamos números fixos de botões nem supomos que os dois ambientes são idênticos.
 
 ## Limites e memória
 
@@ -49,17 +53,18 @@ O padrão de **`src/config.lua` é `platform = "lupinho"`**, conferido contra o 
 Na raiz do repositório, com Lua 5.4+ e Node.js:
 
 ```sh
-lua tools/check.lua
-node tools/build.cjs
+lua .tools/check.lua
+node .tools/build.cjs
+node .tools/check-discovery.cjs
 ```
 
-O teste cobre botões liberados retornando zero, avanço/recuo, diagonais, ambos os mapeamentos L/R, movimento relativo à câmera, colisão, borda, giros completos e câmera nas bordas/próxima aos objetos. Mede o heap Lua e verifica crescimento persistente. O build copia apenas os módulos Lua de `src/` e gera o manifesto e `BUILD.json` com tamanhos e SHA-256.
+O teste cobre botões liberados retornando zero, avanço/recuo, diagonais, ambos os mapeamentos L/R, movimento relativo à câmera, colisão, borda, giros completos e câmera nas bordas/próxima aos objetos. Mede o heap Lua e verifica crescimento persistente. O build copia apenas os módulos Lua da raiz e gera o manifesto e `BUILD.json` com tamanhos e SHA-256.
 
 Para reconstruir as malhas derivadas dos arquivos de origem CC0:
 
 ```sh
-node tools/convert-assets.cjs
-node tools/build.cjs
+node .tools/convert-assets.cjs
+node .tools/build.cjs
 ```
 
 O conversor usa agrupamento de vértices, elimina triângulos repetidos/degenerados, abaixa os braços da pose original e aplica cores chapadas com duas intensidades de iluminação. Não precisa de Blender, npm ou bibliotecas externas.
@@ -67,10 +72,10 @@ O conversor usa agrupamento de vértices, elimina triângulos repetidos/degenera
 Prévia de diagnóstico no Windows, após o teste:
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File tools/render-check.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File .tools/render-check.ps1
 ```
 
-Isso gera `tools/preview.png` usando as chamadas reais do código Lua com um substituto de `ui`. A fonte/rasterização da prévia pode diferir do Lupinho.
+Isso gera `.tools/preview.png` usando as chamadas reais do código Lua com um substituto de `ui`. A fonte/rasterização da prévia pode diferir do Lupinho.
 
 ## Referências oficiais
 
@@ -79,4 +84,4 @@ Isso gera `tools/preview.png` usando as chamadas reais do código Lua com um sub
 - [Projeto inicial, revisão fd769b1](https://github.com/lupi-org-br/primeiro-jogo/tree/fd769b1eec35cf1e77c221887966a22716c3e7e2): estrutura e entrada.
 - [Codec, revisão 3e8c662](https://github.com/lupi-org-br/lupi-codec/tree/3e8c66299a4606b36b9f490212acc44e084a6aa2): estrutura do manifesto Lua.
 
-Assets e licenças: veja [CREDITS.md](CREDITS.md). Nenhuma alteração foi enviada ao GitHub durante a preparação local.
+Assets e licenças: veja [CREDITS.md](CREDITS.md).
