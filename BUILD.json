@@ -1,5 +1,5 @@
 {
-  "project": "Lupi Oval 3D 2.1",
+  "project": "Lupi Figure Eight 3D 3.0",
   "files": [
     {
       "file": "colors.lua",
@@ -14,8 +14,8 @@
       "metadata": {
         "type": "lua_code"
       },
-      "bytes": 230,
-      "sha256": "23bf10430b772ce04818897629c3c931162945ac2ade5dcccc51365827f3edd4"
+      "bytes": 278,
+      "sha256": "6a7dc39acff05e6cbbfd45297515d80f9bf4b43cdcdfec12edc0a2e13a08dbc3"
     },
     {
       "file": "game.lua",
@@ -38,33 +38,33 @@
       "metadata": {
         "type": "lua_code"
       },
-      "bytes": 1391,
-      "sha256": "8ab0b165d377161ccf374f88a8718876107b4dc81dd084301c55d92eed511bb6"
+      "bytes": 1688,
+      "sha256": "6321d15a1cb1a1cd8d14efb21dd460355b4171c496b90ad803e22e88abf18512"
     },
     {
       "file": "track.lua",
       "metadata": {
         "type": "lua_code"
       },
-      "bytes": 1268,
-      "sha256": "3e950806a8e5aabf61c25c4321f7b79c3421f0210d05eb3debe6e1a965a9a937"
+      "bytes": 2934,
+      "sha256": "c568bd316f20b5910fda884e06a7ba7be7f564925303bda955a27570e2b452b0"
     },
     {
       "file": "main.lua",
       "metadata": {
         "type": "lua_code"
       },
-      "bytes": 3866,
-      "sha256": "228fb6ca39411a5cb92ed342834c3af766ea8cf9635de6f8f978425209c322ac"
+      "bytes": 6004,
+      "sha256": "cde004a18605ea656f5e9cf2d87bc41e8423b10abfcacf9630291386feb0d75d"
     },
     {
       "file": "renderer.lua",
       "metadata": {
         "type": "lua_code"
       },
-      "bytes": 6474,
-      "sha256": "f0f63e02ea6af35908091158f8508f5ec564747009335df59479e7bf6d49521c"
+      "bytes": 6848,
+      "sha256": "abc76bb9699bf013908286a77dae8ba389d997cd8e8a1df09a5814d26024b722"
     }
   ],
-  "totalBytes": 16339
+  "totalBytes": 20862
 }

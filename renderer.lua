@@ -19,11 +19,14 @@ end
 local function project(obj,view)
     if not obj.px then obj.px,obj.py,obj.pz,obj.sx,obj.sy={},{},{},{},{} end
     local v=obj.mesh.v
-    local oc,os=cos(obj.yaw or 0),sin(obj.yaw or 0)
+    local oc,os
+    if obj.yaw then oc,os=cos(obj.yaw),sin(obj.yaw) end
     R.vertices=R.vertices+#v/3
     R.input_triangles=R.input_triangles+#obj.mesh.f/4
     for i=1,#v,3 do
-        local x,y,z=v[i]*oc+v[i+2]*os+obj.x,v[i+1]+obj.y,-v[i]*os+v[i+2]*oc+obj.z
+        local x,y,z=v[i],v[i+1]+obj.y,v[i+2]
+        if oc then x,z=x*oc+z*os,-x*os+z*oc end
+        x,z=x+obj.x,z+obj.z
         if not view then
             x,y,z=x-camera.x,y-camera.y-cfg.eye_height,z-camera.z
             local depth=x*sy+z*cy
@@ -139,6 +142,13 @@ end
 
 local function farfirst(a,b) return a[8]>b[8] end
 function R.submit(obj,view)
+    if not view and obj.radius then
+        local dx,dz=obj.x-camera.x,obj.z-camera.z
+        local depth=dx*sy+dz*cy
+        local side=dx*cy-dz*sy
+        local r=obj.radius
+        if depth< -r or depth>(cfg.draw_distance or 38)+r or math.abs(side)>math.max(0,depth)*240/projection+r*1.4 then return end
+    end
     project(obj,view);emit(obj)
 end
 function R.flush()

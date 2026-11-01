@@ -1,6 +1,6 @@
 # Créditos
 
-O carro inspirado no Fusca, pista oval, chegada, paleta e código de corrida foram criados para este teste e são distribuídos sob a licença MIT do projeto. Não há sprites ou assets de terceiros carregados pelo jogo de corrida.
+O carro inspirado no Fusca, adversário, pista em oito, árvores, chegada, paleta e código de corrida foram criados para este teste e são distribuídos sob a licença MIT do projeto. Não há sprites ou assets de terceiros carregados pelo jogo de corrida.
 
 ## Arquivos históricos
 

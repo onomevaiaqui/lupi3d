@@ -4,5 +4,5 @@ local triangles=0
 ui={btn=function() return false end,palset=function() end,camera=function() end,clip=function() end,cls=function() end,rectfill=function() end,print=function() end,trisfill=function() triangles=triangles+1 end}
 require "game";update(0)
 assert(triangles>0 and triangles==Game.triangles)
-assert(#require("car").v>0 and require("track").segments==24)
+assert(#require("car").v>0 and require("track").segments==48)
 print("PASS: built race loads XYZ track and car, "..triangles.." native triangles at start")
