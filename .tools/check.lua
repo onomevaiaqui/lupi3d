@@ -9,88 +9,70 @@ palset=function(i,c) assert(i>=0 and i<32 and c>=0 and c<32768);palette[i]=c end
 camera=function() end,clip=function() end,cls=function(c) record("rect",0,0,480,270,c) end,
 rectfill=function(a,b,c,d,e) assert(a>=0 and c<=480 and b>=0 and d<=270);record("rect",a,b,c,d,e) end,
 print=function(s,x,y,c) record("text",x,y,c,s) end,
-spr=function() error("3D weapon must not use a sprite") end,
+spr=function() error("car must use XYZ triangles") end,
 trisfill=function(a,b,c,d,e,f,color)
+    assert(a==math.floor(a) and b==math.floor(b) and c==math.floor(c) and d==math.floor(d) and e==math.floor(e) and f==math.floor(f))
     assert(a>=0 and a<=479 and c>=0 and c<=479 and e>=0 and e<=479)
     assert(b>=20 and b<=227 and d>=20 and d<=227 and f>=20 and f<=227)
-    assert((c-a)*(f-b)-(d-b)*(e-a)>0,"degenerate/inverted native triangle")
-    assert(color>=0 and color<32)
-    submitted=submitted+1;record("tri",a,b,c,d,e,f,color)
+    assert((c-a)*(f-b)-(d-b)*(e-a)>0,"invalid native triangle")
+    assert(color>=0 and color<32);submitted=submitted+1;record("tri",a,b,c,d,e,f,color)
 end}
-local level=require "level"
-local cfg=require "config"
 require "game"
-local function reset(x,z,y,yaw)
-    keys={};Game.x,Game.z,Game.y,Game.vy,Game.yaw,Game.pitch=x or 6.5,z or 2.5,y or 0,0,yaw or 0,0
-    Game.grounded=true;Game.phase=0;Game.step(0)
+local track=require "track"
+local function reset()
+    keys={};Game.x,Game.z,Game.yaw,Game.speed=-3,-28,math.pi/2,0
+    Game.time,Game.laps,Game.checkpoint,Game.lap_start=0,0,3,0
+    Game.started,Game.finished,Game.best=false,false,nil
 end
-assert(Game.shoot()==1 and Game.hits==1,"initial 3D target hit")
-assert(Game.shoot()==0 and Game.shots==1,"shot cooldown")
-Game.cooldown=0;Game.yaw=math.pi/2;assert(Game.shoot()==0,"off-axis 3D shot must miss")
-Game.reset_targets();reset()
-for i,t in ipairs(Game.targets) do t.alive=i==6 end
-assert(Game.shoot()==0 and Game.targets[6].alive,"cover must block the far target")
-Game.y=0.8;Game.cooldown=0
-assert(Game.shoot()==6,"elevated ray must pass over low cover and hit the raised target")
-Game.reset_targets();reset(11.8,3.3)
-assert(Game.shoot()==0 and Game.targets[3].alive,"ground-level ray must miss elevated volume")
-Game.y=0.6;Game.cooldown=0;assert(Game.shoot()==3,"jump-height ray must hit elevated volume")
-Game.reset_targets();reset()
-local old1,old2=Game.targets[1].z,Game.targets[2].x
-Game.targets[1].z=4.5;Game.targets[2].x=6.5
-for i=3,#Game.targets do Game.targets[i].alive=false end
-assert(Game.shoot()==1,"nearest XYZ volume first")
-Game.targets[1].z=old1;Game.targets[2].x=old2
-Game.reset_targets();reset();keys[BTN_F]=true
-for _=1,60 do Game.step(1/60) end
-keys={};Game.step(0);assert(Game.shots>=4 and Game.shots<=5 and Game.hits==1,"SNES Y shooting")
-keys[BTN_G]=true;Game.step(0);assert(Game.hits==0 and Game.shots==0,"A rearms targets")
-for _,fps in ipairs({10,15,30,60,120}) do
-    reset(5.5,2.5);keys[UP]=true
+for _,fps in ipairs({10,15,26,30,60,120}) do
+    reset();keys[BTN_Z]=true
     for _=1,fps do Game.step(1/fps) end
-    assert(math.abs(Game.z-6.7)<0.00001,"frame-rate independent movement")
-    reset(2,2.5);keys[LEFT]=true
-    for _=1,fps*2 do Game.step(1/fps) end
-    assert(Game.x>=1.18-0.00001,"solid 3D wall collision")
-    reset(5.5,2.5);keys[BTN_Z]=true;local apex=0
-    for _=1,fps*2 do Game.step(1/fps);apex=math.max(apex,Game.y) end
-    assert(apex>0.93 and apex<0.99 and Game.y==0 and Game.grounded,"jump and floor landing")
-    Game.step(1/fps);assert(Game.y==0,"B hold must not repeat jump")
-    reset(6.6,10.75);keys[BTN_Z]=true;apex=0
-    for _=1,fps do Game.step(1/fps);apex=math.max(apex,Game.y) end
-    assert(apex>0.55 and apex<=0.60001,"overhead beam must stop the player's head")
-    reset(12.3,8.25,0,-math.pi/2);keys[UP],keys[BTN_Z]=true,true
-    local landed=false
-    for i=1,fps*2 do Game.step(1/fps);if i>1 and Game.grounded and Game.y==0.55 then landed=true;break end end
-    assert(landed,"jump must land on the raised 3D platform")
-    keys={};for _=1,fps do Game.step(1/fps) end
-    assert(Game.y==0.55,"platform top must support player")
+    assert(math.abs(Game.speed-7)<0.001,"B acceleration must be time based")
+    assert(Game.started and Game.laps==0,"first crossing starts the race without awarding a lap")
+    keys[BTN_G]=true
+    for _=1,fps do Game.step(1/fps) end
+    assert(Game.speed==0,"A brake must override B and stop")
 end
-reset();keys[BTN_Q]=true
-for _=1,180 do Game.step(1/30);Game.draw();assert(Game.dropped==0) end
-keys={};Game.step(0);local yaw=Game.yaw;Game.step(1/30);assert(Game.yaw==yaw,"L release")
-keys[BTN_E]=true
-for _=1,180 do Game.step(1/30);Game.draw();assert(Game.dropped==0) end
-keys={};Game.step(0)
+reset();keys[RIGHT]=true;Game.step(0.1);assert(Game.yaw==math.pi/2,"no steering while stopped")
+Game.speed=5;Game.step(0.1);assert(Game.yaw>math.pi/2,"right steering")
+local rightYaw=Game.yaw;keys={[LEFT]=true};Game.step(0.1);assert(Game.yaw<rightYaw,"left steering")
+reset();Game.x,Game.z,Game.speed=0,0,12;keys[BTN_Z]=true
+for _=1,60 do Game.step(1/60) end
+assert(Game.offroad and Game.speed<6,"grass must slow the car")
+reset();Game.speed=0
+local function gate(phase)
+    local a=math.pi-phase;Game.x,Game.z=math.sin(a)*track.a,math.cos(a)*track.b;Game.step(0)
+end
+gate(0.1);assert(Game.started and Game.laps==0)
+gate(0.1);assert(Game.laps==0,"stationary finish must not count")
+for lap=1,3 do
+    gate(1.7);gate(3.3);gate(4.9);gate(0.1);assert(Game.laps==lap,"ordered oval checkpoints")
+end
+assert(Game.finished and Game.best~=nil,"three lap finish")
+reset();gate(0.1);gate(4.9);gate(0.1);assert(Game.laps==0,"reverse crossing must not count")
+-- Drive a complete race through the same throttle/steering inputs.
+reset()
+for _=1,6000 do
+    local a=math.atan(Game.x/track.a,Game.z/track.b)-0.18
+    local heading=math.atan(math.sin(a)*track.a-Game.x,math.cos(a)*track.b-Game.z)
+    local error=(heading-Game.yaw+math.pi)%(2*math.pi)-math.pi
+    keys={[BTN_Z]=true,[LEFT]=error< -0.02,[RIGHT]=error>0.02}
+    Game.step(1/30)
+    if Game.finished then break end
+end
+assert(Game.finished and Game.laps==3,"oval must be drivable for three laps with real inputs")
 local maxTriangles=0
-local viewCount=0
-collectgarbage("collect");local baseline=collectgarbage("count");local start=os.clock()
-for _,p in ipairs({{6.5,2.5},{1.5,2.5},{11.5,2.5},{3.5,10.8},{10.5,10.8},{9.7,8.25},{6.6,10.75}}) do
-    Game.x,Game.z=p[1],p[2]
-    for _,height in ipairs({0,0.97,1.522}) do
-        Game.y=height
-        for degree=-180,175,5 do
-            Game.yaw=degree*math.pi/180;Game.draw()
-            viewCount=viewCount+1
-            assert(Game.triangles>0 and Game.dropped==0,"missing or overflowing 3D geometry")
-            maxTriangles=math.max(maxTriangles,Game.triangles)
-        end
+collectgarbage("collect");local start=os.clock();local views=0
+for i=0,95 do
+    local a=i*2*math.pi/96;Game.x,Game.z=math.sin(a)*track.a,math.cos(a)*track.b
+    for _,offset in ipairs({-1,0,1}) do
+        Game.yaw=-a+math.pi/2+offset;Game.draw();views=views+1
+        assert(Game.triangles>0 and Game.dropped==0);maxTriangles=math.max(maxTriangles,Game.triangles)
     end
 end
 local elapsed=os.clock()-start
-collectgarbage("collect");local retained=collectgarbage("count")
-assert(retained<1024 and retained-baseline<32,"unexpected 3D heap growth")
-reset();Game.reset_targets();capture=true;Game.draw();capture=false
+reset();capture=true;Game.draw();capture=false
 local out=assert(io.open(".tools/frame.csv","w"));out:write(table.concat(commands,"\n"));out:close()
 out=assert(io.open(".tools/palette.csv","w"));for i=0,31 do out:write(i,",",palette[i],"\n") end;out:close()
-print(string.format("PASS: true XYZ perspective and native triangles; 3D shot occlusion/height, elevated targets, ceiling collision, platform landing, SNES controls and movement at 10/15/30/60/120 FPS\n%d camera views; Lua heap %.1f KiB; maximum %d native triangles/frame; local Lua %.3f ms/frame; no weapon sprites",viewCount,retained,maxTriangles,elapsed/viewCount*1000))
+collectgarbage("collect")
+print(string.format("PASS: B throttle, A brake priority, steering, grass slowdown, ordered checkpoints, 3 laps, 10/15/26/30/60/120 FPS physics; %d 3D camera views, max %d triangles, heap %.1f KiB, local Lua %.3f ms/view (not hardware)",views,maxTriangles,collectgarbage("count"),elapsed/views*1000))

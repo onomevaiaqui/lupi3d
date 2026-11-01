@@ -23,23 +23,7 @@ assert(raisedY<baseY,"XYZ height must change projected position")
 camera.pitch=0.15;local _,pitchedY=bounds();assert(pitchedY>raisedY,"pitch must rotate the 3D camera")
 camera.pitch=0;obj.y=1.05
 for _,z in ipairs({-1,0,0.1,0.5,1,4}) do obj.z=z;bounds();assert(R.dropped==0) end
-local level=require "level"
-assert(#level.obstacles>0 and #level.targets==6)
-assert(level.free(6.6,0,10.75,0.18,1.5),"player must fit below the overhead beam")
-assert(not level.free(6.6,0.8,10.75,0.18,1.5),"raised body must collide with the overhead beam")
-local sloped=0
-local rock=require "rock"
-for i=1,#rock.f,4 do
-    local a,b,c=(rock.f[i]-1)*3+1,(rock.f[i+1]-1)*3+1,(rock.f[i+2]-1)*3+1
-    local ux,uy,uz=rock.v[b]-rock.v[a],rock.v[b+1]-rock.v[a+1],rock.v[b+2]-rock.v[a+2]
-    local vx,vy,vz=rock.v[c]-rock.v[a],rock.v[c+1]-rock.v[a+1],rock.v[c+2]-rock.v[a+2]
-    local nx,ny,nz=uy*vz-uz*vy,uz*vx-ux*vz,ux*vy-uy*vx
-    if math.abs(nx)>0.00001 and math.abs(ny)>0.00001 and math.abs(nz)>0.00001 then sloped=sloped+1 end
-end
-assert(sloped>0,"imported rock must contain sloped XYZ triangles")
-local weapon=require "gun";local minZ,maxZ=math.huge,-math.huge
-for i=3,#weapon.v,3 do minZ=math.min(minZ,weapon.v[i]);maxZ=math.max(maxZ,weapon.v[i]) end
-assert(maxZ-minZ>0.5 and #weapon.f/4>=40,"weapon must have 3D volume")
-points={};R.begin(camera);R.submit({x=0,y=0,z=0,mesh=weapon.flash},true);R.flush()
-assert(#points>0,"3D muzzle flash must render triangles")
-print("PASS: perspective depth, XYZ elevation, camera pitch, near-plane clipping and volumetric 3D weapon")
+obj.z=4;obj.y=0.4;obj.yaw=0.7;bounds();assert(#points>0)
+local car=require "car"
+assert(#car.v>0 and #car.f>0)
+print("PASS: perspective, XYZ elevation, camera pitch, near-plane clipping and object yaw")

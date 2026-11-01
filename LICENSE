@@ -20,8 +20,6 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
-Third-party assets retain their own permissions. The KayKit rock in rock.lua
-and its source OBJ are CC0 under .assets-source/LICENSE-Forest.txt.
-Rekkimaru's historical sprite in .assets-source/fps/PIST1.png retains the
-author's permission documented in CREDITS.md. Other historical KayKit assets
-retain their included CC0 licenses. The current procedural gun.lua is MIT.
+Third-party historical assets in .assets-source/ and .tools/vendor/ retain
+their own licenses and permissions as documented in CREDITS.md. Current
+procedural car and track geometry are covered by the MIT license above.

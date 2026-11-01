@@ -1,7 +1,7 @@
 const fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypto');
-const root=path.resolve(__dirname,'..'),out=path.join(root,'.build/fps-3d-release');
+const root=path.resolve(__dirname,'..'),out=path.join(root,'.build/race-3d-release');
 fs.mkdirSync(out,{recursive:true});
-const runtime=['colors.lua','config.lua','game.lua','geometry.lua','gun.lua','level.lua','main.lua','renderer.lua','rock.lua'];
+const runtime=['colors.lua','config.lua','game.lua','geometry.lua','car.lua','track.lua','main.lua','renderer.lua'];
 const entries=[];
 for(const file of runtime) {
   const code=fs.readFileSync(path.join(root,file),'utf8').replace(/\r\n/g,'\n');
@@ -17,5 +17,5 @@ const files=entries.map((entry,i)=>{
 });
 fs.writeFileSync(path.join(out,'lupi_manifest.txt'),manifest);
 const totalBytes=files.reduce((sum,f)=>sum+f.bytes,Buffer.byteLength(manifest));
-fs.writeFileSync(path.join(root,'BUILD.json'),JSON.stringify({project:'Lupi FPS 3D 1.3',files,totalBytes},null,2)+'\n');
-console.log('3D FPS release ready:',out,totalBytes,'bytes');
+fs.writeFileSync(path.join(root,'BUILD.json'),JSON.stringify({project:'Lupi Oval 3D 2.0',files,totalBytes},null,2)+'\n');
+console.log('3D race release ready:',out,totalBytes,'bytes');

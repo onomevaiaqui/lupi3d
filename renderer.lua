@@ -19,10 +19,11 @@ end
 local function project(obj,view)
     if not obj.px then obj.px,obj.py,obj.pz,obj.sx,obj.sy={},{},{},{},{} end
     local v=obj.mesh.v
+    local oc,os=cos(obj.yaw or 0),sin(obj.yaw or 0)
     R.vertices=R.vertices+#v/3
     R.input_triangles=R.input_triangles+#obj.mesh.f/4
     for i=1,#v,3 do
-        local x,y,z=v[i]+obj.x,v[i+1]+obj.y,v[i+2]+obj.z
+        local x,y,z=v[i]*oc+v[i+2]*os+obj.x,v[i+1]+obj.y,-v[i]*os+v[i+2]*oc+obj.z
         if not view then
             x,y,z=x-camera.x,y-camera.y-cfg.eye_height,z-camera.z
             local depth=x*sy+z*cy

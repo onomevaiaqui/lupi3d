@@ -1,54 +1,44 @@
-# Lupi FPS 3D — estande de tiro (1.3)
+# Lupi Oval 3D — Fusquinha (2.0)
 
-Teste de 3D poligonal em primeira pessoa para o Lupi. Cenário, alvos, arma e clarão são malhas com vértices XYZ, projeção em perspectiva e rasterização por `ui.trisfill`. Apenas a interface é 2D. Esta versão substitui o raycasting 2,5D da versão 1.1.
+Pequeno jogo de corrida em 3D poligonal para testar o Lupi. Pista oval, zebras vermelhas/brancas, chegada quadriculada e carro original inspirado na silhueta do Fusca. A câmera acompanha o carro por trás. Complete três voltas no sentido inicial.
 
-O renderizador faz transformação da câmera, descarte de faces traseiras, recorte no plano próximo e na tela, ordenação por profundidade e validação dos triângulos após conversão para coordenadas inteiras. É 3D por software em Lua usando o rasterizador de triângulos do console; não depende de uma API de GPU 3D. A ordenação usa profundidade média, sem z-buffer, e pode apresentar sobreposição incorreta em geometrias que se intersectam.
-
-## Revisão visual 1.3
-
-Paleta com concreto frio e alvos quentes, maior contraste entre faces superiores e laterais, centros dos alvos em losango e arma mais estreita e baixa. As malhas mantêm a quantidade de vértices e faces da versão 1.2; o recorte da arma pode produzir dois triângulos adicionais. Nenhuma textura, luz dinâmica ou etapa de renderização foi adicionada. No profiler local, a maior área projetada caiu de 226.066 para 221.179 pixels; isso não garante aumento de FPS no console.
-
-## Controles SNES
-
-| Controle | Ação |
+| Controle SNES | Ação |
 | --- | --- |
-| Cruz: cima / baixo | Avançar / recuar |
-| Cruz: esquerda / direita | Movimento lateral |
-| L / R | Virar a câmera |
-| B | Pular |
-| Y | Atirar; segurar repete os disparos |
-| A | Rearmar os seis alvos e zerar os contadores |
+| B | Acelerar |
+| A | Frear |
+| Direcional esquerda / direita | Esterçar |
 
-O padrão em `config.lua` é `controller="snes"`: L=`BTN_Q`, R=`BTN_E`, B=`BTN_Z`, Y=`BTN_F`, A=`BTN_G`. Para o simulador Raylib direto, `controller="lupinho"` usa W/A/S/D para movimento, G/H para câmera, K para pulo, L para tiro e J para reposição.
+Soltar B desacelera gradualmente. A tem prioridade sobre B. Não há marcha a ré; o carro esterça quando está em movimento. Sair do asfalto reduz a velocidade. Para repetir a prova, reinicie o jogo.
 
-Velocidade: 4,2 unidades/s; giro: 1,5 rad/s. Diagonais são normalizadas. O movimento usa subpassos de colisão e o FPS de `ui.stat(7)` quando disponível, com fallback de 60 FPS. B pula uma vez por aperto.
+O padrão é `controller="snes"`, B=`BTN_Z` e A=`BTN_G`. No modo direto do simulador, `controller="lupinho"`, B usa `BTN_Z` e A usa `BTN_X`. As cores mantêm o BGR555 que funcionou no teste anterior; `platform="hardware"` troca os canais vermelho/azul.
 
-## O que validar
+## Como funciona
 
-Há seis alvos volumétricos, alguns elevados, divisórias, uma plataforma, uma viga suspensa e uma pedra importada da itch.io. É possível passar sob a viga, colidir com sua parte inferior ao pular e pousar na plataforma.
+Toda a pista, carro e linha de chegada usam vértices XYZ, perspectiva e `ui.trisfill`. Apenas a interface é 2D. O renderizador do teste FPS foi preservado, com suporte adicional à rotação da malha do carro. Há descarte de faces traseiras, recorte próximo/na tela e ordenação por profundidade média, sem z-buffer ou iluminação dinâmica.
 
-O tiro usa interseção de raio em XYZ, incluindo a altura dos olhos, o bloqueio pelo cenário e o alvo mais próximo. Não há assistência vertical: alvos elevados exigem ajustar a posição/altura pelo pulo ou plataforma. A mira permanece horizontal. O alvo à frente do ponto inicial pode ser acertado imediatamente. Munição ilimitada; sem áudio.
+O carro tem capô curto, cabine facetada e curva, para-lamas, quatro rodas, para-choques, faróis e lanternas. A malha é original, criada em código para este teste; não é um modelo oficial da Volkswagen.
 
-## Executar
+A física usa velocidade em unidades por segundo, aceleração, freio, arrasto e esterçamento dependente da velocidade. As atualizações são divididas em passos de até 1/60 s. A pista usa uma elipse de raios 18 e 28, dividida em 24 segmentos. A grama desacelera o carro, sem barreiras na borda da pista. Quatro setores precisam ser atravessados na ordem para validar uma volta; cruzar a chegada de ré não soma voltas. A primeira passagem inicia a contagem, e a terceira volta encerra a prova.
 
-`lupi.yaml` e `game.lua` ficam na raiz para descoberta pelo catálogo. Atualize pelo repositório; o cabeçalho deve mostrar **FPS 3D 1.3 / ESTANDE**.
+## Orçamento
 
-No Lupinho SDK, selecione a raiz como entrada. O jogo atual não carrega imagens ou sprites: registra sua própria paleta de 32 cores. O padrão `platform="lupinho"` preserva BGR555; a opção `"hardware"` troca os canais vermelho/azul.
+| Elemento | Triângulos da malha |
+| --- | ---: |
+| Carro | 176 |
+| Asfalto e zebras | 144 |
+| Chegada quadriculada | 32 |
+| Terreno | 2 |
+| Total | 354 |
 
-Com Node.js:
+Na posição inicial são enviados 157 triângulos ao rasterizador. Em 288 posições/ângulos locais, o pico foi 227, sem estouro do pool de 512. A paleta mantém 32 cores e a tela é 480 x 270.
 
-```sh
-node .tools/build.cjs
-```
+O pacote tem oito módulos Lua, aproximadamente 16,3 KB. O harness local reteve cerca de 268 KiB de heap Lua; isso não inclui motor, framebuffer ou sistema. FPS e consumo total nos 4 MB ainda precisam de teste no console. Os aproximadamente 26 FPS relatados anteriormente pertencem ao FPS 3D, não a este jogo de corrida.
 
-O pacote fica em `.build/fps-3d-release/`, com nove módulos Lua e manifesto. Não inclui o executável do motor. Python e processamento de imagens não são necessários.
+## Executar e verificar
 
-## Limites e verificação
+`lupi.yaml` e `game.lua` permanecem na raiz para descoberta pelo Lupi. O cabeçalho deve mostrar **OVAL 3D 2.0 / FUSQUINHA**.
 
-- Tela de 480 × 270; área 3D entre y=20 e y=227; paleta de 32 cores.
-- Pacote Lua: 21.913 bytes. Pool limitado a 512 triângulos projetados.
-- Nos 1.512 pontos/ângulos do teste local: máximo de 188 triângulos enviados por quadro e heap Lua de aproximadamente 241 KiB. Isso não inclui motor, framebuffer ou sistema e não comprova o consumo total nos 4 MB.
-- Os tempos no computador não representam FPS do Lupi. A versão 1.2 foi validada pelo usuário em aproximadamente 26 FPS, com L/R funcionando. A revisão visual 1.3 ainda precisa de medição no aparelho.
+Com Lua e Node.js:
 
 ```sh
 lua .tools/check-renderer.lua
@@ -56,16 +46,16 @@ lua .tools/check.lua
 node .tools/build.cjs
 node .tools/check-discovery.cjs
 lua .tools/check-release.lua
-lua .tools/profile.lua
 ```
 
-Os testes verificam perspectiva, altura XYZ, rotação da câmera, recorte, triângulos inteiros válidos, arma volumétrica, ausência de sprites, tiros com oclusão e altura, teto, plataforma, L/R sustentados e movimento em 10/15/30/60/120 FPS.
+O build fica em `.build/race-3d-release/`, com os oito módulos e manifesto; não inclui o motor. Não requer imagens, Python ou processamento de assets.
 
-Para reconstruir uma prévia das chamadas de desenho no Windows após `check.lua`:
+Os testes verificam aceleração e freio em 10/15/26/30/60/120 FPS, prioridade do freio, direção, grama, checkpoints, chegada e três voltas completas usando os mesmos comandos do jogo. Também verificam projeção, rotação de malhas, recorte, coordenadas inteiras, paleta e pacote compilado.
+
+No Windows, uma prévia pode ser reconstruída após `check.lua`:
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File .tools/render-check.ps1
 ```
 
-A prévia não mede o aparelho. Para regenerar a pedra a partir do OBJ original: `node .tools/import-rock.cjs`. Origem e licenças em [CREDITS.md](CREDITS.md).
-
+O FPS anterior permanece no [commit 9b0bff6](https://github.com/onomevaiaqui/lupi3d/tree/9b0bff67e255b9d45c1b78d2fa9d3b6b80f4dec4).

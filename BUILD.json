@@ -1,21 +1,21 @@
 {
-  "project": "Lupi FPS 3D 1.3",
+  "project": "Lupi Oval 3D 2.0",
   "files": [
     {
       "file": "colors.lua",
       "metadata": {
         "type": "lua_code"
       },
-      "bytes": 825,
-      "sha256": "a7dc8607666a397c9cf7cca006e4752c91c5be21d946c932a4f460667574c2d2"
+      "bytes": 823,
+      "sha256": "a8d973e3a1d1466ea3f49a425a02edd2622f1b9eb61f01c60b5feece7503179a"
     },
     {
       "file": "config.lua",
       "metadata": {
         "type": "lua_code"
       },
-      "bytes": 412,
-      "sha256": "5e7a2df7bce71e3fe58c2c1fb0eecaa9e907df9eae569feb8d4eac1bbe90a88c"
+      "bytes": 230,
+      "sha256": "23bf10430b772ce04818897629c3c931162945ac2ade5dcccc51365827f3edd4"
     },
     {
       "file": "game.lua",
@@ -34,45 +34,37 @@
       "sha256": "f0e89493ee8db4e126365aef64824e034b6f0069c2cc3bfb113a71b408bd177d"
     },
     {
-      "file": "gun.lua",
+      "file": "car.lua",
       "metadata": {
         "type": "lua_code"
       },
-      "bytes": 995,
-      "sha256": "54b749cf531a88b4149e7a1357dd1c821f271f505735915854dad35a88bb2d31"
+      "bytes": 1391,
+      "sha256": "8ab0b165d377161ccf374f88a8718876107b4dc81dd084301c55d92eed511bb6"
     },
     {
-      "file": "level.lua",
+      "file": "track.lua",
       "metadata": {
         "type": "lua_code"
       },
-      "bytes": 4268,
-      "sha256": "598b23225433d078dc6e9f5020017abb6e56920ea1f6cef544078a735737681b"
+      "bytes": 1268,
+      "sha256": "3e950806a8e5aabf61c25c4321f7b79c3421f0210d05eb3debe6e1a965a9a937"
     },
     {
       "file": "main.lua",
       "metadata": {
         "type": "lua_code"
       },
-      "bytes": 5499,
-      "sha256": "5010ea80a38ea72a2e203b6271d94ad7ba273afff5f94ffb37354491d1ea0535"
+      "bytes": 3850,
+      "sha256": "c9d44188053fd6158f772732348a117bd861b66e6a9744e7b8bcf1469fea23e5"
     },
     {
       "file": "renderer.lua",
       "metadata": {
         "type": "lua_code"
       },
-      "bytes": 6397,
-      "sha256": "544d7a64bdb95554b0301633d66fe34d280605ce6c0d20b6e598e5190ee21d7d"
-    },
-    {
-      "file": "rock.lua",
-      "metadata": {
-        "type": "lua_code"
-      },
-      "bytes": 1182,
-      "sha256": "8a869aeeffaddbf9c7559747728d2871d4c08a4c8cf1a9ff73e9176999220ee9"
+      "bytes": 6474,
+      "sha256": "f0f63e02ea6af35908091158f8508f5ec564747009335df59479e7bf6d49521c"
     }
   ],
-  "totalBytes": 21913
+  "totalBytes": 16323
 }
