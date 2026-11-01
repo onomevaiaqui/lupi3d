@@ -1,5 +1,5 @@
 {
-  "project": "Lupi Figure Eight 3D 3.0",
+  "project": "Lupi Figure Eight 3D 3.1",
   "files": [
     {
       "file": "colors.lua",
@@ -38,8 +38,8 @@
       "metadata": {
         "type": "lua_code"
       },
-      "bytes": 1688,
-      "sha256": "6321d15a1cb1a1cd8d14efb21dd460355b4171c496b90ad803e22e88abf18512"
+      "bytes": 3118,
+      "sha256": "15a1fbcb4d050eb48937355d0992bcb744439798510dbec8e6041902bfa2cd32"
     },
     {
       "file": "track.lua",
@@ -55,7 +55,7 @@
         "type": "lua_code"
       },
       "bytes": 6004,
-      "sha256": "cde004a18605ea656f5e9cf2d87bc41e8423b10abfcacf9630291386feb0d75d"
+      "sha256": "87d85b12c401fe9fa9d5d8bb2cbde6435847d2d3cafc4b9944c4c19f299f160b"
     },
     {
       "file": "renderer.lua",
@@ -66,5 +66,5 @@
       "sha256": "abc76bb9699bf013908286a77dae8ba389d997cd8e8a1df09a5814d26024b722"
     }
   ],
-  "totalBytes": 20862
+  "totalBytes": 22292
 }

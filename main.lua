@@ -8,7 +8,7 @@ local x,z,yaw=track.sample(track.segments-0.35)
 Game={x=x,z=z,yaw=yaw,speed=0,time=0,laps=0,checkpoint=3,best=nil,lap_start=0,finished=false,triangles=0,progress=track.segments-0.35}
 Game.rival={progress=0.6,laps=0,speed=10.5,x=0,y=0,z=0,mesh=mesh.rival,radius=2.5}
 local car={x=0,y=0,z=0,mesh=mesh}
-local camera={x=0,y=2.8,z=0,yaw=0,pitch=-0.30}
+local camera={x=0,y=3.3,z=0,yaw=0,pitch=-0.30}
 local frame=0
 local restartHeld=false
 local function held(k) if k==nil then return false end local v=ui.btn(k,0);return v==true or type(v)=="number" and v>0 end
@@ -85,7 +85,7 @@ function Game.draw()
     colors.register();ui.camera(0,0);ui.clip(0,0,480,270);ui.cls(colors.index[1])
     -- Flat ground to the fixed chase-camera horizon: replace two huge raster triangles.
     ui.rectfill(0,31,480,228,colors.index[14])
-    camera.x=Game.x-sin(Game.yaw)*4.8;camera.z=Game.z-cos(Game.yaw)*4.8;camera.yaw=Game.yaw
+    camera.x=Game.x-sin(Game.yaw)*6.4;camera.z=Game.z-cos(Game.yaw)*6.4;camera.yaw=Game.yaw
     car.x,car.z,car.yaw=Game.x,Game.z,Game.yaw
     renderer.begin(camera)
     for _,part in ipairs(track.parts) do
@@ -99,7 +99,7 @@ function Game.draw()
     renderer.submit(Game.rival);renderer.submit(car);renderer.flush()
     Game.triangles,Game.dropped=renderer.triangles,renderer.dropped
     ui.rectfill(0,0,480,20,colors.index[10]);ui.rectfill(0,228,480,270,colors.index[10])
-    text("PISTA 8 3D 3.0 / FUSQUINHA",10,6,15)
+    text("PISTA 8 3D 3.1 / FUSQUINHA",10,6,15)
     text("TRI "..Game.triangles,285,6,9);text(Game.reported_fps and "FPS "..math.floor(Game.reported_fps+0.5) or "FPS --",390,6,9)
     local playerProgress=(Game.started and Game.laps*track.segments or -track.segments)+Game.progress
     local position=playerProgress>=Game.rival.progress and 1 or 2

@@ -1,4 +1,4 @@
-# Lupi Pista 8 3D — Fusquinha (3.0)
+# Lupi Pista 8 3D — Fusquinha (3.1)
 
 Corrida em 3D poligonal para testar o Lupi: pista em oito de aproximadamente 227 unidades, um Fusquinha amarelo, um adversário vermelho, oito árvores e chegada quadriculada. A pista anterior tinha aproximadamente 146 unidades. Complete três voltas seguindo a direção inicial. O cruzamento é plano, sem ponte.
 
@@ -12,6 +12,12 @@ Corrida em 3D poligonal para testar o Lupi: pista em oito de aproximadamente 227
 O semáforo da interface passa por vermelho (2 s), amarelo (1 s) e verde. Antes do verde, os dois carros e o cronômetro ficam parados. Segurar B durante a contagem permite acelerar assim que a corrida é liberada. Y funciona também após a chegada e dispara uma vez por aperto.
 
 O padrão é `controller="snes"`: B=`BTN_Z`, A=`BTN_G`, Y=`BTN_F`. A pedido do usuário, Y substitui Start. No modo direto do simulador, `controller="lupinho"`, usa BTN_Z/BTN_X/BTN_Q respectivamente. As cores mantêm BGR555; `platform="hardware"` troca vermelho/azul.
+
+## Revisão 3.1
+
+A câmera passou de 4,8 para 6,4 unidades atrás do carro e de 2,8 para 3,3 de altura. A inclinação, projeção e distância de desenho foram mantidas. O carro recebeu carroceria afunilada, teto ajustado e para-choques usando os mesmos 76 triângulos: faces superiores ocultas das rodas cederam espaço aos detalhes. Vértices coincidentes são unidos uma vez ao carregar: o carro passou de 104 para 88 posições XYZ a projetar por quadro.
+
+Com a câmera mais distante, o pico dos 288 testes passou de 158 para 160 triângulos e a largada de 104 para 111. O tempo Lua local ficou próximo do anterior; isso não comprova ausência de perda de FPS no Lupi. A revisão ainda precisa de medição no aparelho.
 
 ## Corrida
 
@@ -34,15 +40,15 @@ O renderizador conserva recorte próximo/na tela, descarte de faces traseiras, v
 | Oito árvores | 64 |
 | Total armazenado | 460 |
 
-Embora a cena tenha mais elementos, não desenha toda a malha em cada quadro. O carro anterior tinha 176 triângulos; faces escondidas, para-lamas e para-choques separados foram simplificados. Nos 288 pontos/ângulos de teste, com o adversário próximo, o pico caiu de 227 para 158 triângulos enviados por quadro (cerca de 30% menos). A largada envia 104, contra 157 no oval. O contador TRI mostra o valor efetivo.
+Embora a cena tenha mais elementos, não desenha toda a malha em cada quadro. O carro anterior tinha 176 triângulos; faces escondidas, para-lamas e para-choques separados foram simplificados. Nos 288 pontos/ângulos de teste, com o adversário próximo, o pico caiu de 227 para 160 triângulos enviados por quadro (cerca de 30% menos). A largada envia 111, contra 157 no oval. O contador TRI mostra o valor efetivo.
 
-Tela de 480 x 270, paleta de 32 cores, pool de 384 triângulos reutilizados. Pacote de oito módulos Lua com aproximadamente 21 KB. Heap Lua do harness em torno de 401 KiB, sem incluir motor, framebuffer e sistema. O teste em computador não comprova consumo total nos 4 MB nem FPS no aparelho.
+Tela de 480 x 270, paleta de 32 cores, pool de 384 triângulos reutilizados. Pacote de oito módulos Lua com aproximadamente 22,3 KB. Heap Lua do harness em torno de 402 KiB, sem incluir motor, framebuffer e sistema. O teste em computador não comprova consumo total nos 4 MB nem FPS no aparelho.
 
 O oval 2.1 rodou a 14–16 FPS segundo o usuário. A meta desta revisão é 24 FPS, mas ainda não foi medida no Lupi e não há garantia desse resultado.
 
 ## Executar e verificar
 
-`lupi.yaml` e `game.lua` permanecem na raiz. O cabeçalho deve mostrar **PISTA 8 3D 3.0 / FUSQUINHA**.
+`lupi.yaml` e `game.lua` permanecem na raiz. O cabeçalho deve mostrar **PISTA 8 3D 3.1 / FUSQUINHA**.
 
 ```sh
 lua .tools/check-renderer.lua
