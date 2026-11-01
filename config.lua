@@ -6,9 +6,9 @@ return {
     jump_speed=5.4,
     gravity=15,
     fallback_fps=60,
-    columns=80, -- 6-pixel wall strips, no triangles or projected character mesh
-    camera_plane=0.66,
-    eye_height=0.75,
-    wall_height=2.0,
+    projection=360, -- perspective focal length in pixels
+    max_triangles=512,
+    eye_height=1.05,
+    player_height=1.5,
     shot_interval=0.25,
 }

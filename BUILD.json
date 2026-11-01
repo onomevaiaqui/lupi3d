@@ -1,21 +1,21 @@
 {
-  "project": "Lupi FPS 1.1",
+  "project": "Lupi FPS 3D 1.2",
   "files": [
     {
       "file": "colors.lua",
       "metadata": {
         "type": "lua_code"
       },
-      "bytes": 2017,
-      "sha256": "dff98ae9a1f41e3751c4e449feeb4dbc7a97b8e3a733802d4ea730b88346ceec"
+      "bytes": 742,
+      "sha256": "4dac91c71a81d9462dea6c4118974363f3055fe0abd71ba56ac5cbc378a93b73"
     },
     {
       "file": "config.lua",
       "metadata": {
         "type": "lua_code"
       },
-      "bytes": 433,
-      "sha256": "8a9e416297d12362896423595263ec7416bedc4d1904a016d19dc93af41403e2"
+      "bytes": 412,
+      "sha256": "5e7a2df7bce71e3fe58c2c1fb0eecaa9e907df9eae569feb8d4eac1bbe90a88c"
     },
     {
       "file": "game.lua",
@@ -26,48 +26,53 @@
       "sha256": "a0405204356040ae66ac9139fc20509fdae716cbd1ee3ce8753b4d17817fe58a"
     },
     {
+      "file": "geometry.lua",
+      "metadata": {
+        "type": "lua_code"
+      },
+      "bytes": 1812,
+      "sha256": "f0e89493ee8db4e126365aef64824e034b6f0069c2cc3bfb113a71b408bd177d"
+    },
+    {
       "file": "gun.lua",
       "metadata": {
         "type": "lua_code"
       },
-      "bytes": 1914,
-      "sha256": "2b061ef444e7922b31c05a7852aeaf33698e948036d7f38708e9b7d9909b5db3"
+      "bytes": 725,
+      "sha256": "df3a936c70f816b5e5fbc7b756220119568037cdc7588308129dc431425fdd37"
     },
     {
       "file": "level.lua",
       "metadata": {
         "type": "lua_code"
       },
-      "bytes": 1081,
-      "sha256": "36643d2aa3d9e483bca0dcf748ee085b6ebef8ad8a531f752f4bafc64099ffec"
+      "bytes": 4129,
+      "sha256": "a7e6eeae62bdfd80c830140df3a539f5a3af4b7a8bcb5b4b723b3949399e0b05"
     },
     {
       "file": "main.lua",
       "metadata": {
         "type": "lua_code"
       },
-      "bytes": 10006,
-      "sha256": "ca1c96b8755af703fa93b439037c619993057ac413d43add84ef928f2d88ed0e"
+      "bytes": 5499,
+      "sha256": "e05c6af27ac32e4ed7f1a63533d108729da07d3a03d58991ee0f107edd6c351a"
     },
     {
-      "file": "img/gun",
-      "metadata": {
-        "type": "bitmap",
-        "width": 72,
-        "height": 96,
-        "tiles": 1
-      },
-      "bytes": 6912,
-      "sha256": "6012b6dffaf7b12da9e9f6ec7814ce7a3c6357183d70d103cca5a54f96e9feaa"
-    },
-    {
-      "file": "palette.lua",
+      "file": "renderer.lua",
       "metadata": {
         "type": "lua_code"
       },
-      "bytes": 189,
-      "sha256": "2cabddf0ec95600b9ffc619b0a9545ee61934496a0fcd95d20b7b061a25b9470"
+      "bytes": 6397,
+      "sha256": "544d7a64bdb95554b0301633d66fe34d280605ce6c0d20b6e598e5190ee21d7d"
+    },
+    {
+      "file": "rock.lua",
+      "metadata": {
+        "type": "lua_code"
+      },
+      "bytes": 1182,
+      "sha256": "8a869aeeffaddbf9c7559747728d2871d4c08a4c8cf1a9ff73e9176999220ee9"
     }
   ],
-  "totalBytes": 23053
+  "totalBytes": 21421
 }

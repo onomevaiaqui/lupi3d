@@ -20,7 +20,8 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
-Third-party assets retain their own permissions. Rekkimaru's weapon artwork
-in .assets-source/fps/PIST1.png, img/gun.png, gun.lua and the derived bitmap
-is covered by the author's permission documented in CREDITS.md. Historical
-KayKit assets in .assets-source/ remain CC0 under their included licenses.
+Third-party assets retain their own permissions. The KayKit rock in rock.lua
+and its source OBJ are CC0 under .assets-source/LICENSE-Forest.txt.
+Rekkimaru's historical sprite in .assets-source/fps/PIST1.png retains the
+author's permission documented in CREDITS.md. Other historical KayKit assets
+retain their included CC0 licenses. The current procedural gun.lua is MIT.
