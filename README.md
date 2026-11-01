@@ -1,4 +1,4 @@
-# Lupi Oval 3D — Fusquinha (2.0)
+# Lupi Oval 3D — Fusquinha (2.1)
 
 Pequeno jogo de corrida em 3D poligonal para testar o Lupi. Pista oval, zebras vermelhas/brancas, chegada quadriculada e carro original inspirado na silhueta do Fusca. A câmera acompanha o carro por trás. Complete três voltas no sentido inicial.
 
@@ -36,7 +36,7 @@ O pacote tem oito módulos Lua, aproximadamente 16,3 KB. O harness local reteve 
 
 ## Executar e verificar
 
-`lupi.yaml` e `game.lua` permanecem na raiz para descoberta pelo Lupi. O cabeçalho deve mostrar **OVAL 3D 2.0 / FUSQUINHA**.
+`lupi.yaml` e `game.lua` permanecem na raiz para descoberta pelo Lupi. O cabeçalho deve mostrar **OVAL 3D 2.1 / FUSQUINHA**.
 
 Com Lua e Node.js:
 

@@ -26,11 +26,11 @@ local function reset()
 end
 for _,fps in ipairs({10,15,26,30,60,120}) do
     reset();keys[BTN_Z]=true
-    for _=1,fps do Game.step(1/fps) end
+    for _=1,fps do Game.step(1/fps);Game.draw() end
     assert(math.abs(Game.speed-7)<0.001,"B acceleration must be time based")
     assert(Game.started and Game.laps==0,"first crossing starts the race without awarding a lap")
     keys[BTN_G]=true
-    for _=1,fps do Game.step(1/fps) end
+    for _=1,fps do Game.step(1/fps);Game.draw() end
     assert(Game.speed==0,"A brake must override B and stop")
 end
 reset();keys[RIGHT]=true;Game.step(0.1);assert(Game.yaw==math.pi/2,"no steering while stopped")

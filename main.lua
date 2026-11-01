@@ -60,9 +60,9 @@ function Game.draw()
     renderer.submit(car);renderer.flush()
     Game.triangles,Game.dropped=renderer.triangles,renderer.dropped
     ui.rectfill(0,0,480,20,colors.index[10]);ui.rectfill(0,228,480,270,colors.index[10])
-    text("OVAL 3D 2.0 / FUSQUINHA",10,6,15)
+    text("OVAL 3D 2.1 / FUSQUINHA",10,6,15)
     text("TRI "..Game.triangles,285,6,9);text(Game.reported_fps and "FPS "..math.floor(Game.reported_fps+0.5) or "FPS --",390,6,9)
-    text(string.format("%03d KM/H   VOLTAS %d/3   TEMPO %.1f",Game.speed*6,Game.laps,Game.time),12,235,15)
+    text(string.format("%03d KM/H   VOLTAS %d/3   TEMPO %.1f",math.floor(Game.speed*6+0.5),Game.laps,Game.time),12,235,15)
     text("B: ACELERA  A: FREIA  ESQUERDA/DIREITA: VIRA",12,255,9)
     if Game.finished then text("CHEGADA!",205,100,15)
     elseif Game.offroad then text("GRAMA",215,210,8) end
