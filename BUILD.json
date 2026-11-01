@@ -1,5 +1,5 @@
 {
-  "project": "Lupi Figure Eight 3D 3.1",
+  "project": "Lupi Combat Rally 4.0",
   "files": [
     {
       "file": "colors.lua",
@@ -14,8 +14,8 @@
       "metadata": {
         "type": "lua_code"
       },
-      "bytes": 278,
-      "sha256": "6a7dc39acff05e6cbbfd45297515d80f9bf4b43cdcdfec12edc0a2e13a08dbc3"
+      "bytes": 302,
+      "sha256": "478548df79fb2d7999feabf4cd97a1b9e28454d5bc686d67eebc34947f0a938a"
     },
     {
       "file": "game.lua",
@@ -46,16 +46,16 @@
       "metadata": {
         "type": "lua_code"
       },
-      "bytes": 2934,
-      "sha256": "c568bd316f20b5910fda884e06a7ba7be7f564925303bda955a27570e2b452b0"
+      "bytes": 3397,
+      "sha256": "472b3be97a61629ccec4cbe52961174265de37835847c61dab86e3f10a263db0"
     },
     {
       "file": "main.lua",
       "metadata": {
         "type": "lua_code"
       },
-      "bytes": 6004,
-      "sha256": "87d85b12c401fe9fa9d5d8bb2cbde6435847d2d3cafc4b9944c4c19f299f160b"
+      "bytes": 7077,
+      "sha256": "ff7f7de373ff378c8ab58489546cd38e667d8f0f9ef7852169e861a9011e94b9"
     },
     {
       "file": "renderer.lua",
@@ -64,7 +64,39 @@
       },
       "bytes": 6848,
       "sha256": "abc76bb9699bf013908286a77dae8ba389d997cd8e8a1df09a5814d26024b722"
+    },
+    {
+      "file": "race.lua",
+      "metadata": {
+        "type": "lua_code"
+      },
+      "bytes": 5145,
+      "sha256": "b6b647d691b5e377cf569c3bd4d6fe3b421de821d825eba93fac2f810720f8e1"
+    },
+    {
+      "file": "combat.lua",
+      "metadata": {
+        "type": "lua_code"
+      },
+      "bytes": 3981,
+      "sha256": "d30382ac8b704a622f080673009769ab68c40637bcd56a4a4369273b9ee97b04"
+    },
+    {
+      "file": "save.lua",
+      "metadata": {
+        "type": "lua_code"
+      },
+      "bytes": 2625,
+      "sha256": "65d2ee5f5221f96fecf66e6a3e23843b5cc0f479a8c77c6dd1dd84f7a93eef20"
+    },
+    {
+      "file": "audio.lua",
+      "metadata": {
+        "type": "lua_code"
+      },
+      "bytes": 819,
+      "sha256": "dc774ccd8e972b284b8118a1405d3b3122c5932a769605292a671464f0c1ec88"
     }
   ],
-  "totalBytes": 22292
+  "totalBytes": 36620
 }

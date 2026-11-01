@@ -1,6 +1,6 @@
 # Créditos
 
-O carro inspirado no Fusca, adversário, pista em oito, árvores, chegada, paleta e código de corrida foram criados para este teste e são distribuídos sob a licença MIT do projeto. Não há sprites ou assets de terceiros carregados pelo jogo de corrida.
+O carro inspirado no Fusca, adversários, três pistas, árvores, itens de combate, chegada, interface, paleta e código de corrida foram criados para este teste e são distribuídos sob a licença MIT do projeto. Não há sprites ou assets de terceiros carregados pelo jogo de corrida.
 
 ## Arquivos históricos
 
@@ -9,3 +9,5 @@ Os assets KayKit preservados em `.assets-source/` vêm dos testes anteriores. O 
 O sprite `.assets-source/fps/PIST1.png` de Rekkimaru foi usado no FPS 1.1: https://rekkimaru.itch.io/fps-gun-sprites . Mantém a permissão do autor para uso comercial/não comercial e modificações, registrada em `.assets-source/fps/PERMISSION.txt`; não é apresentado como CC0.
 
 A ferramenta histórica meshoptimizer em `.tools/vendor/` mantém sua licença MIT incluída. Nenhum desses arquivos históricos é carregado ou incluído no pacote atual.
+
+Os sons usam o sample 0 disponibilizado pelo firmware via API documentada; nenhum sample de terceiros é redistribuído neste repositório.

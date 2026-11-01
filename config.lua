@@ -1,6 +1,6 @@
 return {
     platform="lupinho",
-    controller="snes", -- B=BTN_Z, A=BTN_G
+    controller="snes", -- SNES: B=BTN_Z, A=BTN_G, R=BTN_E, Y=BTN_F
     fallback_fps=60,
     projection=300,
     max_triangles=384, -- reusable triangle pool

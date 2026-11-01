@@ -9,3 +9,4 @@
 .tools/platform*.csv
 .tools/platform*.png
 .build/
+.tools/rally-save-*.dat
