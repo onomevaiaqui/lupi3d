@@ -1,6 +1,10 @@
-# Lupi Combat Rally 3D (4.0)
+# Lupi Combat Rally 3D (4.1)
 
 Protótipo de campeonato de corrida e combate, com menu inicial, três pistas selecionáveis, quatro carros, power-ups, sons e save entre provas. Cenário, carros e itens usam malhas XYZ e triângulos nativos do Lupi. A interface e o semáforo são 2D.
+
+## Correção 4.1
+
+O console confirmou que a tabela global package não está disponível. A descoberta da pasta agora é opcional e protegida; sem ela, usa a pasta relativa atual. A coleta de memória explícita também é opcional. Um teste usa um require próprio e remove package, io, os, debug, collectgarbage e sfx, verificando menu, três pistas, resultados e Continue durante a sessão. Isso evita o erro de inicialização; não comprova persistência de save em disco no firmware.
 
 ## Controles
 
@@ -78,7 +82,7 @@ Renderização por software em Lua: projeção em perspectiva, descarte de faces
 
 ## Executar e testar
 
-`lupi.yaml` e `game.lua` ficam na raiz para descoberta. O menu deve mostrar **LUPI COMBAT RALLY 4.0**.
+`lupi.yaml` e `game.lua` ficam na raiz para descoberta. O menu deve mostrar **LUPI COMBAT RALLY 4.1**.
 
 ```sh
 lua .tools/check-save.lua
@@ -87,6 +91,7 @@ lua .tools/check-renderer.lua
 node .tools/build.cjs
 node .tools/check-discovery.cjs
 lua .tools/check-release.lua
+lua .tools/check-firmware.lua
 ```
 
 O pacote vai para `.build/race-3d-release/`, com módulos e manifesto; não inclui motor ou banco de samples. Não distribui os arquivos de save de teste.

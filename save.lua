@@ -2,7 +2,11 @@ local cfg=require "config"
 local S={ranks={0,0,0},last=1,sequence=0,status="SEM SAVE"}
 local base=cfg.save_dir
 if not base then
-    local path=package.searchpath and package.searchpath("main",package.path)
+    local path
+    if type(package)=="table" and type(package.searchpath)=="function" and type(package.path)=="string" then
+        local ok,result=pcall(package.searchpath,"main",package.path)
+        if ok then path=result end
+    end
     base=path and path:match("^(.*[/\\])") or "./"
 end
 if base:sub(-1)~="/" and base:sub(-1)~="\\" then base=base.."/" end
@@ -62,5 +66,6 @@ function S.record(track,rank)
     S.last=track%3+1
     return S.write()
 end
+if not io or type(io.open)~="function" then S.status="SAVE INDISPONIVEL" end
 S.load()
 return S
