@@ -109,6 +109,12 @@ Game.startRace(1);Game.race.countdown=0;C.collect(Game.race.player,"shot")
 tap(BTN_E);assert(Game.race.player.ammo==2)
 tap(BTN_G);assert(Game.race.player.ammo==2)
 tap(BTN_F);assert(Game.race.countdown==3 and Save.wins()==2)
+-- Turning the car must not rotate the world camera.
+Game.startRace(2);Game.draw()
+local part=Game.race.track.parts[1]
+local sx,sy=part.sx[1],part.sy[1]
+Game.race.player.yaw=Game.race.player.yaw+1.1;Game.draw()
+assert(part.sx[1]==sx and part.sy[1]==sy,"top-down world orientation must remain fixed when car turns")
 local maxTriangles,maxArea=0,0
 local start=os.clock();local views=0
 for id=1,3 do

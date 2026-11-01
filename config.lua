@@ -5,7 +5,7 @@ return {
     projection=300,
     max_triangles=384, -- reusable triangle pool
     eye_height=0,
-    draw_distance=30,
+    draw_distance=42,
     top_speed=15,
     acceleration=7,
     brake=13,

@@ -24,7 +24,7 @@ for i=0,T.segments-1 do
     s.radius=s.length/2+T.halfWidth+0.35
     local function edge(v,w) return {v.x+v.nx*w-s.x,0,v.z+v.nz*w-s.z} end
     -- Winding follows +Y regardless of the turn direction.
-    G.quad(s.mesh,edge(a,-T.halfWidth),edge(b,-T.halfWidth),edge(b,T.halfWidth),edge(a,T.halfWidth),10)
+    G.quad(s.mesh,edge(a,-T.halfWidth),edge(b,-T.halfWidth),edge(b,T.halfWidth),edge(a,T.halfWidth),4)
     s.trim={x=s.x,y=0,z=s.z,mesh=G.mesh(),radius=s.radius}
     for _,side in ipairs({-1,1}) do
         local w=T.halfWidth*side;local o=(T.halfWidth+0.28)*side

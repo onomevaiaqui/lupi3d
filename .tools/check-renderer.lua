@@ -27,3 +27,12 @@ obj.z=4;obj.y=0.4;obj.yaw=0.7;bounds();assert(#points>0)
 local car=require "car"
 assert(#car.v>0 and #car.f>0)
 print("PASS: perspective, XYZ elevation, camera pitch, near-plane clipping and object yaw")
+-- High-angle culling must match unbounded projection for nearby visible boxes.
+camera={x=-12,y=18,z=-14,yaw=math.atan(12,14),pitch=-math.atan(18/math.sqrt(340))}
+for x=-8,8,8 do for z=-8,8,8 do
+    obj.x,obj.y,obj.z,obj.yaw=x,0.5,z,0
+    obj.radius=nil;points={};R.begin(camera);R.submit(obj);R.flush();local expected=#points
+    obj.radius=1;points={};R.begin(camera);R.submit(obj);R.flush()
+    assert(#points==expected,"steep-camera culling discarded visible XYZ geometry")
+end end
+print("PASS: high-angle camera frustum retains visible objects")

@@ -1,6 +1,16 @@
-# Lupi Combat Rally 3D (4.1)
+# Lupi Combat Rally 3D (4.2)
 
 Protótipo de campeonato de corrida e combate, com menu inicial, três pistas selecionáveis, quatro carros, power-ups, sons e save entre provas. Cenário, carros e itens usam malhas XYZ e triângulos nativos do Lupi. A interface e o semáforo são 2D.
+
+## Câmera e estilo 4.2
+
+A referência de câmera é Low Poly Racing, do Imphenzia: https://imphenzia.itch.io/low-poly-racing . A câmera traseira foi substituída por uma visão alta oblíqua, com orientação fixa no mundo. Ela acompanha a posição do jogador sem girar junto com o carro. Altura de 18 unidades e deslocamento de 12 em X/14 em Z, aproximadamente 44 graus de inclinação para baixo. O fundo é preenchido pela grama porque a área de jogo inteira olha para o chão. Asfalto usa um tom cinza mais claro.
+
+O descarte de objetos agora usa profundidade e altura após a rotação completa da câmera, para não apagar objetos visíveis no ângulo superior. Há testes de geometria visível e de invariância da câmera à direção do carro.
+
+A nova vista mantém carros, pistas, árvores e itens em 3D XYZ. Ela não adiciona a densidade de objetos, sombras suaves, prédios e rochedos da referência artística do Lowpolydrifter. Essa direção visual pode ser explorada com malhas mais simples e poucos objetos visíveis por vez, mas equivalência visual e desempenho não foram demonstrados.
+
+Em 576 vistas, o pico passou de 185 para 209 triângulos; o teste com todos os efeitos ativos usou 223. A maior soma de áreas projetadas passou de 116.762 para 59.832 pixels, cerca de 49% menos. Mais chamadas de triângulos e menos pixels são custos diferentes: somente o teste no Lupi determina o resultado em FPS.
 
 ## Correção 4.1
 
@@ -74,15 +84,15 @@ Renderização por software em Lua: projeção em perspectiva, descarte de faces
 - Carro do jogador: 76 triângulos, 88 vértices XYZ compartilhados.
 - Adversários: 32 triângulos cada, com geometria compartilhada e cores distintas.
 - Só a pista selecionada é construída; árvores e trechos fora da visão são descartados antes da projeção.
-- Câmera preservada em 6,4 unidades atrás e altura 3,3. Distância de desenho de 30 unidades; zebras até 18 unidades.
-- Em 576 vistas locais das três pistas, com quatro carros próximos: pico de **185 triângulos enviados por quadro**, sem estouro do pool de 384. Um teste com todas as minas e rastros ativos também passou.
-- Pacote de 12 módulos Lua, aproximadamente 37 KB. O harness completo, mantendo várias corridas de teste ao mesmo tempo, ficou em aproximadamente 803 KiB de heap Lua; isso não mede a memória total do console.
+- Câmera superior fixa, altura 18, deslocamento X=12/Z=14. Distância de desenho de 42 unidades; zebras até 15 unidades.
+- Em 576 vistas locais das três pistas, com quatro carros próximos: pico de **209 triângulos enviados por quadro**, sem estouro do pool de 384. Um teste com todas as minas e rastros ativos também passou.
+- Pacote de 12 módulos Lua, aproximadamente 37 KB. O harness completo, mantendo várias corridas de teste ao mesmo tempo, ficou em aproximadamente 861 KiB de heap Lua; isso não mede a memória total do console.
 
 **Ainda não há FPS desta versão no Lupi.** Quatro carros, combate e som aumentam o trabalho. Tempos de execução no computador não garantem 24 FPS no aparelho.
 
 ## Executar e testar
 
-`lupi.yaml` e `game.lua` ficam na raiz para descoberta. O menu deve mostrar **LUPI COMBAT RALLY 4.1**.
+`lupi.yaml` e `game.lua` ficam na raiz para descoberta. O menu deve mostrar **LUPI COMBAT RALLY 4.2**.
 
 ```sh
 lua .tools/check-save.lua
