@@ -1,7 +1,9 @@
 local G=require "geometry"
 local M={spawn={x=6.5,z=2.5,yaw=0},objects={},obstacles={},rayBoxes={},targets={}}
+local topColors={[5]=12,[6]=5,[13]=8,[11]=12,[12]=9}
 local function box(name,x,y,z,w,h,d,color,solid)
-    local obj={name=name,x=x,y=y,z=z,mesh=G.box(w,h,d,color,color+16,color)}
+    -- Baked material lighting: bright tops, shaded sides; no per-frame lights.
+    local obj={name=name,x=x,y=y,z=z,mesh=G.box(w,h,d,color,color+16,topColors[color] or color)}
     M.objects[#M.objects+1]=obj
     local b={name=name,minx=x-w/2,maxx=x+w/2,miny=y-h/2,maxy=y+h/2,minz=z-d/2,maxz=z+d/2}
     M.rayBoxes[#M.rayBoxes+1]=b
@@ -36,7 +38,7 @@ M.obstacles[#M.obstacles+1]=rb;M.rayBoxes[#M.rayBoxes+1]=rb
 local targetMesh=G.box(0.84,0.9,0.5,7,23,8)
 -- Fixed front-face inlays, actual XYZ polygons: they do not turn toward the camera.
 G.quad(targetMesh,{-0.30,-0.31,-0.251},{-0.30,0.31,-0.251},{0.30,0.31,-0.251},{0.30,-0.31,-0.251},9)
-G.quad(targetMesh,{-0.13,-0.14,-0.252},{-0.13,0.14,-0.252},{0.13,0.14,-0.252},{0.13,-0.14,-0.252},8)
+G.quad(targetMesh,{0,-0.22,-0.252},{-0.21,0,-0.252},{0,0.22,-0.252},{0.21,0,-0.252},8)
 local points={{6.5,1.05,6.5},{1.7,1.05,5.5},{11.8,2.0,5.5},{3.5,1.05,10.8},{10.5,2.0,10.8},{6.5,2.0,12}}
 for i,p in ipairs(points) do
     local t={id=i,x=p[1],y=p[2],z=p[3],alive=true,mesh=targetMesh,bounds={}}

@@ -1,8 +1,9 @@
 local cfg=require "config"
-local rgb={{0,0,0},{23,28,38},{48,48,42},{62,62,51},{105,106,102},{146,148,137},{63,94,102},{172,48,42},{232,180,63},{224,216,182},{44,48,52},{91,100,104},{156,165,161},{125,87,64},{124,156,58},{240,208,103}}
+-- Cool concrete, warm targets and brighter upper faces. Same 32-entry budget.
+local rgb={{0,0,0},{96,144,176},{55,70,76},{63,80,84},{104,125,132},{154,176,180},{63,121,143},{208,64,40},{248,176,48},{232,232,208},{16,28,40},{73,100,118},{176,200,208},{160,94,56},{120,216,104},{248,224,144}}
 local M={palette={},index={}}
 for shade=0,1 do for _,c in ipairs(rgb) do
-    local factor=shade==0 and 1 or 0.68
+    local factor=shade==0 and 1 or 0.62
     local r,g,b=math.floor(c[1]*factor/8),math.floor(c[2]*factor/8),math.floor(c[3]*factor/8)
     M.palette[#M.palette+1]=b*1024+g*32+r
     M.index[#M.palette-1]=#M.palette-1

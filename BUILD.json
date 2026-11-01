@@ -1,13 +1,13 @@
 {
-  "project": "Lupi FPS 3D 1.2",
+  "project": "Lupi FPS 3D 1.3",
   "files": [
     {
       "file": "colors.lua",
       "metadata": {
         "type": "lua_code"
       },
-      "bytes": 742,
-      "sha256": "4dac91c71a81d9462dea6c4118974363f3055fe0abd71ba56ac5cbc378a93b73"
+      "bytes": 825,
+      "sha256": "a7dc8607666a397c9cf7cca006e4752c91c5be21d946c932a4f460667574c2d2"
     },
     {
       "file": "config.lua",
@@ -38,16 +38,16 @@
       "metadata": {
         "type": "lua_code"
       },
-      "bytes": 725,
-      "sha256": "df3a936c70f816b5e5fbc7b756220119568037cdc7588308129dc431425fdd37"
+      "bytes": 995,
+      "sha256": "54b749cf531a88b4149e7a1357dd1c821f271f505735915854dad35a88bb2d31"
     },
     {
       "file": "level.lua",
       "metadata": {
         "type": "lua_code"
       },
-      "bytes": 4129,
-      "sha256": "a7e6eeae62bdfd80c830140df3a539f5a3af4b7a8bcb5b4b723b3949399e0b05"
+      "bytes": 4268,
+      "sha256": "598b23225433d078dc6e9f5020017abb6e56920ea1f6cef544078a735737681b"
     },
     {
       "file": "main.lua",
@@ -55,7 +55,7 @@
         "type": "lua_code"
       },
       "bytes": 5499,
-      "sha256": "e05c6af27ac32e4ed7f1a63533d108729da07d3a03d58991ee0f107edd6c351a"
+      "sha256": "5010ea80a38ea72a2e203b6271d94ad7ba273afff5f94ffb37354491d1ea0535"
     },
     {
       "file": "renderer.lua",
@@ -74,5 +74,5 @@
       "sha256": "8a869aeeffaddbf9c7559747728d2871d4c08a4c8cf1a9ff73e9176999220ee9"
     }
   ],
-  "totalBytes": 21421
+  "totalBytes": 21913
 }

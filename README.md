@@ -1,8 +1,12 @@
-# Lupi FPS 3D — estande de tiro (1.2)
+# Lupi FPS 3D — estande de tiro (1.3)
 
 Teste de 3D poligonal em primeira pessoa para o Lupi. Cenário, alvos, arma e clarão são malhas com vértices XYZ, projeção em perspectiva e rasterização por `ui.trisfill`. Apenas a interface é 2D. Esta versão substitui o raycasting 2,5D da versão 1.1.
 
 O renderizador faz transformação da câmera, descarte de faces traseiras, recorte no plano próximo e na tela, ordenação por profundidade e validação dos triângulos após conversão para coordenadas inteiras. É 3D por software em Lua usando o rasterizador de triângulos do console; não depende de uma API de GPU 3D. A ordenação usa profundidade média, sem z-buffer, e pode apresentar sobreposição incorreta em geometrias que se intersectam.
+
+## Revisão visual 1.3
+
+Paleta com concreto frio e alvos quentes, maior contraste entre faces superiores e laterais, centros dos alvos em losango e arma mais estreita e baixa. As malhas mantêm a quantidade de vértices e faces da versão 1.2; o recorte da arma pode produzir dois triângulos adicionais. Nenhuma textura, luz dinâmica ou etapa de renderização foi adicionada. No profiler local, a maior área projetada caiu de 226.066 para 221.179 pixels; isso não garante aumento de FPS no console.
 
 ## Controles SNES
 
@@ -27,7 +31,7 @@ O tiro usa interseção de raio em XYZ, incluindo a altura dos olhos, o bloqueio
 
 ## Executar
 
-`lupi.yaml` e `game.lua` ficam na raiz para descoberta pelo catálogo. Atualize pelo repositório; o cabeçalho deve mostrar **FPS 3D 1.2 / ESTANDE**.
+`lupi.yaml` e `game.lua` ficam na raiz para descoberta pelo catálogo. Atualize pelo repositório; o cabeçalho deve mostrar **FPS 3D 1.3 / ESTANDE**.
 
 No Lupinho SDK, selecione a raiz como entrada. O jogo atual não carrega imagens ou sprites: registra sua própria paleta de 32 cores. O padrão `platform="lupinho"` preserva BGR555; a opção `"hardware"` troca os canais vermelho/azul.
 
@@ -42,9 +46,9 @@ O pacote fica em `.build/fps-3d-release/`, com nove módulos Lua e manifesto. N�
 ## Limites e verificação
 
 - Tela de 480 × 270; área 3D entre y=20 e y=227; paleta de 32 cores.
-- Pacote Lua: 21.421 bytes. Pool limitado a 512 triângulos projetados.
-- Nos 1.512 pontos/ângulos do teste local: máximo de 186 triângulos enviados por quadro e heap Lua de aproximadamente 241 KiB. Isso não inclui motor, framebuffer ou sistema e não comprova o consumo total nos 4 MB.
-- Os tempos no computador não representam FPS do Lupi. Esta versão ainda precisa de teste no aparelho, inclusive para verificar L/R.
+- Pacote Lua: 21.913 bytes. Pool limitado a 512 triângulos projetados.
+- Nos 1.512 pontos/ângulos do teste local: máximo de 188 triângulos enviados por quadro e heap Lua de aproximadamente 241 KiB. Isso não inclui motor, framebuffer ou sistema e não comprova o consumo total nos 4 MB.
+- Os tempos no computador não representam FPS do Lupi. A versão 1.2 foi validada pelo usuário em aproximadamente 26 FPS, com L/R funcionando. A revisão visual 1.3 ainda precisa de medição no aparelho.
 
 ```sh
 lua .tools/check-renderer.lua
@@ -64,3 +68,4 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .tools/render-check.ps1
 ```
 
 A prévia não mede o aparelho. Para regenerar a pedra a partir do OBJ original: `node .tools/import-rock.cjs`. Origem e licenças em [CREDITS.md](CREDITS.md).
+
