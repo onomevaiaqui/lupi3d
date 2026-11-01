@@ -72,6 +72,7 @@ for i=1,6 do
     local _,dist=T.locate(tx,tz)
     if dist>36 then T.trees[#T.trees+1]={x=tx,y=0,z=tz,mesh=tree,radius=4} end
 end
+require("scenery").populate(T)
 return T
 end
 return {new=new,names=names}

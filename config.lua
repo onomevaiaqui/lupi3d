@@ -3,7 +3,7 @@ return {
     controller="snes", -- SNES: B=BTN_Z, A=BTN_G, R=BTN_E, Y=BTN_F
     fallback_fps=60,
     projection=300,
-    max_triangles=384, -- reusable triangle pool
+    max_triangles=512, -- reusable triangle pool
     eye_height=0,
     draw_distance=42,
     top_speed=15,

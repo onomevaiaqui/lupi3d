@@ -1,100 +1,99 @@
-# Lupi Combat Rally 3D (4.2)
+# Lupi Combat Rally 3D — revisão visual e áudio 5.0
 
-Protótipo de campeonato de corrida e combate, com menu inicial, três pistas selecionáveis, quatro carros, power-ups, sons e save entre provas. Cenário, carros e itens usam malhas XYZ e triângulos nativos do Lupi. A interface e o semáforo são 2D.
+Campeonato 3D para Lupi, com três pistas, quatro carros, combate, power-ups, menu Novo Jogo/Continue e save entre provas. A câmera permanece alta e inclinada, com orientação fixa, acompanhando a posição do jogador.
 
-## Câmera e estilo 4.2
+## Revisão gráfica
 
-A referência de câmera é Low Poly Racing, do Imphenzia: https://imphenzia.itch.io/low-poly-racing . A câmera traseira foi substituída por uma visão alta oblíqua, com orientação fixa no mundo. Ela acompanha a posição do jogador sem girar junto com o carro. Altura de 18 unidades e deslocamento de 12 em X/14 em Z, aproximadamente 44 graus de inclinação para baixo. O fundo é preenchido pela grama porque a área de jogo inteira olha para o chão. Asfalto usa um tom cinza mais claro.
+O modo **ALTO** é o padrão desta versão de teste. Acrescenta árvores com três camadas de copa, pedras facetadas, cabanas com telhado/porta/janelas, cercas, marcação central no asfalto, sombras simples sob os carros, chama de nitro e explosões com volume 3D. As malhas estáticas são compartilhadas e os efeitos usam pools limitados.
 
-O descarte de objetos agora usa profundidade e altura após a rotação completa da câmera, para não apagar objetos visíveis no ângulo superior. Há testes de geometria visível e de invariância da câmera à direção do carro.
+**L alterna ALTO/LEVE durante a corrida, sem reiniciar.** LEVE remove os novos objetos decorativos, marcações, sombras e chamas, e usa as árvores simples anteriores. Explosões e rastros de tiros permanecem para comunicar o combate. O cabeçalho mostra o modo e a quantidade de triângulos enviados, junto do FPS informado pelo firmware.
 
-A nova vista mantém carros, pistas, árvores e itens em 3D XYZ. Ela não adiciona a densidade de objetos, sombras suaves, prédios e rochedos da referência artística do Lowpolydrifter. Essa direção visual pode ser explorada com malhas mais simples e poucos objetos visíveis por vez, mas equivalência visual e desempenho não foram demonstrados.
+As sombras são polígonos de cor fixa, não sombras dinâmicas calculadas por luz. Toda a pista, carros, árvores, itens, construções e efeitos descritos usam XYZ/perspectiva/triângulos. A interface e o semáforo são 2D. O chão plano é preenchido por um retângulo até o limite da área de jogo, equivalente ao fundo da câmera que olha para o chão.
 
-Em 576 vistas, o pico passou de 185 para 209 triângulos; o teste com todos os efeitos ativos usou 223. A maior soma de áreas projetadas passou de 116.762 para 59.832 pixels, cerca de 49% menos. Mais chamadas de triângulos e menos pixels são custos diferentes: somente o teste no Lupi determina o resultado em FPS.
+Nos testes de 576 vistas das três pistas, com os quatro carros próximos:
 
-## Correção 4.1
+| Modo | Pico de triângulos por quadro |
+| --- | ---: |
+| LEVE | 207 |
+| ALTO | 279 |
+| ALTO com todas as minas, rastros, explosões e nitros ativos no teste de estresse | 305 |
 
-O console confirmou que a tabela global package não está disponível. A descoberta da pasta agora é opcional e protegida; sem ela, usa a pasta relativa atual. A coleta de memória explícita também é opcional. Um teste usa um require próprio e remove package, io, os, debug, collectgarbage e sfx, verificando menu, três pistas, resultados e Continue durante a sessão. Isso evita o erro de inicialização; não comprova persistência de save em disco no firmware.
+Não houve descarte por estouro do pool, limitado a 512. O carro do jogador mantém 76 triângulos; cada adversário, 32. Cada árvore detalhada tem 16; pedra 12; cabana 24; cerca 20; sombra 2; chama 3; explosão 8. O modo ALTO aumenta o custo e pode reduzir FPS: o objetivo é medir o limite no console, não prometer 24 FPS.
+
+## Áudio: correção baseada nos jogos oficiais
+
+O usuário confirmou silêncio e o aviso de som indisponível na versão anterior. A documentação pública antiga descreve `sfx.fx`, mas o [Caio Pernocas atual](https://github.com/lupi-org-br/caio-pernocas/blob/main/soundtrack.lua) usa **music.loop(caminho, fade)** com arquivos **Furnace .fur**. O [Balão Gatinho](https://github.com/lupi-org-br/balao-gatinho/blob/main/cols.lua) usa o backend legado `sfx.fx` com IDs de samples diferentes de zero.
+
+A revisão 5.0 prefere `music.loop` quando disponível e inclui **18 composições/efeitos originais em music/*.fur**, aproximadamente 5 KB no total. Não copia músicas, samples ou instrumentos dos jogos de referência. Os arquivos usam o formato v173 com síntese NES, também identificado nos módulos do Caio, sem PCM/WAVs grandes na RAM Lua.
+
+Inclui tema do menu, navegação, confirmação, semáforo, motor em quatro faixas de velocidade, freada/derrapagem, tiro, colocação de mina, dano, explosão, coleta, nitro e resultado. A freada toca ao frear em movimento; curvas fortes em alta velocidade também disparam o efeito. O nitro produz um som mais agudo enquanto está ativo. Sons de combate muito distantes do jogador são filtrados.
+
+**Limitação do backend confirmado:** music.loop é um único fluxo de música. Os efeitos curtos interrompem o tema/motor por um instante e depois o restauram. As faixas de motor têm múltiplas vozes sintetizadas; não há quatro gravações de motores independentes com áudio espacial. Explosão e resultado têm prioridade sobre tiro/navegação. Mudanças de rotação são agrupadas para evitar recarregar arquivos a cada quadro.
+
+Se só `sfx.fx` existir, o fallback usa os IDs 3 e 62 observados nos jogos oficiais, com pulsos de motor, melodia simples de menu e eventos. O volume legado é configurado por `sfx.volume`. No backend moderno, ajusta `music.volume` apenas se a função e CH_ALL estiverem disponíveis, seguindo a assinatura usada pelo Caio.
+
+No menu:
+
+- **SOM: FUR** indica que music.loop foi encontrado; **SFX**, o backend antigo.
+- **X: TESTAR** dispara o som de confirmação.
+- **SEM API** indica que nenhum dos dois backends foi exposto.
+- **FUR ERRO / SFX ERRO** mostra também a mensagem retornada pela chamada. Falhas de carregamento têm espera de dois segundos antes de tentar novamente, para não sobrecarregar o jogo.
+
+Os 18 módulos foram abertos e renderizados pelo executável oficial Furnace 0.6.8.3 e todos produziram PCM não silencioso. Isso valida os arquivos, mas **o carregamento pelo firmware, a entrega dos .fur pelo servidor de atualização, a saída de áudio e o volume do console ainda precisam de teste no aparelho**. Usamos a mesma pasta/caminho `music/nome` dos exemplos oficiais.
+
+O codec público antigo ignora .fur. O repositório inclui os arquivos fonte como nos jogos oficiais; nosso pacote independente também os preserva como arquivos binários no manifesto, sem convertê-los para Lua ou inventar um tipo de recurso específico. Se o pipeline do console não os entregar, será necessário ajustar esse pipeline, não repetir chamadas ao sample zero.
 
 ## Controles
 
-| Controle SNES | Ação |
+| SNES | Ação |
 | --- | --- |
-| Cruz no menu | Escolher opção / pista |
+| Cruz no menu | Escolher opção/pista |
 | B no menu | Confirmar |
+| X no menu | Testar som |
 | B na corrida | Acelerar |
-| A na corrida | Frear; tem prioridade sobre B |
+| A na corrida | Frear, com prioridade sobre B |
 | Cruz esquerda/direita | Esterçar |
-| R | Acionar uma carga do item armado, uma vez por aperto |
-| Y na corrida | Reiniciar a pista e o semáforo |
-| Y na seleção ou resultado | Voltar ao menu |
+| R | Uma carga da arma equipada por aperto |
+| Y na corrida | Reiniciar pista e semáforo |
+| Y na seleção/resultado | Menu |
+| L na corrida | Alternar ALTO/LEVE |
 
-O perfil padrão mantém os códigos já utilizados: B=`BTN_Z`, A=`BTN_G`, R=`BTN_E`, Y=`BTN_F`. No modo direto `controller="lupinho"`, usa BTN_Z/BTN_X/BTN_G/BTN_Q respectivamente. Mantenha o perfil SNES no console.
+Padrão `controller="snes"`: B=BTN_Z, A=BTN_G, R=BTN_E, Y=BTN_F, L=BTN_Q. No perfil direto do simulador `lupinho`, usa BTN_Z/BTN_X/BTN_G/BTN_Q/BTN_F respectivamente.
 
-## Menu, pistas e campeonato
+## Campeonato e combate
 
-- **Novo Jogo** zera o progresso salvo e abre a seleção de pistas.
-- **Continue** fica desabilitado até vencer pelo menos uma pista em primeiro lugar. Depois carrega o progresso e abre a seleção.
-- As três pistas podem ser escolhidas livremente: **Vale Oval** (~165 unidades), **Cruzamento 8** (~227) e **Serra Verde** (~180).
-- Cada prova tem três voltas, o jogador e três adversários vermelhos/azuis/verdes. O cruzamento da pista 8 é plano.
-- Para conquistar o campeonato, vença **duas pistas diferentes em primeiro lugar**. Repetir uma vitória na mesma pista não aumenta esse total. Ainda é possível vencer a terceira.
-- O semáforo mantém todos parados por três segundos: vermelho por dois, amarelo por um e verde para largar. O cronômetro inicia no verde.
-- A primeira passagem pela chegada inicia as voltas. Quatro setores em ordem impedem que cruzar de ré some voltas; a pista 8 distingue os dois ramos pelo progresso anterior.
-- A classificação considera o avanço no percurso e os adversários que já terminaram. A prova encerra quando o jogador completa três voltas.
+Três pistas selecionáveis: Vale Oval (~165 unidades), Cruzamento 8 (~227) e Serra Verde (~180). Cada prova tem três voltas, jogador e três adversários que também coletam/usam itens. Vermelho por dois segundos, amarelo por um e verde para liberar carros/cronômetro. Checkpoints em ordem distinguem os ramos do cruzamento e impedem voltas cruzando a chegada de ré.
 
-Os adversários seguem a linha central e também coletam e usam itens. Neste protótipo os carros podem se atravessar; as árvores são decorativas, sem colisão. A grama desacelera o jogador, e frear nas curvas ajuda a manter o traçado.
+Novo Jogo zera o progresso. Continue é liberado após pelo menos uma pista em primeiro lugar. Vença **duas pistas diferentes** para ser campeão; repetir a mesma vitória não aumenta o total. Ainda é possível disputar a terceira. A classificação considera o avanço no percurso e quem já terminou.
 
-## Power-ups e combate
+| Power-up | Cargas / efeito |
+| --- | --- |
+| Amarelo: tiro | 3 tiros frontais, alcance 15, dano 35 |
+| Vermelho: mina | 2 minas, dano 50, arma em 0,5 s e dura 18 s |
+| Azul: nitro | Automático por 5 s; aceleração e velocidade máxima +10% |
 
-| Cor | Item | Efeito |
-| --- | --- | --- |
-| Amarelo | Tiro | 3 cargas; R dispara um tiro frontal |
-| Vermelho | Mina | 2 cargas; R deixa uma mina atrás do carro |
-| Azul | Nitro | Ativa automaticamente por 5 segundos: aceleração e velocidade máxima +10% |
+Uma arma por vez: tiro/mina substituem o tipo e recarregam as cargas. Nitro coexiste com a arma. Caixas voltam após nove segundos. Minas armadas podem atingir o próprio dono. Vida 100; destruído, o carro para por dois segundos, perde os itens e retorna com vida cheia no mesmo progresso. Limite de oito minas, quatro rastros e quatro explosões. Sem espaço para outra mina, a carga não é consumida.
 
-Tiro e mina ocupam o mesmo espaço de arma: coletar outra arma substitui o tipo e as cargas. Nitro pode coexistir com a arma. As caixas retornam após nove segundos e podem ser coletadas pelos adversários.
+Os carros ainda podem se atravessar; não há física de colisão entre eles. Árvores, pedras, casas e cercas são decorativas, sem colisão. A grama desacelera. As decisões de combate dos adversários são avaliadas quatro vezes por segundo.
 
-O tiro calcula o primeiro carro alinhado à frente, com alcance de 15 unidades, e causa 35 de dano. A mina arma em 0,5 segundo, dura até 18 segundos e causa 50 de dano; depois de armada pode atingir inclusive seu dono. Vida inicial de 100. Ao chegar a zero, o carro fica parado/invisível por dois segundos, perde arma/nitro e volta com vida cheia no mesmo ponto de progresso.
+## Save e compatibilidade
 
-Há limite de oito minas e quatro rastros de tiros simultâneos, com estruturas reutilizadas. Sem espaço para outra mina, a carga não é consumida. As decisões de combate de cada adversário são avaliadas quatro vezes por segundo.
+Ao terminar cada pista, salva a melhor colocação e a próxima seleção. Continue só libera após uma vitória. Y não apaga vitórias. Não salva no meio da corrida. O formato do save anterior é mantido.
 
-## Save
+Dois arquivos pequenos alternados, rally-save-0.dat e rally-save-1.dat, têm versão, geração e checksum; um arquivo inválido pode ser recuperado pelo anterior. Usa io.open na pasta do aplicativo quando é possível descobri-la por package.searchpath; sem package, usa a pasta relativa atual. config.save_dir permite outra pasta existente. O console já confirmou ausência da tabela package; não é exigida.
 
-O jogo grava automaticamente ao terminar **cada pista**, inclusive quando perde, preservando a melhor colocação de cada uma. Continue só é liberado depois de um primeiro lugar. Reiniciar a pista por Y não apaga as vitórias anteriores. Não há save no meio da corrida.
+O resultado mostra **PROGRESSO SALVO** somente após gravar e reler com sucesso, ou **SAVE INDISPONIVEL**. Sem acesso a arquivos, mantém apenas o progresso da sessão. Persistência real continua dependendo do suporte do firmware. Novo Jogo substitui os saves.
 
-São usados `rally-save-0.dat` e `rally-save-1.dat`, arquivos pequenos com versão, geração, melhores colocações, próxima seleção e checksum. As gravações alternam entre os dois: se o arquivo mais recente estiver inválido, o anterior válido pode ser carregado. O save é dado de texto validado, nunca código executado.
+## Build e testes
 
-A pasta padrão é a pasta do aplicativo, obtida por `package.searchpath`; `config.save_dir` permite definir outra pasta existente. O módulo usa `io.open` da biblioteca Lua, disponível no simulador. **A documentação pública consultada não apresenta uma API de save específica: gravação na pasta do app ainda precisa ser validada no firmware do console.**
+Tela 480x270, 32 cores, BGR555 preservado. Distância de desenho 42 unidades; geometria fora da visão descartada antes da projeção. Sem texturas, z-buffer ou luzes dinâmicas. A cena selecionada é construída sob demanda.
 
-O resultado mostra **PROGRESSO SALVO** após gravar e reler com sucesso, ou **SAVE INDISPONIVEL** quando não consegue persistir. Nesse segundo caso, o jogo continua e mantém o progresso apenas durante a sessão. Remover os dados do aplicativo remove os saves. Novo Jogo substitui o progresso do campeonato.
-
-## Som
-
-Menu, semáforo, tiro, mina, coleta, dano, resultado e pulsos do motor chamam a API documentada `sfx.fx(0, nota, 0.5)`. Usa o sample 0 do banco do firmware, com notas diferentes; não carrega WAVs grandes na memória Lua. O motor é um efeito tonal simples, não uma gravação realista.
-
-A presença da API e a ausência de erro são indicadas no menu por **SOM: API OK**. Isso não confirma que o banco de samples do aparelho contém um som audível no índice zero: áudio e volume precisam de teste no console. Se a API não estiver presente ou falhar, mostra **SOM: NAO DISPONIVEL** e continua sem travar. O simulador público consultado não expõe essa API de áudio; os testes locais validam as chamadas com um stub.
-
-Referência: https://lupi.api.br/docs/system.html
-
-## Orçamento e desempenho
-
-Renderização por software em Lua: projeção em perspectiva, descarte de faces traseiras e de objetos fora da visão, recorte próximo/na tela, ordenação por profundidade média, envio de triângulos inteiros válidos a `ui.trisfill`. Sem z-buffer, texturas ou luzes dinâmicas.
-
-- Tela: 480 x 270; paleta: 32 cores, mantendo BGR555 que funcionou no aparelho.
-- Carro do jogador: 76 triângulos, 88 vértices XYZ compartilhados.
-- Adversários: 32 triângulos cada, com geometria compartilhada e cores distintas.
-- Só a pista selecionada é construída; árvores e trechos fora da visão são descartados antes da projeção.
-- Câmera superior fixa, altura 18, deslocamento X=12/Z=14. Distância de desenho de 42 unidades; zebras até 15 unidades.
-- Em 576 vistas locais das três pistas, com quatro carros próximos: pico de **209 triângulos enviados por quadro**, sem estouro do pool de 384. Um teste com todas as minas e rastros ativos também passou.
-- Pacote de 12 módulos Lua, aproximadamente 37 KB. O harness completo, mantendo várias corridas de teste ao mesmo tempo, ficou em aproximadamente 861 KiB de heap Lua; isso não mede a memória total do console.
-
-**Ainda não há FPS desta versão no Lupi.** Quatro carros, combate e som aumentam o trabalho. Tempos de execução no computador não garantem 24 FPS no aparelho.
-
-## Executar e testar
-
-`lupi.yaml` e `game.lua` ficam na raiz para descoberta. O menu deve mostrar **LUPI COMBAT RALLY 4.2**.
+Pacote com 13 módulos Lua e 18 arquivos Furnace, aproximadamente 51 KB. O harness, que mantém várias corridas de teste simultaneamente, chegou a aproximadamente 1.245 KiB de heap Lua; não é a memória total usada no console. O custo do áudio no firmware não foi medido.
 
 ```sh
+node .tools/build-audio.cjs
+lua .tools/check-audio-api.lua
+node .tools/check-audio.cjs
 lua .tools/check-save.lua
 lua .tools/check.lua
 lua .tools/check-renderer.lua
@@ -104,18 +103,15 @@ lua .tools/check-release.lua
 lua .tools/check-firmware.lua
 ```
 
-O pacote vai para `.build/race-3d-release/`, com módulos e manifesto; não inclui motor ou banco de samples. Não distribui os arquivos de save de teste.
+Com `FURNACE_EXE` apontando para o executável oficial Furnace, check-audio.cjs também decodifica/renderiza os 18 módulos e verifica que o PCM não é silencioso. Sem o executável, verifica cabeçalhos compactados. O motor e o executável Furnace não são redistribuídos.
 
-Os testes cobrem as três corridas completas usando controles reais, diferentes FPS, classificação, checkpoints, semáforo, todos os itens e cargas, vida/retorno, chamadas de áudio, falha de áudio, menus e Continue, campeão por vitórias distintas, save real em disco, recarga, arquivo corrompido, limpeza por Novo Jogo e falha em pasta sem escrita.
+O build fica em .build/race-3d-release/, com manifesto e pasta music. Cabeçalho da versão: **LUPI COMBAT RALLY 5.0**. Testes preservam menu/Continue, três corridas completas, itens, checkpoints, semáforo, save real com recuperação de corrupção, renderização válida, comparação ALTO/LEVE, todos os efeitos ativos e inicialização sem package/io/os/debug/collectgarbage/sfx/music.
 
 Prévia das chamadas de desenho no Windows:
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File .tools/render-check.ps1
-powershell -NoProfile -ExecutionPolicy Bypass -File .tools/render-check.ps1 -Frame view-menu
-powershell -NoProfile -ExecutionPolicy Bypass -File .tools/render-check.ps1 -Frame view-select
-lua .tools/overview.lua 1
-powershell -NoProfile -ExecutionPolicy Bypass -File .tools/render-check.ps1 -Frame view-track1
+powershell -NoProfile -ExecutionPolicy Bypass -File .tools/render-check.ps1 -Frame view-light
+lua .tools/overview.lua 2
+powershell -NoProfile -ExecutionPolicy Bypass -File .tools/render-check.ps1 -Frame view-track2
 ```
-
-Troque 1 por 2 ou 3 para as outras pistas. As imagens superiores projetam as malhas XYZ reais para inspeção.

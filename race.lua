@@ -112,7 +112,7 @@ function Race.step(r,dt,input)
         end
     end
     r.place=position(r)
-    audio.step(dt,r.player.speed)
+
     if r.finished then audio.play(r.place==1 and "win" or "lose") end
 end
 return Race

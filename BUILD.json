@@ -1,13 +1,13 @@
 {
-  "project": "Lupi Combat Rally 4.2",
+  "project": "Lupi Combat Rally 5.0",
   "files": [
     {
       "file": "colors.lua",
       "metadata": {
         "type": "lua_code"
       },
-      "bytes": 823,
-      "sha256": "a8d973e3a1d1466ea3f49a425a02edd2622f1b9eb61f01c60b5feece7503179a"
+      "bytes": 824,
+      "sha256": "1661e66f5131d33da0429795c870b4713a5008ac78c3610344a09e81e77044e9"
     },
     {
       "file": "config.lua",
@@ -15,7 +15,7 @@
         "type": "lua_code"
       },
       "bytes": 302,
-      "sha256": "746bb5f1572e8d3b92aa20ffd74b5ba499f6184a490bdc1e6876e7ce6deb64a2"
+      "sha256": "bce3e376305f404dad613277d5354ad10e0d852eb4cbdfa0001732618ebf7051"
     },
     {
       "file": "game.lua",
@@ -46,16 +46,16 @@
       "metadata": {
         "type": "lua_code"
       },
-      "bytes": 3396,
-      "sha256": "d4eeac7339e09c3024ccf8c022e02ef11640e9d07dc4d849bbf890ec9cb48755"
+      "bytes": 3427,
+      "sha256": "f09b8426f543e9017d511a0f1edbeef887c507f3c2ba51437cf43427a7d9a966"
     },
     {
       "file": "main.lua",
       "metadata": {
         "type": "lua_code"
       },
-      "bytes": 7190,
-      "sha256": "cfdaebc3cd7373e5c5c85d6fb07c4b60a7a1dafd9637879778cff3f2f5e640b1"
+      "bytes": 8769,
+      "sha256": "fc90958dfa8dbddc3553a8665455496c2a6ec428868f18e5e957385f2cafa915"
     },
     {
       "file": "renderer.lua",
@@ -70,16 +70,16 @@
       "metadata": {
         "type": "lua_code"
       },
-      "bytes": 5145,
-      "sha256": "b6b647d691b5e377cf569c3bd4d6fe3b421de821d825eba93fac2f810720f8e1"
+      "bytes": 5112,
+      "sha256": "af88de73aba29b75d8da462bf4329f46b77d5d9ef89b98f39b428c70310859a3"
     },
     {
       "file": "combat.lua",
       "metadata": {
         "type": "lua_code"
       },
-      "bytes": 3981,
-      "sha256": "d30382ac8b704a622f080673009769ab68c40637bcd56a4a4369273b9ee97b04"
+      "bytes": 4555,
+      "sha256": "b3d4704579d5a1948925d07bf2b6fdf28704bbb152cd45a47cc305ce907485ee"
     },
     {
       "file": "save.lua",
@@ -94,9 +94,125 @@
       "metadata": {
         "type": "lua_code"
       },
-      "bytes": 819,
-      "sha256": "dc774ccd8e972b284b8118a1405d3b3122c5932a769605292a671464f0c1ec88"
+      "bytes": 4009,
+      "sha256": "b5522d212e7ffbd634b9c142b97bcd19eed6e3ea98a95d7036611ac71179960f"
+    },
+    {
+      "file": "scenery.lua",
+      "metadata": {
+        "type": "lua_code"
+      },
+      "bytes": 3342,
+      "sha256": "e35bfe9ecffaa2da5ff65be8ce38b1b7faeaaf4a4e8e3c612d54491556ab702e"
+    },
+    {
+      "file": "music/brake.fur",
+      "metadata": {},
+      "bytes": 298,
+      "sha256": "179aac3803cd2d8cdb75c6508f95a795e0f0b775969148b1a42baafcde076d92"
+    },
+    {
+      "file": "music/confirm.fur",
+      "metadata": {},
+      "bytes": 260,
+      "sha256": "7f02b896476822c5ffc622fb3b5b4d193957ffe555630d033b27156269706a3f"
+    },
+    {
+      "file": "music/engine_high.fur",
+      "metadata": {},
+      "bytes": 289,
+      "sha256": "db9195ca34659117d82cf2cda3bc5a302f854a53dcf8899ccfbe1b31077f8ba9"
+    },
+    {
+      "file": "music/engine_idle.fur",
+      "metadata": {},
+      "bytes": 289,
+      "sha256": "9523fbb120f1018209e66be9ebac7d79e8ce67edf074c71c0839a23164fde3d5"
+    },
+    {
+      "file": "music/engine_low.fur",
+      "metadata": {},
+      "bytes": 287,
+      "sha256": "41948e09d9f020dcf1bce1e10e5c6c96e23f39573714f8e77483848c5f63e026"
+    },
+    {
+      "file": "music/engine_mid.fur",
+      "metadata": {},
+      "bytes": 288,
+      "sha256": "2f3193238b32952d34e78e44c5d4d837856c1ac22fad47e57ee5431ed5bee678"
+    },
+    {
+      "file": "music/explosion.fur",
+      "metadata": {},
+      "bytes": 297,
+      "sha256": "16d2854599b31bd4fff9f615385eb282719615377b8a27ff284abf6d0ffb41e3"
+    },
+    {
+      "file": "music/green.fur",
+      "metadata": {},
+      "bytes": 255,
+      "sha256": "aa54ece02f35ff7830b6395968246b85802c7ac2174080bba48014732133d460"
+    },
+    {
+      "file": "music/hit.fur",
+      "metadata": {},
+      "bytes": 297,
+      "sha256": "97fd2734180d24c2b8df9f9885b4a2efac0ff79930b7cc475a9b0a0f2b3543d7"
+    },
+    {
+      "file": "music/lose.fur",
+      "metadata": {},
+      "bytes": 258,
+      "sha256": "6d868824a141f83581804e188e6ea243b0002ddc0727198e15bd9de2808aec02"
+    },
+    {
+      "file": "music/menu.fur",
+      "metadata": {},
+      "bytes": 294,
+      "sha256": "aa7a73d66c59dad3ef9f51e012128f390273b6796ceff32d92ae665983a4b470"
+    },
+    {
+      "file": "music/mine.fur",
+      "metadata": {},
+      "bytes": 296,
+      "sha256": "9aa6427c9db313e696e2ddca84072caee9102a79ae4d1045ea410e24cb0a1cc7"
+    },
+    {
+      "file": "music/navigate.fur",
+      "metadata": {},
+      "bytes": 257,
+      "sha256": "d37ab7e1e7d457573e81d3a008cb867eda0126a7919a528efb8a6e4e4bd065cc"
+    },
+    {
+      "file": "music/nitro.fur",
+      "metadata": {},
+      "bytes": 284,
+      "sha256": "9ea30912c4e19d3e6b1f06a97ee483d8388a06091fd8b652567a20f5c7d98cf1"
+    },
+    {
+      "file": "music/pickup.fur",
+      "metadata": {},
+      "bytes": 260,
+      "sha256": "577a7ee77e18c18b158e94f3f8fcf08dfa117b7a717036ab38e3122f047cb4b1"
+    },
+    {
+      "file": "music/red.fur",
+      "metadata": {},
+      "bytes": 252,
+      "sha256": "6830c378f96c2d67f023deee24799c7d2231c12b62d95b03b2749ff8a86f1aba"
+    },
+    {
+      "file": "music/shot.fur",
+      "metadata": {},
+      "bytes": 298,
+      "sha256": "cfe09289776db8f62d9497f813134dd83c2611f5894accc00000907d5704af4b"
+    },
+    {
+      "file": "music/win.fur",
+      "metadata": {},
+      "bytes": 263,
+      "sha256": "474e8f705d48acad3a3f090fb54a3d564c896ac98ab137d0fcb3c682c5d1b168"
     }
   ],
-  "totalBytes": 37214
+  "totalBytes": 51679
 }

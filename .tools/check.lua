@@ -6,7 +6,7 @@ local capture=false
 local drawCalls,area=0,0
 local function record(...) if capture then commands[#commands+1]=table.concat({...},",") end end
 local sounds=0
-sfx={fx=function(id,note,pan) assert(id==0 and note>=0 and note<=127 and pan==0.5);sounds=sounds+1 end}
+sfx={fx=function(id,note,pan) assert(id>=0 and id<256 and note>=0 and note<=127 and pan==0.5);sounds=sounds+1 end}
 ui={btn=function(k) return keys[k] or 0 end,
 palset=function(i,c) assert(i>=0 and i<32 and c>=0 and c<32768);palette[i]=c end,
 camera=function() end,clip=function() end,cls=function(c) record("rect",0,0,480,270,c) end,
@@ -115,7 +115,10 @@ local part=Game.race.track.parts[1]
 local sx,sy=part.sx[1],part.sy[1]
 Game.race.player.yaw=Game.race.player.yaw+1.1;Game.draw()
 assert(part.sx[1]==sx and part.sy[1]==sy,"top-down world orientation must remain fixed when car turns")
-local maxTriangles,maxArea=0,0
+local before=Game.detail;local sameRace=Game.race
+tap(BTN_Q);assert(Game.detail~=before and Game.race==sameRace,"L must switch detail without restarting race")
+tap(BTN_Q);assert(Game.detail==before)
+local maxTriangles,maxArea,maxLow=0,0,0
 local start=os.clock();local views=0
 for id=1,3 do
     Game.startRace(id)
@@ -126,10 +129,11 @@ for id=1,3 do
         for j=2,4 do rr.cars[j].x,rr.cars[j].z,rr.cars[j].yaw=rr.track.sample(progress+(j-1)*0.6) end
         for _,offset in ipairs({-0.7,0,0.7}) do
             local yaw=rr.player.yaw;rr.player.yaw=yaw+offset
-            drawCalls,area=0,0;Game.draw();views=views+1
+            Game.detail=true;drawCalls,area=0,0;Game.draw();views=views+1
             assert(Game.dropped==0 and Game.triangles>0 and Game.triangles==drawCalls)
             maxTriangles=math.max(maxTriangles,drawCalls);maxArea=math.max(maxArea,area)
-            rr.player.yaw=yaw
+            Game.detail=false;drawCalls,area=0,0;Game.draw();assert(Game.dropped==0);maxLow=math.max(maxLow,drawCalls)
+            Game.detail=true;rr.player.yaw=yaw
         end
     end
 end
@@ -138,7 +142,9 @@ Game.startRace(2)
 local rr=Game.race;local p=rr.player
 for i,m in ipairs(rr.combat.mines) do m.active=true;m.x=p.x+(i%3-1);m.z=p.z+i*0.6 end
 for i,t in ipairs(rr.combat.traces) do t.active=true;t.x=p.x+i*0.2;t.z=p.z+2;t.yaw=p.yaw end
-Game.draw();assert(Game.dropped==0 and Game.triangles<384)
+for i,c in ipairs(rr.cars) do c.nitro=5 end
+for i,b in ipairs(rr.combat.blasts) do b.active=true;b.x=p.x+i*0.4;b.z=p.z+i;b.ttl=0.4 end
+Game.draw();assert(Game.dropped==0 and Game.triangles<require("config").max_triangles)
 local stressTriangles=Game.triangles
 local elapsed=os.clock()-start
 local function frame(name)
@@ -147,9 +153,10 @@ local function frame(name)
 end
 Game.state="menu";frame("view-menu")
 Game.state="select";frame("view-select")
-Game.startRace(2);frame("frame")
+Game.startRace(2);Game.detail=true;frame("frame");Game.detail=false;frame("view-light");Game.detail=true
 local out=assert(io.open(".tools/palette.csv","w"));for i=0,31 do out:write(i,",",palette[i],"\n") end;out:close()
 collectgarbage("collect")
-print(string.format("PASS: 4 cars, items 3 shots/2 mines, 10%% nitro, damage/respawn, sound API, menus, Continue, distinct wins, R/A/Y controls; %d views, max %d triangles, max projected area %.0f px, heap %.1f KiB, local %.3f ms/view (not console FPS)",views,maxTriangles,maxArea,collectgarbage("count"),elapsed/views*1000))
+print(string.format("PASS: 4 cars, items 3 shots/2 mines, 10%% nitro, damage/respawn, sound API, menus, Continue, distinct wins, R/A/Y controls; %d views, max %d triangles, max projected area %.0f px, heap %.1f KiB, local %.3f ms/ALTO+LEVE pair (not console FPS)",views,maxTriangles,maxArea,collectgarbage("count"),elapsed/views*1000))
+print("LEVE maximum: "..maxLow.." triangles")
 print("All effects stress: "..stressTriangles.." triangles; no dropped triangles")
 for _,slot in ipairs({0,1}) do os.remove(".tools/rally-save-"..slot..".dat") end

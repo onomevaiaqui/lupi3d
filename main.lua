@@ -5,7 +5,8 @@ local renderer=require "renderer"
 local Race=require "race"
 local Save=require "save"
 local audio=require "audio"
-Game={state="menu",menu=1,selected=1,triangles=0,race=nil}
+local scenery=require "scenery"
+Game={state="menu",menu=1,selected=1,triangles=0,race=nil,detail=true}
 -- Fixed oblique top-down view; follows position, never the car's heading.
 local camera={x=0,y=18,z=0,yaw=math.atan(12,14),pitch=-math.atan(18/math.sqrt(340))}
 local frame=0
@@ -22,6 +23,7 @@ local function timestep()
     frame=frame+1;return math.min(1/(Game.fps or cfg.fallback_fps),0.125)
 end
 function Game.startRace(id)
+    audio.scene("race",true)
     Game.selected=id;Game.race=Race.new(id);Game.state="race"
     if type(collectgarbage)=="function" then pcall(collectgarbage,"collect") end
 end
@@ -32,14 +34,15 @@ function Game.result()
 end
 function Game.step(dt)
     dt=math.max(0,math.min(dt or timestep(),0.125))
-    local gas,brake,fire,back=BTN_Z,BTN_G,BTN_E,BTN_F
-    if cfg.controller=="lupinho" then brake,fire,back=BTN_X,BTN_G,BTN_Q end
-    local current={up=held(UP),down=held(DOWN),left=held(LEFT),right=held(RIGHT),ok=held(gas),back=held(back),fire=held(fire),brake=held(brake)}
+    local gas,brake,fire,back,detailKey=BTN_Z,BTN_G,BTN_E,BTN_F,BTN_Q
+    if cfg.controller=="lupinho" then brake,fire,back,detailKey=BTN_X,BTN_G,BTN_Q,BTN_F end
+    local current={up=held(UP),down=held(DOWN),left=held(LEFT),right=held(RIGHT),ok=held(gas),back=held(back),fire=held(fire),brake=held(brake),detail=held(detailKey),test=held(BTN_X)}
     local function pressed(k) return current[k] and not previous[k] end
     if Game.state=="menu" then
+        if pressed("test") then audio.play("confirm") end
         if pressed("up") or pressed("down") then Game.menu=3-Game.menu;audio.play("menu") end
         if pressed("ok") then
-            if Game.menu==1 then Save.newGame();Game.selected=1;Game.state="select";audio.play("menu")
+            if Game.menu==1 then Save.newGame();Game.selected=1;Game.state="select";audio.play("confirm")
             elseif Save.canContinue() then Game.selected=Save.last;Game.state="select";audio.play("menu") end
         end
     elseif Game.state=="select" then
@@ -48,6 +51,7 @@ function Game.step(dt)
         if pressed("back") then Game.state="menu"
         elseif pressed("ok") then Game.startRace(Game.selected) end
     elseif Game.state=="race" then
+        if pressed("detail") then Game.detail=not Game.detail end
         if pressed("back") then Game.startRace(Game.selected)
         else
             Race.step(Game.race,dt,{gas=current.ok,brake=current.brake,fire=pressed("fire"),steer=(current.right and 1 or 0)-(current.left and 1 or 0)})
@@ -57,13 +61,15 @@ function Game.step(dt)
         if pressed("back") then Game.state="menu"
         elseif pressed("ok") then Game.selected=Save.last;Game.state="select" end
     end
+    audio.scene(Game.state=="race" and "race" or "menu")
+    audio.update(dt,Game.state=="race" and Game.race or nil,{brake=current.brake,steer=(current.right and 1 or 0)-(current.left and 1 or 0)})
     previous=current
 end
 local function rect(x,y,w,h,c) ui.rectfill(x,y,x+w,y+h,colors.index[c]) end
 local function text(s,x,y,c) ui.print(s,x,y,colors.index[c or 9]) end
 local function panel()
     rect(40,38,400,190,10);rect(40,38,400,3,8)
-    text("LUPI COMBAT RALLY 4.2",122,53,15)
+    text("LUPI COMBAT RALLY 5.0",122,53,15)
 end
 local function drawMenu()
     panel()
@@ -74,7 +80,8 @@ local function drawMenu()
     else text("VITORIAS "..Save.wins().."/3  /  "..Save.status,90,172,14) end
     text("CRUZ: ESCOLHER    B: CONFIRMAR",114,198,9)
     text("NOVO JOGO ZERA O PROGRESSO SALVO",100,214,11)
-    text(audio.available and not audio.error and "SOM: API OK" or "SOM: NAO DISPONIVEL",174,241,11)
+    text("SOM: "..audio.status().."   X: TESTAR",135,240,11)
+    if audio.error then text(audio.lastError:sub(1,68),20,256,7) end
 end
 local function drawSelect()
     panel()
@@ -108,20 +115,46 @@ local function drawRace()
         local dx,dz=part.x-p.x,part.z-p.z
         if dx*dx+dz*dz<225 then renderer.submit(part.trim) end
     end
-    renderer.flush();renderer.submit(track.finish);renderer.flush()
-    for _,tree in ipairs(track.trees) do renderer.submit(tree) end
+    renderer.flush()
+    if Game.detail then for _,mark in ipairs(track.markings) do renderer.submit(mark) end;renderer.flush() end
+    renderer.submit(track.finish);renderer.flush()
+    if Game.detail then
+        for _,obj in ipairs(track.decor) do renderer.submit(obj) end
+    end
+    for _,tree in ipairs(track.trees) do
+        if Game.detail then
+            tree.basic=tree.basic or tree.mesh;tree.mesh=scenery.tree
+        else tree.mesh=tree.basic or tree.mesh end
+        renderer.submit(tree)
+    end
     for _,item in ipairs(r.combat.pickups) do if item.cooldown==0 then renderer.submit(item) end end
     for _,mine in ipairs(r.combat.mines) do if mine.active then renderer.submit(mine) end end
-    for _,car in ipairs(r.cars) do if car.respawn==0 then renderer.submit(car) end end
+    if Game.detail then
+        renderer.flush()
+        for _,car in ipairs(r.cars) do if car.respawn==0 then
+            car.shadow=car.shadow or {mesh=scenery.shadow,y=0.015,radius=2}
+            car.shadow.x,car.shadow.z,car.shadow.yaw=car.x,car.z,car.yaw
+            renderer.submit(car.shadow)
+        end end
+        renderer.flush()
+    end
+    for _,car in ipairs(r.cars) do if car.respawn==0 then
+        renderer.submit(car)
+        if Game.detail and car.nitro>0 then
+            car.flame=car.flame or {mesh=scenery.flame,y=0,radius=3}
+            car.flame.x,car.flame.z,car.flame.yaw=car.x,car.z,car.yaw;renderer.submit(car.flame)
+        end
+    end end
+    for _,b in ipairs(r.combat.blasts) do if b.active then renderer.submit(b) end end
     for _,trace in ipairs(r.combat.traces) do if trace.active then renderer.submit(trace) end end
     renderer.flush()
     Game.triangles,Game.dropped=renderer.triangles,renderer.dropped
     rect(0,0,480,20,10);rect(0,228,480,42,10)
-    text("COMBAT RALLY 4.2 / "..r.id,10,6,15);text("TRI "..Game.triangles,282,6,9)
+    text("COMBAT RALLY 5.0 / "..r.id,10,6,15);text((Game.detail and "ALTO " or "LEVE ")..Game.triangles,282,6,9)
     text(Game.reported_fps and "FPS "..math.floor(Game.reported_fps+0.5) or "FPS --",390,6,9)
     text(string.format("%03d KM/H  VOLTA %d/3  POS %d/4  VIDA %d",math.floor(p.speed*6+0.5),p.laps,Race.position(r),p.hp),10,235,15)
     local item=p.weapon=="shot" and "TIRO" or p.weapon=="mine" and "MINA" or "SEM ARMA"
-    text("R: "..item.." "..p.ammo..(p.nitro>0 and "  NITRO +10%" or "").."  B: GAS A: FREIO Y: REINICIA",10,255,9)
+    text("R: "..item.." "..p.ammo..(p.nitro>0 and "  NITRO +10%" or "").." | B GAS A FREIO Y RESET L GRAF",10,255,9)
     if r.countdown>0 or r.time<1 then
         rect(190,44,100,28,10)
         local stage=r.countdown>1 and 1 or r.countdown>0 and 2 or 3

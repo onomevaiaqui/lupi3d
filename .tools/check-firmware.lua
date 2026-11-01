@@ -7,7 +7,7 @@ require=function(name)
     local result=chunk();if result==nil then result=true end
     loaded[name]=result;return result
 end
-package=nil;io=nil;os=nil;debug=nil;collectgarbage=nil;sfx=nil
+package=nil;io=nil;os=nil;debug=nil;collectgarbage=nil;sfx=nil;music=nil
 LEFT,RIGHT,UP,DOWN,BTN_Z,BTN_G,BTN_X,BTN_F,BTN_Q,BTN_E=4,2,1,3,7,11,6,9,5,8
 local keys={};local triangles=0
 ui={btn=function(k) return keys[k] or false end,palset=function() end,camera=function() end,clip=function() end,cls=function() end,rectfill=function() end,print=function() end,trisfill=function() triangles=triangles+1 end}
