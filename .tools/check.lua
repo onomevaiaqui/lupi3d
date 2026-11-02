@@ -1,7 +1,6 @@
 package.path="./?.lua;"..package.path
 LEFT,RIGHT,UP,DOWN,BTN_F,BTN_G,BTN_Q,BTN_E,BTN_Z,BTN_X=4,2,1,3,9,11,5,8,7,6
 local cfg=require "config";cfg.save_dir=".tools/"
-for _,slot in ipairs({0,1}) do os.remove(".tools/rally-save-"..slot..".dat") end
 local keys,palette,commands={},{},{}
 local capture=false
 local drawCalls,area=0,0
@@ -51,9 +50,8 @@ for id=1,3 do
     print("PASS: track "..id.." complete race, "..string.format("%.1f",r.time).." seconds, place "..r.place)
 end
 local r=Race.new(2);r.countdown=0
-local p0,d0=r.track.locate(0,0,r.track.segments-r.track.startOffset)
-local p1,d1=r.track.locate(0,0,r.track.segments/2-r.track.startOffset)
-assert(d0<1e-8 and d1<1e-8 and r.track.height(p0)<0.01 and r.track.height(p1)>2.5,"crossing must preserve distinct lower/upper 3D branches")
+local p0,d0=r.track.locate(0,0,0);local p1,d1=r.track.locate(0,0,24)
+assert((p0<0.01 or p0>47.99) and math.abs(p1-24)<0.01 and d0<1e-8 and d1<1e-8)
 -- Ordered gates prevent reverse crossings and permit true first-place completion.
 local gateRace=Race.new(1);gateRace.countdown=0
 local function gate(progress)
@@ -65,21 +63,6 @@ for lap=1,3 do
     gate(gateRace.track.segments/4+0.1);gate(gateRace.track.segments/2+0.1);gate(gateRace.track.segments*3/4+0.1);gate(0.1)
 end
 assert(gateRace.finished and gateRace.place==1)
--- Cars/items on the viaduct must have actual height and combat must respect it.
-local elevated=Race.new(2);elevated.countdown=0
-local upper=elevated.track.segments/2-elevated.track.startOffset
-local lower=elevated.track.segments-elevated.track.startOffset
-local hero,target=elevated.cars[1],elevated.cars[2]
-hero.progress=upper;hero.x,hero.z,hero.yaw=elevated.track.sample(upper)
-Race.step(elevated,0,input());assert(hero.y>2.5)
-hero.x,hero.z,hero.yaw=0,0,0;target.x,target.z,target.y=0,5,0
-C.collect(hero,"shot");C.fire(elevated.combat,hero,elevated.cars)
-assert(target.hp==100,"shot on bridge must not hit lower-level traffic")
-for _,pickup in ipairs(elevated.combat.pickups) do pickup.cooldown=1 end
-hero.cooldown=0;C.collect(hero,"mine");C.fire(elevated.combat,hero,elevated.cars)
-local mine=elevated.combat.mines[1];target.x,target.z=mine.x,mine.z
-C.step(elevated.combat,elevated.cars,0.6)
-assert(mine.active and target.hp==100,"upper-level mine must not hit a car below")
 -- Controlled combat: nearest target, ammunition, cooldown and respawn.
 local p,a,b=r.cars[1],r.cars[2],r.cars[3]
 p.x,p.z,p.yaw=0,0,0;a.x,a.z=0,5;b.x,b.z=0,9;r.cars[4].x=30
@@ -128,17 +111,13 @@ tap(BTN_G);assert(Game.race.player.ammo==2)
 tap(BTN_F);assert(Game.race.countdown==3 and Save.wins()==2)
 -- Turning the car must not rotate the world camera.
 Game.startRace(2);Game.draw()
-local part=Game.race.track.parts[Game.race.track.startOffset+1]
+local part=Game.race.track.parts[1]
 local sx,sy=part.sx[1],part.sy[1]
 Game.race.player.yaw=Game.race.player.yaw+1.1;Game.draw()
 assert(part.sx[1]==sx and part.sy[1]==sy,"top-down world orientation must remain fixed when car turns")
 local before=Game.detail;local sameRace=Game.race
 tap(BTN_Q);assert(Game.detail~=before and Game.race==sameRace,"L must switch detail without restarting race")
 tap(BTN_Q);assert(Game.detail==before)
-tap(BTN_X);assert(Game.overview and Game.race==sameRace,"X must enable whole-stadium inspection without restart")
-Game.draw();assert(Game.dropped==0)
-local overviewTriangles=Game.triangles
-tap(BTN_X);assert(not Game.overview)
 local maxTriangles,maxArea,maxLow=0,0,0
 local start=os.clock();local views=0
 for id=1,3 do
@@ -175,15 +154,9 @@ end
 Game.state="menu";frame("view-menu")
 Game.state="select";frame("view-select")
 Game.startRace(2);Game.detail=true;frame("frame");Game.detail=false;frame("view-light");Game.detail=true
-Game.startRace(2)
-local br=Game.race;local bp=br.player;bp.progress=br.track.segments/2-br.track.startOffset
-bp.x,bp.z,bp.yaw=br.track.sample(bp.progress);bp.y=br.track.height(bp.progress)
-frame("view-bridge")
-br.countdown=0;br.time=4;Game.overview=true;frame("view-general");Game.overview=false
 local out=assert(io.open(".tools/palette.csv","w"));for i=0,31 do out:write(i,",",palette[i],"\n") end;out:close()
 collectgarbage("collect")
 print(string.format("PASS: 4 cars, items 3 shots/2 mines, 10%% nitro, damage/respawn, sound API, menus, Continue, distinct wins, R/A/Y controls; %d views, max %d triangles, max projected area %.0f px, heap %.1f KiB, local %.3f ms/ALTO+LEVE pair (not console FPS)",views,maxTriangles,maxArea,collectgarbage("count"),elapsed/views*1000))
-print("Whole-stadium camera: "..overviewTriangles.." triangles")
 print("LEVE maximum: "..maxLow.." triangles")
 print("All effects stress: "..stressTriangles.." triangles; no dropped triangles")
 for _,slot in ipairs({0,1}) do os.remove(".tools/rally-save-"..slot..".dat") end

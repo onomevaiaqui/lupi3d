@@ -1,21 +1,21 @@
 {
-  "project": "Lupi Combat Rally 6.0",
+  "project": "Lupi Combat Rally 6.1",
   "files": [
     {
       "file": "colors.lua",
       "metadata": {
         "type": "lua_code"
       },
-      "bytes": 826,
-      "sha256": "59ae1b0fd1933d2a942fe76784602de74a2ffc3ead0651768f5407183235ca7b"
+      "bytes": 824,
+      "sha256": "28a3a42464337025f3adc9eab0856fe751d8c9166f259f915cac4185c235bee2"
     },
     {
       "file": "config.lua",
       "metadata": {
         "type": "lua_code"
       },
-      "bytes": 303,
-      "sha256": "13682c0cc75ee3448bf79a3cc3f08dde4e2b41a5b027360aa619d1e2448ef203"
+      "bytes": 302,
+      "sha256": "bce3e376305f404dad613277d5354ad10e0d852eb4cbdfa0001732618ebf7051"
     },
     {
       "file": "game.lua",
@@ -46,40 +46,40 @@
       "metadata": {
         "type": "lua_code"
       },
-      "bytes": 4962,
-      "sha256": "5eceb6555516d0a8d2969be5b33634e71125f47fe0ec658594ba7be1977666a6"
+      "bytes": 3427,
+      "sha256": "f09b8426f543e9017d511a0f1edbeef887c507f3c2ba51437cf43427a7d9a966"
     },
     {
       "file": "main.lua",
       "metadata": {
         "type": "lua_code"
       },
-      "bytes": 10229,
-      "sha256": "883b03ea5f41938568fc115f4549b106cac23e8995a4c8e7e5cdae41b47dac9f"
+      "bytes": 8420,
+      "sha256": "dfc3563bf6597e781dc68d2c030be2d5d9e8c0ccf3836f5930a63069ff6ceac3"
     },
     {
       "file": "renderer.lua",
       "metadata": {
         "type": "lua_code"
       },
-      "bytes": 7108,
-      "sha256": "e86e8a313839a5be0d6cb5636b50df4eaa2502672d0d93b041e6fd4e79d7b46a"
+      "bytes": 7094,
+      "sha256": "e2ec431a8d03db6240968fcf4c156bbbcdb730f8919b835c9aa8edc5e04509cd"
     },
     {
       "file": "race.lua",
       "metadata": {
         "type": "lua_code"
       },
-      "bytes": 5213,
-      "sha256": "d617320861215dc2de73805e47473847f684d72267e17c44df4a092e886a0578"
+      "bytes": 5112,
+      "sha256": "af88de73aba29b75d8da462bf4329f46b77d5d9ef89b98f39b428c70310859a3"
     },
     {
       "file": "combat.lua",
       "metadata": {
         "type": "lua_code"
       },
-      "bytes": 4788,
-      "sha256": "944cd9b5aee0ac3650d075c039cc7079f4076f05abb88895590582c8bb32d06d"
+      "bytes": 4555,
+      "sha256": "b3d4704579d5a1948925d07bf2b6fdf28704bbb152cd45a47cc305ce907485ee"
     },
     {
       "file": "save.lua",
@@ -102,16 +102,8 @@
       "metadata": {
         "type": "lua_code"
       },
-      "bytes": 3273,
-      "sha256": "70da404428d0fa3d66bf25caae2bacfed523dcea468f732ba748bd56d8e1ab4e"
-    },
-    {
-      "file": "stadium.lua",
-      "metadata": {
-        "type": "lua_code"
-      },
-      "bytes": 5956,
-      "sha256": "77d4a555acd3cffe1714b2ac04c56e443949224f33c62ae9890fe4f9d2db91f6"
+      "bytes": 3253,
+      "sha256": "393ba7e746a373a95f844421040766e1158bf7f9a6edd843ec8546ab9eca16f6"
     },
     {
       "file": "music/brake.fur",
@@ -222,5 +214,5 @@
       "sha256": "474e8f705d48acad3a3f090fb54a3d564c896ac98ab137d0fcb3c682c5d1b168"
     }
   ],
-  "totalBytes": 61531
+  "totalBytes": 51807
 }
