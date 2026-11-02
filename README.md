@@ -1,30 +1,40 @@
-# Lupi Combat Rally 3D — revisão visual e áudio 5.0
+# Lupi Combat Rally 3D — carros sem sombra 5.1
 
 Campeonato 3D para Lupi, com três pistas, quatro carros, combate, power-ups, menu Novo Jogo/Continue e save entre provas. A câmera permanece alta e inclinada, com orientação fixa, acompanhando a posição do jogador.
 
+## Revisão 5.1: carroceria e menos sombra
+
+As sombras projetadas sob os quatro carros foram removidas em ALTO e LEVE, incluindo a malha e a etapa de desenho usadas para elas. O Fusca passou de 76 para 82 triângulos: separação do capô/tampa traseira e vidros, teto com seis seções e rodas com perfil hexagonal e volume. Os adversários mantêm 32 triângulos, com teto afunilado, vidros inclinados e rodas mais expostas.
+
+A paleta usa contraste mais suave entre as cores claras/escuras das faces (fator 0,78 em vez de 0,62), sem acrescentar cores ou cálculos de luz. Essas cores fixas ajudam a ler o volume; não são sombras projetadas e o escurecimento delas não muda a quantidade de triângulos.
+
+Nos mesmos 576 pontos/ângulos, ALTO manteve o pico de 279 triângulos; LEVE passou de 207 para 221, pois as novas inclinações/rodas expõem mais faces. O teste com todos os efeitos ativos ficou em 305. A maior soma de áreas projetadas caiu ligeiramente de 67.687 para 66.820 pixels. Isso não garante manter FPS no console.
+
+Para prévia ampliada das malhas reais: lua .tools/car-preview.lua; use o argumento rival para o adversário. Depois execute render-check.ps1 com -Frame view-car ou view-rival. A câmera da corrida foi mantida.
+
 ## Revisão gráfica
 
-O modo **ALTO** é o padrão desta versão de teste. Acrescenta árvores com três camadas de copa, pedras facetadas, cabanas com telhado/porta/janelas, cercas, marcação central no asfalto, sombras simples sob os carros, chama de nitro e explosões com volume 3D. As malhas estáticas são compartilhadas e os efeitos usam pools limitados.
+O modo **ALTO** é o padrão desta versão de teste. Acrescenta árvores com três camadas de copa, pedras facetadas, cabanas com telhado/porta/janelas, cercas, marcação central no asfalto, chama de nitro e explosões com volume 3D. As malhas estáticas são compartilhadas e os efeitos usam pools limitados.
 
-**L alterna ALTO/LEVE durante a corrida, sem reiniciar.** LEVE remove os novos objetos decorativos, marcações, sombras e chamas, e usa as árvores simples anteriores. Explosões e rastros de tiros permanecem para comunicar o combate. O cabeçalho mostra o modo e a quantidade de triângulos enviados, junto do FPS informado pelo firmware.
+**L alterna ALTO/LEVE durante a corrida, sem reiniciar.** LEVE remove os novos objetos decorativos, marcações e chamas, e usa as árvores simples anteriores. Explosões e rastros de tiros permanecem para comunicar o combate. O cabeçalho mostra o modo e a quantidade de triângulos enviados, junto do FPS informado pelo firmware.
 
-As sombras são polígonos de cor fixa, não sombras dinâmicas calculadas por luz. Toda a pista, carros, árvores, itens, construções e efeitos descritos usam XYZ/perspectiva/triângulos. A interface e o semáforo são 2D. O chão plano é preenchido por um retângulo até o limite da área de jogo, equivalente ao fundo da câmera que olha para o chão.
+Não há sombras projetadas dos carros. Toda a pista, carros, árvores, itens, construções e efeitos descritos usam XYZ/perspectiva/triângulos. A interface e o semáforo são 2D. O chão plano é preenchido por um retângulo até o limite da área de jogo, equivalente ao fundo da câmera que olha para o chão.
 
 Nos testes de 576 vistas das três pistas, com os quatro carros próximos:
 
 | Modo | Pico de triângulos por quadro |
 | --- | ---: |
-| LEVE | 207 |
+| LEVE | 221 |
 | ALTO | 279 |
 | ALTO com todas as minas, rastros, explosões e nitros ativos no teste de estresse | 305 |
 
-Não houve descarte por estouro do pool, limitado a 512. O carro do jogador mantém 76 triângulos; cada adversário, 32. Cada árvore detalhada tem 16; pedra 12; cabana 24; cerca 20; sombra 2; chama 3; explosão 8. O modo ALTO aumenta o custo e pode reduzir FPS: o objetivo é medir o limite no console, não prometer 24 FPS.
+Não houve descarte por estouro do pool, limitado a 512. O carro do jogador usa 82 triângulos; cada adversário, 32. Cada árvore detalhada tem 16; pedra 12; cabana 24; cerca 20; chama 3; explosão 8. O modo ALTO aumenta o custo e pode reduzir FPS: o objetivo é medir o limite no console, não prometer 24 FPS.
 
 ## Áudio: correção baseada nos jogos oficiais
 
 O usuário confirmou silêncio e o aviso de som indisponível na versão anterior. A documentação pública antiga descreve `sfx.fx`, mas o [Caio Pernocas atual](https://github.com/lupi-org-br/caio-pernocas/blob/main/soundtrack.lua) usa **music.loop(caminho, fade)** com arquivos **Furnace .fur**. O [Balão Gatinho](https://github.com/lupi-org-br/balao-gatinho/blob/main/cols.lua) usa o backend legado `sfx.fx` com IDs de samples diferentes de zero.
 
-A revisão 5.0 prefere `music.loop` quando disponível e inclui **18 composições/efeitos originais em music/*.fur**, aproximadamente 5 KB no total. Não copia músicas, samples ou instrumentos dos jogos de referência. Os arquivos usam o formato v173 com síntese NES, também identificado nos módulos do Caio, sem PCM/WAVs grandes na RAM Lua.
+O áudio introduzido na revisão 5.0 prefere `music.loop` quando disponível e inclui **18 composições/efeitos originais em music/*.fur**, aproximadamente 5 KB no total. Não copia músicas, samples ou instrumentos dos jogos de referência. Os arquivos usam o formato v173 com síntese NES, também identificado nos módulos do Caio, sem PCM/WAVs grandes na RAM Lua.
 
 Inclui tema do menu, navegação, confirmação, semáforo, motor em quatro faixas de velocidade, freada/derrapagem, tiro, colocação de mina, dano, explosão, coleta, nitro e resultado. A freada toca ao frear em movimento; curvas fortes em alta velocidade também disparam o efeito. O nitro produz um som mais agudo enquanto está ativo. Sons de combate muito distantes do jogador são filtrados.
 
@@ -88,7 +98,7 @@ O resultado mostra **PROGRESSO SALVO** somente após gravar e reler com sucesso,
 
 Tela 480x270, 32 cores, BGR555 preservado. Distância de desenho 42 unidades; geometria fora da visão descartada antes da projeção. Sem texturas, z-buffer ou luzes dinâmicas. A cena selecionada é construída sob demanda.
 
-Pacote com 13 módulos Lua e 18 arquivos Furnace, aproximadamente 51 KB. O harness, que mantém várias corridas de teste simultaneamente, chegou a aproximadamente 1.245 KiB de heap Lua; não é a memória total usada no console. O custo do áudio no firmware não foi medido.
+Pacote com 13 módulos Lua e 18 arquivos Furnace, aproximadamente 51 KB. O harness, que mantém várias corridas de teste simultaneamente, chegou a aproximadamente 1.248 KiB de heap Lua; não é a memória total usada no console. O custo do áudio no firmware não foi medido.
 
 ```sh
 node .tools/build-audio.cjs
@@ -105,7 +115,7 @@ lua .tools/check-firmware.lua
 
 Com `FURNACE_EXE` apontando para o executável oficial Furnace, check-audio.cjs também decodifica/renderiza os 18 módulos e verifica que o PCM não é silencioso. Sem o executável, verifica cabeçalhos compactados. O motor e o executável Furnace não são redistribuídos.
 
-O build fica em .build/race-3d-release/, com manifesto e pasta music. Cabeçalho da versão: **LUPI COMBAT RALLY 5.0**. Testes preservam menu/Continue, três corridas completas, itens, checkpoints, semáforo, save real com recuperação de corrupção, renderização válida, comparação ALTO/LEVE, todos os efeitos ativos e inicialização sem package/io/os/debug/collectgarbage/sfx/music.
+O build fica em .build/race-3d-release/, com manifesto e pasta music. Cabeçalho da versão: **LUPI COMBAT RALLY 5.1**. Testes preservam menu/Continue, três corridas completas, itens, checkpoints, semáforo, save real com recuperação de corrupção, renderização válida, comparação ALTO/LEVE, todos os efeitos ativos e inicialização sem package/io/os/debug/collectgarbage/sfx/music.
 
 Prévia das chamadas de desenho no Windows:
 
