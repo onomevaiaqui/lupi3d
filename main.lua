@@ -39,7 +39,7 @@ function Game.step(dt)
     local current={up=held(UP),down=held(DOWN),left=held(LEFT),right=held(RIGHT),ok=held(gas),back=held(back),fire=held(fire),brake=held(brake),detail=held(detailKey),test=held(BTN_X)}
     local function pressed(k) return current[k] and not previous[k] end
     if Game.state=="menu" then
-        if pressed("test") then audio.play("confirm") end
+        if pressed("test") then audio.test() end
         if pressed("up") or pressed("down") then Game.menu=3-Game.menu;audio.play("menu") end
         if pressed("ok") then
             if Game.menu==1 then Save.newGame();Game.selected=1;Game.state="select";audio.play("confirm")
@@ -69,7 +69,7 @@ local function rect(x,y,w,h,c) ui.rectfill(x,y,x+w,y+h,colors.index[c]) end
 local function text(s,x,y,c) ui.print(s,x,y,colors.index[c or 9]) end
 local function panel()
     rect(40,38,400,190,10);rect(40,38,400,3,8)
-    text("LUPI COMBAT RALLY 6.1",122,53,15)
+    text("LUPI COMBAT RALLY 6.2",122,53,15)
 end
 local function drawMenu()
     panel()
@@ -81,7 +81,8 @@ local function drawMenu()
     text("CRUZ: ESCOLHER    B: CONFIRMAR",114,198,9)
     text("NOVO JOGO ZERA O PROGRESSO SALVO",100,214,11)
     text("SOM: "..audio.status().."   X: TESTAR",135,240,11)
-    if audio.error then text(audio.lastError:sub(1,68),20,256,7) end
+    if audio.error then text(audio.lastError:sub(1,68),20,256,7)
+    elseif audio.testInfo and audio.testTimer>0 then text(audio.testInfo:sub(1,72),20,256,9) end
 end
 local function drawSelect()
     panel()
@@ -141,7 +142,7 @@ local function drawRace()
     renderer.flush()
     Game.triangles,Game.dropped=renderer.triangles,renderer.dropped
     rect(0,0,480,20,10);rect(0,228,480,42,10)
-    text("COMBAT RALLY 6.1 / "..r.id,10,6,15);text((Game.detail and "ALTO " or "LEVE ")..Game.triangles,282,6,9)
+    text("COMBAT RALLY 6.2 / "..r.id,10,6,15);text((Game.detail and "ALTO " or "LEVE ")..Game.triangles,282,6,9)
     text(Game.reported_fps and "FPS "..math.floor(Game.reported_fps+0.5) or "FPS --",390,6,9)
     text(string.format("%03d KM/H  VOLTA %d/3  POS %d/4  VIDA %d",math.floor(p.speed*6+0.5),p.laps,Race.position(r),p.hp),10,235,15)
     local item=p.weapon=="shot" and "TIRO" or p.weapon=="mine" and "MINA" or "SEM ARMA"

@@ -7,16 +7,46 @@ local function backend()
     if type(sfx)=="table" and type(sfx.fx)=="function" then return "SFX" end
     return "SEM API"
 end
-local function start(name)
+local function start(name,fade)
     if A.retry>0 then return false end
     local kind=backend();A.available=kind~="SEM API"
     if kind~="FUR" then return false end
-    if not A.volumeReady and type(music.volume)=="function" and type(CH_ALL)=="number" then pcall(music.volume,0.7,CH_ALL,0);A.volumeReady=true end
-    local ok,err=pcall(music.loop,"music/"..name,0)
+    if not A.volumeReady and type(music.volume)=="function" and type(CH_ALL)=="number" then local vok,verr=pcall(music.volume,1.0,CH_ALL,0.5);A.volumeReady=vok;A.volumeError=not vok and tostring(verr) or nil end
+    local ok,err=pcall(music.loop,"music/"..name,fade or 0.03)
     if ok and err==false then ok=false;err="music.loop recusou arquivo" end
     A.error=not ok
     if not ok then A.lastError=tostring(err):sub(1,72);A.retry=2;A.current=nil;return false end
     A.current=name;A.change=0.6;return true
+end
+local function fileProbe()
+    if type(io)~="table" or type(io.open)~="function" then return "ARQ: SEM IO" end
+    local ok,result=pcall(function()
+        local base=""
+        if type(package)=="table" and type(package.searchpath)=="function" and type(package.path)=="string" then
+            local found=package.searchpath("main",package.path)
+            if found then base=found:match("^(.*[/\\])") or "" end
+        end
+        local root=io.open(base.."main.lua","rb")
+        if not root then return "ARQ: BASE NAO CONFIRMADA" end
+        root:close()
+        local f=io.open(base.."music/menu.fur","rb")
+        if not f then return "ARQ: MENU.FUR AUSENTE" end
+        local header=f:read(16);f:close()
+        return header and #header==16 and "ARQ: ENCONTRADO" or "ARQ: TRUNCADO"
+    end)
+    return ok and result or "ARQ: LEITURA FALHOU"
+end
+function A.test()
+    A.retry=0;A.hold=0;A.priority=0;A.current=nil;A.volumeReady=false
+    local kind=backend()
+    if kind=="FUR" then
+        if start("menu",0.6) then A.hold=8;A.priority=100 end
+        local volume=A.volumeReady and "VOL OK" or A.volumeError and "ERRO VOL" or "VOL PADRAO"
+        A.testInfo=volume.." | "..fileProbe().." | TESTE 8S"
+    elseif kind=="SFX" then
+        A.play("confirm");A.testInfo="TESTE SAMPLE 62 / SEM FURNACE"
+    else A.testInfo="FIRMWARE SEM API DE AUDIO" end
+    A.testTimer=8
 end
 function A.status()
     local b=backend();A.available=b~="SEM API"
@@ -43,6 +73,7 @@ function A.play(event,x,z)
 end
 function A.update(dt,r,input)
     A.retry=math.max(0,A.retry-dt)
+    A.testTimer=math.max(0,(A.testTimer or 0)-dt)
     A.hold=math.max(0,A.hold-dt);A.change=math.max(0,A.change-dt);A.brake=math.max(0,A.brake-dt)
     if r then A.lx,A.lz=r.player.x,r.player.z end
     if r and r.countdown==0 and not r.finished then
@@ -76,7 +107,7 @@ function A.update(dt,r,input)
         local p=r.player
         desired=p.nitro>0 and "nitro" or p.speed<1 and "engine_idle" or p.speed<6 and "engine_low" or p.speed<11 and "engine_mid" or "engine_high"
     end
-    if A.current~=desired and (A.change==0 or returning) then start(desired) end
+    if A.current~=desired and (A.change==0 or returning) then start(desired,desired=="menu" and 0.6 or 0.06) end
 end
 A.status()
 return A

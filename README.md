@@ -1,8 +1,18 @@
-# Lupi Combat Rally 3D — restauração da versão 5.1 (6.1)
+# Lupi Combat Rally 3D — restauração da versão 5.1 (6.2)
 
 Campeonato 3D para Lupi, com três pistas, quatro carros, combate, power-ups, menu Novo Jogo/Continue e save entre provas. A câmera permanece alta e inclinada, com orientação fixa, acompanhando a posição do jogador.
 
 A versão 6.1 restaura a jogabilidade, cenário, câmera, malhas e configurações da tag v5.1-baseline. O experimento de estádio 6.0 foi removido por lentidão no console. A numeração 6.1 permite que o catálogo reconheça a restauração como atualização.
+
+## Áudio 6.2
+
+Os outros jogos têm som no aparelho, mas o Combat Rally seguia silencioso com SOM: FUR. Esse diagnóstico apenas confirmava a presença da API e a ausência de exceção; não comprovava o carregamento do arquivo.
+
+Os módulos agora incluem volume e duty explícitos no instrumento NES e conexões explícitas da saída mono aos canais esquerdo/direito, além de volume mestre 1.0. Antes dependiam dos padrões do Furnace. O playback usa transições positivas (menu 0,6 s), e a chamada de volume usa 1.0/CH_ALL/0,5 s. Os 18 módulos foram novamente decodificados e renderizados pelo Furnace com PCM não silencioso.
+
+X no menu reproduz o menu por oito segundos com prioridade sobre os efeitos curtos. A linha inferior informa VOL OK/VOL PADRAO/ERRO VOL e a verificação de music/menu.fur. ARQ: ENCONTRADO é confirmado por leitura real; AUSENTE só é mostrado quando a pasta base também foi confirmada. SEM IO ou BASE NAO CONFIRMADA significam que não foi possível verificar os arquivos no contexto do aplicativo. Isso separa problemas de entrega dos assets de problemas do player. A reprodução no console ainda precisa ser validada.
+
+Gráficos, pistas, câmera e física continuam iguais à restauração 6.1/5.1.
 
 ## Revisão 5.1: carroceria e menos sombra
 
@@ -117,7 +127,7 @@ lua .tools/check-firmware.lua
 
 Com `FURNACE_EXE` apontando para o executável oficial Furnace, check-audio.cjs também decodifica/renderiza os 18 módulos e verifica que o PCM não é silencioso. Sem o executável, verifica cabeçalhos compactados. O motor e o executável Furnace não são redistribuídos.
 
-O build fica em .build/race-3d-release/, com manifesto e pasta music. Cabeçalho da versão: **LUPI COMBAT RALLY 6.1**. Testes preservam menu/Continue, três corridas completas, itens, checkpoints, semáforo, save real com recuperação de corrupção, renderização válida, comparação ALTO/LEVE, todos os efeitos ativos e inicialização sem package/io/os/debug/collectgarbage/sfx/music.
+O build fica em .build/race-3d-release/, com manifesto e pasta music. Cabeçalho da versão: **LUPI COMBAT RALLY 6.2**. Testes preservam menu/Continue, três corridas completas, itens, checkpoints, semáforo, save real com recuperação de corrupção, renderização válida, comparação ALTO/LEVE, todos os efeitos ativos e inicialização sem package/io/os/debug/collectgarbage/sfx/music.
 
 Prévia das chamadas de desenho no Windows:
 

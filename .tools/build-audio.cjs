@@ -4,7 +4,12 @@ const out=path.resolve(__dirname,'../music');fs.mkdirSync(out,{recursive:true});
 class W {constructor(){this.a=[];this.n=0} put(b){this.a.push(b);this.n+=b.length;return this} u8(n){return this.put(Buffer.from([n]))} u16(n){let b=Buffer.alloc(2);b.writeUInt16LE(n);return this.put(b)} u32(n){let b=Buffer.alloc(4);b.writeUInt32LE(n);return this.put(b)} f(n){let b=Buffer.alloc(4);b.writeFloatLE(n);return this.put(b)} str(s){return this.put(Buffer.from(s+'\0'))} zero(n){return this.put(Buffer.alloc(n))} buf(){return Buffer.concat(this.a)}}
 function block(id,data){return new W().put(Buffer.from(id)).u32(data.length).put(data).buf()}
 function make(name,rows,speed,fn){
- const ins=block('INS2',new W().u16(173).u16(34).put(Buffer.from('NA')).u16(6).str('Rally').put(Buffer.from('EN')).buf());
+  const macros=new W().u16(8)
+  .u8(0).u8(1).u8(255).u8(255).u8(0).u8(1).u8(0).u8(1).u8(15)
+  .u8(2).u8(1).u8(255).u8(255).u8(0).u8(1).u8(0).u8(1).u8(2)
+  .u8(255).buf();
+ const ins=block('INS2',new W().u16(173).u16(34).put(Buffer.from('NA')).u16(6).str('Rally')
+  .put(Buffer.from('MA')).u16(macros.length).put(macros).put(Buffer.from('EN')).buf());
  const patterns=[];
  for(let ch=0;ch<5;ch++){
   const b=new W().u8(0).u8(ch).u16(0).str('');
@@ -21,9 +26,9 @@ function make(name,rows,speed,fn){
   w.u8(6).zero(31).put(Buffer.alloc(32,64)).zero(32).zero(128).str('Lupi Rally '+name).str('lupi3d original').f(440);
   w.zero(20).u32(pointers[0]);for(let i=1;i<6;i++)w.u32(pointers[i]);
   w.zero(5).put(Buffer.alloc(5,1)).zero(10);for(let i=0;i<10;i++)w.str('');
-  w.str('Original procedural audio, MIT').f(0.6).zero(28).u16(1).u16(1).str('').str('').u8(0).zero(3);
+  w.str('Original procedural audio, MIT').f(1).zero(28).u16(1).u16(1).str('').str('').u8(0).zero(3);
   for(let i=0;i<6;i++)w.str('');
-  w.f(1).f(0).f(0).u32(0).u8(1).zero(8).u8(1).u8(speed).zero(15).u8(0).u32(pointers[6]||0).u32(pointers[6]||0).u32(pointers[6]||0);
+  w.f(1).f(0).f(0).u32(2).u32(0x00000000).u32(0x00000001).u8(1).zero(8).u8(1).u8(speed).zero(15).u8(0).u32(pointers[6]||0).u32(pointers[6]||0).u32(pointers[6]||0);
   return block('INFO',w.buf());
  }
  let inf=info([0,0,0,0,0,0]);let cursor=32+inf.length;const pointers=[cursor];cursor+=ins.length;

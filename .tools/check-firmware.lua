@@ -12,6 +12,7 @@ LEFT,RIGHT,UP,DOWN,BTN_Z,BTN_G,BTN_X,BTN_F,BTN_Q,BTN_E=4,2,1,3,7,11,6,9,5,8
 local keys={};local triangles=0
 ui={btn=function(k) return keys[k] or false end,palset=function() end,camera=function() end,clip=function() end,cls=function() end,rectfill=function() end,print=function() end,trisfill=function() triangles=triangles+1 end}
 require "game";update(0);assert(Game.state=="menu")
+keys={[BTN_X]=true};Game.step(0);assert(require("audio").testInfo=="FIRMWARE SEM API DE AUDIO");keys={};Game.step(0)
 keys={[BTN_Z]=true};Game.step(0);assert(Game.state=="select")
 assert(require("save").status=="SAVE INDISPONIVEL")
 keys={};Game.step(0)

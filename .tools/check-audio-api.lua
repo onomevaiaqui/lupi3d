@@ -1,13 +1,21 @@
 package.path="./?.lua;"..package.path
 local calls={}
 CH_ALL=31
-music={loop=function(path,fade) assert(type(path)=="string" and path:match("^music/") and fade==0);calls[#calls+1]=path end,volume=function(v,mask,fade) assert(v==0.7 and mask==31) end}
+music={loop=function(path,fade) assert(type(path)=="string" and path:match("^music/") and fade>=0 and fade<=0.6);calls[#calls+1]=path end,volume=function(v,mask,fade) assert(v==1.0 and mask==31) end}
 sfx=nil
 local A=require "audio"
 assert(A.status()=="FUR")
 A.scene("menu",true);A.update(0);assert(calls[#calls]=="music/menu")
 A.play("menu");assert(calls[#calls]=="music/navigate")
 A.update(0.3);assert(calls[#calls]=="music/menu")
+A.test();assert(A.hold==8 and A.testInfo:match("ENCONTRADO"),"diagnostic must confirm actual asset in local app folder")
+local protected=#calls;A.play("menu");assert(#calls==protected,"short cues must not interrupt eight-second test")
+A.update(4);assert(A.hold==4)
+local oldIo=io;io=nil;A.test();assert(A.testInfo:match("SEM IO"));io=oldIo
+local oldOpen=io.open
+io.open=function(path,mode) if path:match("music/menu%.fur$") then return nil,"missing" end;return oldOpen(path,mode) end
+A.test();assert(A.testInfo:match("AUSENTE"),"missing delivered asset must be visible in diagnostic")
+io.open=oldOpen
 local r={countdown=0,finished=false,player={x=0,z=0,speed=12,nitro=0}}
 A.scene("race",true);A.update(1,r,{brake=false,steer=0});assert(calls[#calls]=="music/engine_high")
 A.play("explosion");local count=#calls
