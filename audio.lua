@@ -11,9 +11,27 @@ local function start(name,fade)
     if A.retry>0 then return false end
     local kind=backend();A.available=kind~="SEM API"
     if kind~="FUR" then return false end
-    if not A.volumeReady and type(music.volume)=="function" and type(CH_ALL)=="number" then local vok,verr=pcall(music.volume,1.0,CH_ALL,0.5);A.volumeReady=vok;A.volumeError=not vok and tostring(verr) or nil end
-    local ok,err=pcall(music.loop,"music/"..name,fade or 0.03)
-    if ok and err==false then ok=false;err="music.loop recusou arquivo" end
+    if not A.volumeReady then
+        local vok,value,reason
+        A.volumeError=nil
+        if type(music.volume)=="function" then
+            -- NES modules use five channels; 31 selects bits 0..4 when CH_ALL is absent.
+            local mask=type(CH_ALL)=="number" and CH_ALL or 31
+            vok,value,reason=pcall(music.volume,1.0,mask,0.5)
+            A.volumeKind=type(CH_ALL)=="number" and "MUSIC" or "MUSIC M31"
+        elseif type(sfx)=="table" and type(sfx.volume)=="function" then
+            vok,value,reason=pcall(sfx.volume,1.0)
+            A.volumeKind="SFX GLOBAL"
+        else A.volumeKind="API AUSENTE" end
+        if vok and (value==false or value==nil and type(reason)=="string") then vok=false;value=reason or "volume recusou ajuste" end
+        A.volumeReady=vok==true
+        if vok==false then A.volumeError=tostring(value) end
+    end
+    local ok,err,reason=pcall(music.loop,"music/"..name,fade or 0.03)
+    A.playResult=tostring(err)
+    if ok and (err==false or err==nil and type(reason)=="string") then
+        ok=false;err=reason or "music.loop recusou arquivo"
+    end
     A.error=not ok
     if not ok then A.lastError=tostring(err):sub(1,72);A.retry=2;A.current=nil;return false end
     A.current=name;A.change=0.6;return true
@@ -41,8 +59,9 @@ function A.test()
     local kind=backend()
     if kind=="FUR" then
         if start("menu",0.6) then A.hold=8;A.priority=100 end
-        local volume=A.volumeReady and "VOL OK" or A.volumeError and "ERRO VOL" or "VOL PADRAO"
-        A.testInfo=volume.." | "..fileProbe().." | TESTE 8S"
+        local volume=A.volumeReady and ("VOL OK "..A.volumeKind) or A.volumeError and "ERRO VOL" or "SEM API VOLUME"
+        A.testInfo=volume.." | "..fileProbe().." | RET:"..(A.playResult or "?")
+        if A.volumeError and not A.error then A.testInfo="VOLUME: "..A.volumeError:sub(1,56) end
     elseif kind=="SFX" then
         A.play("confirm");A.testInfo="TESTE SAMPLE 62 / SEM FURNACE"
     else A.testInfo="FIRMWARE SEM API DE AUDIO" end

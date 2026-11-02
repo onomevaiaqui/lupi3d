@@ -1,8 +1,14 @@
-# Lupi Combat Rally 3D — restauração da versão 5.1 (6.2)
+# Lupi Combat Rally 3D — restauração da versão 5.1 (6.3)
 
 Campeonato 3D para Lupi, com três pistas, quatro carros, combate, power-ups, menu Novo Jogo/Continue e save entre provas. A câmera permanece alta e inclinada, com orientação fixa, acompanhando a posição do jogador.
 
 A versão 6.1 restaura a jogabilidade, cenário, câmera, malhas e configurações da tag v5.1-baseline. O experimento de estádio 6.0 foi removido por lentidão no console. A numeração 6.1 permite que o catálogo reconheça a restauração como atualização.
+
+## Diagnóstico e volume 6.3
+
+O aparelho mostrou VOL PADRAO e ARQ: SEM IO: a presença de music.loop foi confirmada, mas não houve verificação dos arquivos nem ajuste de volume. A versão anterior exigia tanto music.volume quanto a constante CH_ALL antes de tentar esse ajuste. Agora, se a função existir sem CH_ALL, usa a máscara 31, correspondente aos cinco canais NES dos nossos módulos. Se music.volume não existir, tenta sfx.volume quando disponível. A ausência de ambas é mostrada explicitamente.
+
+A reprodução também passa a capturar o padrão de erro Lua return nil, mensagem, que antes podia passar despercebido por não lançar exceção. O teste X continua por oito segundos e informa o tipo de ajuste de volume, estado de acesso ao arquivo e retorno do player. SEM IO não confirma arquivo ausente. O áudio no console ainda precisa de validação; não houve mudança nos gráficos ou na física.
 
 ## Áudio 6.2
 
@@ -127,7 +133,7 @@ lua .tools/check-firmware.lua
 
 Com `FURNACE_EXE` apontando para o executável oficial Furnace, check-audio.cjs também decodifica/renderiza os 18 módulos e verifica que o PCM não é silencioso. Sem o executável, verifica cabeçalhos compactados. O motor e o executável Furnace não são redistribuídos.
 
-O build fica em .build/race-3d-release/, com manifesto e pasta music. Cabeçalho da versão: **LUPI COMBAT RALLY 6.2**. Testes preservam menu/Continue, três corridas completas, itens, checkpoints, semáforo, save real com recuperação de corrupção, renderização válida, comparação ALTO/LEVE, todos os efeitos ativos e inicialização sem package/io/os/debug/collectgarbage/sfx/music.
+O build fica em .build/race-3d-release/, com manifesto e pasta music. Cabeçalho da versão: **LUPI COMBAT RALLY 6.3**. Testes preservam menu/Continue, três corridas completas, itens, checkpoints, semáforo, save real com recuperação de corrupção, renderização válida, comparação ALTO/LEVE, todos os efeitos ativos e inicialização sem package/io/os/debug/collectgarbage/sfx/music.
 
 Prévia das chamadas de desenho no Windows:
 

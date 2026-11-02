@@ -28,5 +28,16 @@ local oldLoop=music.loop;music.loop=function() error("missing audio asset") end
 A.play("win");assert(A.error and A.lastError:match("missing audio asset"))
 local retry=A.retry;A.play("win");assert(A.retry==retry)
 music.loop=oldLoop;A.update(3,r,{brake=false,steer=0});assert(not A.error)
+-- The real console reported default volume: missing CH_ALL must not skip setup.
+CH_ALL=nil;A.scene("menu",true);A.test();assert(A.volumeReady and A.volumeKind=="MUSIC M31")
+local oldVolume=music.volume;music.volume=nil
+sfx={volume=function(v) assert(v==1) end}
+A.test();assert(A.volumeReady and A.volumeKind=="SFX GLOBAL")
+sfx=nil;A.test();assert(not A.volumeReady and A.testInfo:match("SEM API VOLUME"))
+music.volume=oldVolume;CH_ALL=31
+-- Lua functions can fail by returning nil, message without raising an exception.
+local savedLoop=music.loop;music.loop=function() return nil,"arquivo nao encontrado no player" end
+A.test();assert(A.error and A.lastError:match("arquivo nao encontrado"))
+music.loop=savedLoop;A.test();assert(not A.error and A.volumeReady)
 music=nil;sfx=nil;assert(A.status()=="SEM API");A.play("shot");A.update(1)
 print("PASS: modern music.loop backend, menu theme, engine RPM, priority/restore, braking, nitro, volume, missing-asset backoff and absent API")
