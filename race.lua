@@ -19,7 +19,7 @@ function Race.new(id)
     for i=1,4 do
         local progress=i==1 and track.segments-0.35 or 0.2+(i-2)*0.6
         local x,z,yaw=track.sample(progress)
-        r.cars[i]={player=i==1,x=x,y=0,z=z,yaw=yaw,speed=0,progress=progress,laps=0,
+        r.cars[i]={player=i==1,x=x,y=track.height(progress),z=z,yaw=yaw,speed=0,progress=progress,laps=0,
             started=i~=1,checkpoint=3,done=false,mesh=i==1 and mesh or enemyMeshes[i-1],radius=2,
             hp=100,respawn=0,stun=0,nitro=0,cooldown=0,ammo=0,weapon=nil,
             total=i==1 and -0.35 or progress,aiSpeed=9.1+(i-2)*0.7,decision=0}
@@ -31,7 +31,7 @@ end
 local function progressPlayer(r)
     local p=r.player
     local progress,distance=r.track.locate(p.x,p.z,p.progress)
-    p.progress=progress;p.offroad=distance>r.track.halfWidth^2
+    p.progress=progress;p.y=r.track.height(progress);p.offroad=distance>r.track.halfWidth^2
     local sector=math.floor(progress/(r.track.segments/4))
     if not p.offroad then
         if sector==p.checkpoint+1 and sector<=3 then p.checkpoint=sector
@@ -85,6 +85,7 @@ function Race.step(r,dt,input)
                 car.total=car.total+car.speed*h/length
                 car.progress=car.total%r.track.segments;car.laps=math.floor(car.total/r.track.segments)
                 car.x,car.z,car.yaw=r.track.sample(car.progress)
+                car.y=r.track.height(car.progress)
                 if car.laps>=3 then car.done=true;car.speed=0 end
             end
         end

@@ -1,7 +1,7 @@
 const fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypto');
 const root=path.resolve(__dirname,'..'),out=path.join(root,'.build/race-3d-release');
 fs.mkdirSync(out,{recursive:true});
-const runtime=['colors.lua','config.lua','game.lua','geometry.lua','car.lua','track.lua','main.lua','renderer.lua','race.lua','combat.lua','save.lua','audio.lua','scenery.lua'];
+const runtime=['colors.lua','config.lua','game.lua','geometry.lua','car.lua','track.lua','main.lua','renderer.lua','race.lua','combat.lua','save.lua','audio.lua','scenery.lua','stadium.lua'];
 const entries=[];
 for(const file of runtime) {
   const code=fs.readFileSync(path.join(root,file),'utf8').replace(/\r\n/g,'\n');
@@ -23,5 +23,5 @@ const files=entries.map((entry,i)=>{
 });
 fs.writeFileSync(path.join(out,'lupi_manifest.txt'),manifest);
 const totalBytes=files.reduce((sum,f)=>sum+f.bytes,Buffer.byteLength(manifest));
-fs.writeFileSync(path.join(root,'BUILD.json'),JSON.stringify({project:'Lupi Combat Rally 5.1',files,totalBytes},null,2)+'\n');
+fs.writeFileSync(path.join(root,'BUILD.json'),JSON.stringify({project:'Lupi Combat Rally 6.0',files,totalBytes},null,2)+'\n');
 console.log('3D race release ready:',out,totalBytes,'bytes');

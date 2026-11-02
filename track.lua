@@ -2,43 +2,74 @@ local G=require "geometry"
 local names={"VALE OVAL","CRUZAMENTO 8","SERRA VERDE"}
 local function new(id)
 assert(id>=1 and id<=3)
-local T={id=id,name=names[id],segments=id==1 and 40 or 48,halfWidth=3.6,parts={},trees={}}
+local T={startOffset=id==2 and 6 or 0,id=id,name=names[id],segments=id==1 and 40 or 48,halfWidth=3.6,parts={},trees={}}
 local tau=2*math.pi
 local function p(t)
     if id==1 then return 20*math.sin(t),32*math.cos(t) end
     if id==2 then return 30*math.sin(t),44*math.sin(t)*math.cos(t) end
     return 24*math.sin(t)+5*math.sin(3*t),30*math.cos(t)
 end
-local points={}
-for i=0,T.segments do
-    local t=i*tau/T.segments;local x,z=p(t)
-    local xa,za=p(t-0.001);local xb,zb=p(t+0.001)
-    local dx,dz=xb-xa,zb-za;local n=math.sqrt(dx*dx+dz*dz)
-    points[i]={x=x,z=z,nx=dz/n,nz=-dx/n}
+local function heightAt(t)
+    if id~=2 then return 0 end
+    local d=math.abs(t-math.pi)
+    if d>=0.65 then return 0 end
+    return 1.3*(1+math.cos(math.pi*d/0.65))
 end
+local function pointAt(t)
+    local x,z=p(t);local xa,za=p(t-0.001);local xb,zb=p(t+0.001)
+    local dx,dz=xb-xa,zb-za;local n=math.sqrt(dx*dx+dz*dz)
+    return {x=x,z=z,y=heightAt(t),nx=dz/n,nz=-dx/n}
+end
+local points={}
+for i=0,T.segments do points[i]=pointAt(i*tau/T.segments) end
 T.length=0
 for i=0,T.segments-1 do
     local a,b=points[i],points[i+1];local dx,dz=b.x-a.x,b.z-a.z
     local s={x=(a.x+b.x)/2,y=0,z=(a.z+b.z)/2,mesh=G.mesh(),a=a,b=b,dx=dx,dz=dz,len2=dx*dx+dz*dz}
     s.length=math.sqrt(s.len2);T.length=T.length+s.length
-    s.radius=s.length/2+T.halfWidth+0.35
-    local function edge(v,w) return {v.x+v.nx*w-s.x,0,v.z+v.nz*w-s.z} end
-    -- Winding follows +Y regardless of the turn direction.
-    G.quad(s.mesh,edge(a,-T.halfWidth),edge(b,-T.halfWidth),edge(b,T.halfWidth),edge(a,T.halfWidth),4)
+    s.radius=s.length/2+T.halfWidth+0.5
+    s.mid=pointAt((i+0.5)*tau/T.segments)
+    s.raised=a.y>0.02 or b.y>0.02 or s.mid.y>0.02
+    s.basic={x=s.x,y=0,z=s.z,mesh=G.mesh(),radius=s.radius}
     s.trim={x=s.x,y=0,z=s.z,mesh=G.mesh(),radius=s.radius}
-    for _,side in ipairs({-1,1}) do
-        local w=T.halfWidth*side;local o=(T.halfWidth+0.28)*side
-        local q={edge(a,w),edge(a,o),edge(b,o),edge(b,w)}
+    s.trimBasic={x=s.x,y=0,z=s.z,mesh=G.mesh(),radius=s.radius}
+    s.bridge={x=s.x,y=0,z=s.z,mesh=G.mesh(),radius=s.radius}
+    local function edge(v,w,drop) return {v.x+v.nx*w-s.x,v.y-(drop or 0),v.z+v.nz*w-s.z} end
+    local function surface(mesh,left,right)
+        G.quad(mesh,edge(left,-T.halfWidth),edge(right,-T.halfWidth),edge(right,T.halfWidth),edge(left,T.halfWidth),4)
+    end
+    surface(s.basic.mesh,a,b);surface(s.mesh,a,s.mid);surface(s.mesh,s.mid,b)
+    local function curb(mesh,left,right,side)
+        local w=T.halfWidth*side;local o=(T.halfWidth+0.5)*side
+        local q={edge(left,w),edge(left,o),edge(right,o),edge(right,w)}
         if side>0 then q={q[4],q[3],q[2],q[1]} end
-        if id~=2 or s.x*s.x+s.z*s.z>64 then G.quad(s.trim.mesh,q[1],q[2],q[3],q[4],i%2==0 and 7 or 9) end
+        G.quad(mesh,q[1],q[2],q[3],q[4],i%2==0 and 7 or 9)
+    end
+    for _,side in ipairs({-1,1}) do
+        if id~=2 or s.x*s.x+s.z*s.z>64 or s.raised then
+            curb(s.trimBasic.mesh,a,b,side);curb(s.trim.mesh,a,s.mid,side);curb(s.trim.mesh,s.mid,b,side)
+        end
+        if s.raised then
+            local w=T.halfWidth*side
+            local q={edge(a,w),edge(b,w),edge(b,w,0.28),edge(a,w,0.28)}
+            if side<0 then q={q[4],q[3],q[2],q[1]} end
+            G.quad(s.bridge.mesh,q[1],q[2],q[3],q[4],11)
+        end
     end
     T.parts[i+1]=s
 end
 function T.sample(progress)
-    local f=progress%T.segments;local i=math.floor(f);local u=f-i;local s=T.parts[i+1]
+    local f=(progress+T.startOffset)%T.segments;local i=math.floor(f);local u=f-i;local s=T.parts[i+1]
     return s.a.x+s.dx*u,s.a.z+s.dz*u,math.atan(s.dx,s.dz),s.length
 end
+function T.heightRaw(progress)
+    local f=progress%T.segments;local i=math.floor(f);local u=f-i;local s=T.parts[i+1]
+    if u<0.5 then return s.a.y+(s.mid.y-s.a.y)*u*2 end
+    return s.mid.y+(s.b.y-s.mid.y)*(u-0.5)*2
+end
+function T.height(progress) return T.heightRaw(progress+T.startOffset) end
 function T.locate(x,z,hint)
+    if hint then hint=(hint+T.startOffset)%T.segments end
     local best,progress=math.huge,0
     local function check(i)
         local s=T.parts[i%T.segments+1]
@@ -49,10 +80,10 @@ function T.locate(x,z,hint)
     end
     if hint then for i=math.floor(hint)-4,math.floor(hint)+4 do check(i) end end
     if not hint or best>144 then for i=0,T.segments-1 do check(i) end end
-    return progress%T.segments,best
+    return (progress-T.startOffset)%T.segments,best
 end
-T.finish={x=points[0].x,y=0.018,z=points[0].z,mesh=G.mesh(),radius=4}
-local a=points[0];local dx,dz=-a.nz,a.nx
+T.finish={x=points[T.startOffset].x,y=0.018,z=points[T.startOffset].z,mesh=G.mesh(),radius=4}
+local a=points[T.startOffset];local dx,dz=-a.nz,a.nx
 for i=0,7 do
     local w=-3.2+i*0.8
     local function v(u,l) return {a.nx*u+dx*l,0,a.nz*u+dz*l} end
@@ -73,6 +104,7 @@ for i=1,6 do
     if dist>36 then T.trees[#T.trees+1]={x=tx,y=0,z=tz,mesh=tree,radius=4} end
 end
 require("scenery").populate(T)
+require("stadium").populate(T)
 return T
 end
 return {new=new,names=names}

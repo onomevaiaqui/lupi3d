@@ -1,6 +1,6 @@
 # Créditos
 
-Código, carros, três pistas, árvores, pedras, cabanas, cercas, efeitos visuais, interface e paleta foram criados para este teste e estão sob a licença MIT do projeto.
+Código, carros, três pistas, árvores, pedras, cabanas, cercas, arquibancadas, barreiras, pilhas de pneus, viaduto, efeitos visuais, interface e paleta foram criados para este teste e estão sob a licença MIT do projeto.
 
 ## Áudio original
 

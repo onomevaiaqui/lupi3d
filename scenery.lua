@@ -44,7 +44,7 @@ function S.populate(T)
             local len=s.length;local dx,dz=s.dx/len,s.dz/len;local nx,nz=-dz*0.07,dx*0.07
             local m=G.mesh();local h=math.min(1,len*0.3)
             G.quad(m,{-dx*h+nx,0,-dz*h+nz},{dx*h+nx,0,dz*h+nz},{dx*h-nx,0,dz*h-nz},{-dx*h-nx,0,-dz*h-nz},9)
-            T.markings[#T.markings+1]={x=s.x,y=0.01,z=s.z,radius=2,mesh=m}
+            T.markings[#T.markings+1]={x=s.x,y=T.heightRaw(i-0.5)+0.015,z=s.z,radius=2,mesh=m}
         end
     end
     for i=1,12 do

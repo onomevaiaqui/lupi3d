@@ -149,7 +149,7 @@ function R.submit(obj,view)
         local height=dy*cp-forward*sp
         local side=dx*cy-dz*sy
         local r=obj.radius
-        if depth< -r or depth>(cfg.draw_distance or 38)+r
+        if depth< -r or depth>(camera.far or cfg.draw_distance or 38)+r
             or math.abs(side)>math.max(0,depth)*240/projection+r*1.5
             or height>math.max(0,depth)*104/projection+r*1.5
             or height< -math.max(0,depth)*103/projection-r*1.5 then return end
