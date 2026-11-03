@@ -56,6 +56,16 @@ end
 function S.wins()
     local n=0;for _,rank in ipairs(S.ranks) do if rank==1 then n=n+1 end end;return n
 end
+local pointsByPlace={10,6,3,1}
+S.titlePoints=45
+function S.pointsFor(place)
+    return pointsByPlace[place] or 0
+end
+function S.points()
+    local total=0
+    for _,rank in ipairs(S.ranks) do total=total+S.pointsFor(rank) end
+    return total
+end
 function S.canContinue() return S.wins()>0 end
 function S.write()
     local seq=S.sequence+1

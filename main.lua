@@ -11,6 +11,7 @@ Game={state="menu",menu=1,selected=1,triangles=0,race=nil,detail=true}
 -- Fixed oblique top-down view; follows position, never the car's heading.
 local camera={x=0,y=18,z=0,yaw=math.atan(12,14),pitch=-math.atan(18/math.sqrt(340))}
 local frame=0
+local titleTime=0
 local previous={}
 local function held(k)
     if k==nil then return false end
@@ -40,6 +41,7 @@ function Game.step(dt)
     local current={up=held(UP),down=held(DOWN),left=held(LEFT),right=held(RIGHT),ok=held(gas),back=held(back),fire=held(fire),brake=held(brake),reset=held(reset),selectItem=held(selectItem),detail=held(BTN_X) and cfg.controller=="snes",test=held(BTN_X)}
     local function pressed(k) return current[k] and not previous[k] end
     if Game.state=="menu" then
+        titleTime=(titleTime+dt)%12
         if pressed("test") then audio.test() end
         if pressed("up") or pressed("down") then Game.menu=3-Game.menu;audio.play("menu") end
         if pressed("ok") then
@@ -70,17 +72,35 @@ local function rect(x,y,w,h,c) ui.rectfill(x,y,x+w,y+h,colors.index[c]) end
 local function text(s,x,y,c) ui.print(s,x,y,colors.index[c or 9]) end
 local function panel()
     rect(40,38,400,190,10);rect(40,38,400,3,8)
-    text("LUPI COMBAT RALLY 7.0",122,53,15)
+    text("LUPI COMBAT RALLY 7.1",122,53,15)
+end
+local function drawTitleArt()
+    rect(0,0,480,104,10)
+    rect(0,78,480,26,11)
+    rect(0,78,480,2,7)
+    local scroll=math.floor(titleTime*160)%48
+    for x=-48,480,48 do rect(x-scroll,91,23,2,9) end
+    local x=math.floor(215+105*math.sin(titleTime*math.pi/3))
+    local y=78+math.floor(2*math.sin(titleTime*math.pi*8))
+    for i=1,4 do rect(x-i*11,y+2+i%2*3,7,2,i%2==0 and 8 or 7) end
+    rect(x,y,47,12,7)
+    rect(x+11,y-9,25,11,7)
+    rect(x+15,y-7,17,7,6)
+    rect(x+41,y+3,6,3,15)
+    rect(x+5,y+9,9,7,10);rect(x+34,y+9,9,7,10)
+    rect(x+8,y+11,3,3,11);rect(x+37,y+11,3,3,11)
+    text("LUPI COMBAT RALLY 3D",137,16,15)
+    text("CAMPEONATO 7.1",160,42,8)
 end
 local function drawMenu()
-    panel()
-    text("VENCA DUAS PISTAS DIFERENTES EM PRIMEIRO",74,84,9)
-    text((Game.menu==1 and "> " or "  ").."NOVO JOGO",144,114,Game.menu==1 and 15 or 9)
+    drawTitleArt()
+    rect(40,110,400,119,10)
+    text((Game.menu==1 and "> " or "  ").."NOVO JOGO",144,119,Game.menu==1 and 15 or 9)
     text((Game.menu==2 and "> " or "  ").."CONTINUE",144,140,Save.canContinue() and (Game.menu==2 and 15 or 9) or 11)
-    if not Save.canContinue() then text("CONTINUE: VENCA UMA PISTA PARA LIBERAR",80,172,11)
-    else text("VITORIAS "..Save.wins().."/"..trackCount.."  /  "..Save.status,90,172,14) end
-    text("CRUZ: ESCOLHER    B: CONFIRMAR",114,198,9)
-    text("NOVO JOGO ZERA O PROGRESSO SALVO",100,214,11)
+    text("PLACAR "..Save.points().."/"..Save.titlePoints.." PTS",144,164,14)
+    if not Save.canContinue() then text("CONTINUE: VENCA UMA PISTA PARA LIBERAR",80,184,11)
+    else text(Save.status,144,184,11) end
+    text("CRUZ: ESCOLHER    B: CONFIRMAR",114,204,9)
     text("SOM: "..audio.status().."   X: TESTAR",135,240,11)
     if audio.error then text(audio.lastError:sub(1,68),20,256,7)
     elseif audio.testInfo and audio.testTimer>0 then text(audio.testInfo:sub(1,72),20,256,9) end
@@ -95,19 +115,20 @@ local function drawSelect()
         local rank=Save.ranks[i]
         local status=rank==1 and "VENCIDA" or rank>0 and (rank.." LUGAR") or "NOVA"
         text((Game.selected==i and "> " or "  ")..i.." - "..name,90,y,Game.selected==i and 15 or 9)
-        text(status,330,y,rank==1 and 14 or 11)
+        text(status.." "..Save.pointsFor(rank).."P",300,y,rank==1 and 14 or 11)
     end
-    text("VITORIAS "..Save.wins().."  B: CORRER  Y: MENU",82,210,9)
+    text("PLACAR "..Save.points().."/"..Save.titlePoints.."   B: CORRER   Y: MENU",82,210,9)
 end
 local function drawResult()
     local r=Game.race
     panel()
     text(r.place==1 and "PRIMEIRO LUGAR!" or (r.place.." LUGAR - TENTE NOVAMENTE"),132,88,r.place==1 and 14 or 8)
     text(r.track.name.." / "..string.format("%.1f S",r.time),136,112,9)
-    text("PISTAS VENCIDAS: "..Save.wins().."/"..trackCount,130,138,15)
-    if Save.wins()>=2 then text("CAMPEAO DO LUPI COMBAT RALLY!",102,163,14)
-    else text("VENCA 2 PISTAS DIFERENTES PARA SER CAMPEAO",64,163,9) end
-    text(Save.status,150,186,Save.status=="SAVE INDISPONIVEL" and 7 or 9)
+    text("PROVA: "..Save.pointsFor(r.place).." PTS   TOTAL: "..Save.points().."/"..Save.titlePoints,104,138,15)
+    if Save.points()>=Save.titlePoints then text("CAMPEAO DO LUPI COMBAT RALLY!",102,163,14)
+    else text("MELHOR RESULTADO DE CADA PISTA CONTA",64,163,9) end
+    text("1O: 10   2O: 6   3O: 3   4O: 1",103,181,11)
+    text(Save.status,150,196,Save.status=="SAVE INDISPONIVEL" and 7 or 9)
     text("B: ESCOLHER PISTA   Y: MENU",123,211,9)
 end
 local function drawRace()
@@ -162,7 +183,7 @@ local function drawRace()
     end
     Game.triangles,Game.dropped=renderer.triangles,renderer.dropped
     rect(0,0,480,20,10);rect(0,228,480,42,10)
-    text("COMBAT RALLY 7.0 / "..r.id,10,6,15);text((Game.detail and "X ALTO " or "X LEVE ")..Game.triangles,282,6,9)
+    text("COMBAT RALLY 7.1 / "..r.id,10,6,15);text((Game.detail and "X ALTO " or "X LEVE ")..Game.triangles,282,6,9)
     text(Game.reported_fps and "FPS "..math.floor(Game.reported_fps+0.5) or "FPS --",390,6,9)
     text(string.format("%03d KM/H  VOLTA %d/3  POS %d/4  VIDA %d",math.floor(p.speed*6+0.5),p.laps,Race.position(r),p.hp),10,235,15)
     local item=p.weapon=="shot" and "TIRO" or p.weapon=="mine" and "MINA" or "SEM ARMA"
