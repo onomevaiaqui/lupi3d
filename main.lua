@@ -1,3 +1,5 @@
+local models=require("car").models
+local geometry=require "geometry"
 local cfg=require "config"
 local colors=require "colors"
 local tracks=require "track"
@@ -12,6 +14,8 @@ Game={state="menu",menu=1,selected=1,triangles=0,race=nil,detail=true}
 local camera={x=0,y=18,z=0,yaw=math.atan(12,14),pitch=-math.atan(18/math.sqrt(340))}
 local frame=0
 local titleTime=0
+local alphabet="ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 "
+local nameCursor,nameLetters,modelId=1,{},1
 local previous={}
 local function held(k)
     if k==nil then return false end
@@ -26,13 +30,13 @@ local function timestep()
 end
 function Game.startRace(id)
     audio.scene("race",true)
-    Game.selected=id;Game.race=Race.new(id);Game.state="race"
+    Game.selected=id;Game.race=Race.new(id,Save.model);Game.state="race"
     if type(collectgarbage)=="function" then pcall(collectgarbage,"collect") end
 end
 function Game.result()
     local r=Game.race
-    Save.record(r.id,r.place)
-    Game.state="result"
+    Save.record(r.id,r.place,Race.opponentOrder(r))
+    Game.state="podium"
 end
 function Game.step(dt)
     dt=math.max(0,math.min(dt or timestep(),0.125))
@@ -45,8 +49,22 @@ function Game.step(dt)
         if pressed("test") then audio.test() end
         if pressed("up") or pressed("down") then Game.menu=3-Game.menu;audio.play("menu") end
         if pressed("ok") then
-            if Game.menu==1 then Save.newGame();Game.selected=1;Game.state="select";audio.play("confirm")
+            if Game.menu==1 then nameLetters={1,37,37,37,37,37,37,37};nameCursor=1;modelId=1;Game.state="name";audio.play("confirm")
             elseif Save.canContinue() then Game.selected=Save.last;Game.state="select";audio.play("menu") end
+        end
+    elseif Game.state=="name" then
+        if pressed("reset") then modelId=(modelId-2)%#models+1 end
+        if pressed("selectItem") then modelId=modelId%#models+1 end
+        if pressed("left") then nameCursor=(nameCursor-2)%8+1 end
+        if pressed("right") then nameCursor=nameCursor%8+1 end
+        if pressed("up") then nameLetters[nameCursor]=nameLetters[nameCursor]%#alphabet+1 end
+        if pressed("down") then nameLetters[nameCursor]=(nameLetters[nameCursor]-2)%#alphabet+1 end
+        if pressed("back") then Game.state="menu"
+        elseif pressed("ok") then
+            local letters={}
+            for i,index in ipairs(nameLetters) do letters[i]=alphabet:sub(index,index) end
+            local name=table.concat(letters):match("^%s*(.-)%s*$")
+            Save.newGame(name~="" and name or "PILOTO",modelId);Game.selected=1;Game.state="select"
         end
     elseif Game.state=="select" then
         if pressed("left") or pressed("up") then Game.selected=(Game.selected-2)%trackCount+1;audio.play("menu") end
@@ -60,6 +78,8 @@ function Game.step(dt)
             Race.step(Game.race,dt,{gas=current.ok,brake=current.brake,fire=pressed("fire"),select=pressed("selectItem"),steer=(current.right and 1 or 0)-(current.left and 1 or 0)})
             if Game.race.finished then Game.result() end
         end
+    elseif Game.state=="podium" then
+        if pressed("ok") or pressed("back") then Game.state="result" end
     elseif Game.state=="result" then
         if pressed("back") then Game.state="menu"
         elseif pressed("ok") then Game.selected=Save.last;Game.state="select" end
@@ -72,7 +92,7 @@ local function rect(x,y,w,h,c) ui.rectfill(x,y,x+w,y+h,colors.index[c]) end
 local function text(s,x,y,c) ui.print(s,x,y,colors.index[c or 9]) end
 local function panel()
     rect(40,38,400,190,10);rect(40,38,400,3,8)
-    text("LUPI COMBAT RALLY 7.1",122,53,15)
+    text("LUPI COMBAT RALLY 7.3",122,53,15)
 end
 local function drawTitleArt()
     rect(0,0,480,104,10)
@@ -90,7 +110,7 @@ local function drawTitleArt()
     rect(x+5,y+9,9,7,10);rect(x+34,y+9,9,7,10)
     rect(x+8,y+11,3,3,11);rect(x+37,y+11,3,3,11)
     text("LUPI COMBAT RALLY 3D",137,16,15)
-    text("CAMPEONATO 7.1",160,42,8)
+    text("CAMPEONATO 7.3",160,42,8)
 end
 local function drawMenu()
     drawTitleArt()
@@ -119,17 +139,72 @@ local function drawSelect()
     end
     text("PLACAR "..Save.points().."/"..Save.titlePoints.."   B: CORRER   Y: MENU",82,210,9)
 end
+local garageCamera={x=-1.3,y=2.0,z=-9,yaw=0,pitch=-0.09}
+local podiumCamera={x=0,y=3.1,z=-10,yaw=0,pitch=-0.14}
+local podiumBlocks,podiumCars={},{}
+local garageCar={x=2.4,y=0,z=0,yaw=2.48}
+for i,h in ipairs({1.45,0.95,0.56}) do
+    local x=({0,-3.25,3.25})[i]
+    podiumBlocks[i]={mesh=geometry.box(2.65,h,2.8,11,27,12),x=x,y=h/2,z=0}
+    podiumCars[i]={x=x,y=h,z=0,yaw=2.65}
+end
+local function drawName()
+    panel()
+    text("NOME DO PILOTO",91,85,15)
+    for i,index in ipairs(nameLetters) do
+        local x=65+(i-1)*24
+        rect(x,106,21,24,i==nameCursor and 8 or 11)
+        text(alphabet:sub(index,index),x+7,114,i==nameCursor and 10 or 9)
+    end
+    text("CRUZ: EDITAR NOME",70,144,9)
+    text("L / R: TROCAR CARRO",70,164,9)
+    local model=models[modelId]
+    renderer.begin(garageCamera)
+    garageCar.mesh=model.mesh
+    renderer.submit(garageCar)
+    renderer.flush()
+    text(model.name,280,174,15)
+    text(model.trait,280,189,9)
+    text("B: CONFIRMAR   Y: VOLTAR",119,210,9)
+end
+local function drawPodium()
+    local r=Game.race
+    rect(0,0,480,270,10)
+    text("PODIO / "..r.track.name,130,26,15)
+    local order=Race.opponentOrder(r)
+    local rival=1
+    renderer.begin(podiumCamera)
+    for place,block in ipairs(podiumBlocks) do
+        local id=1
+        if place~=r.place then
+            id=1+tonumber(order:sub(rival,rival));rival=rival+1
+        end
+        renderer.submit(block)
+        local car=podiumCars[place]
+        car.mesh=r.cars[id].mesh
+        renderer.submit(car)
+        local x=({240,140,340})[place]
+        local name=({Save.name,"Lino","Carol","Lucas"})[id]
+        text(place.."O",x-8,203,place==1 and 15 or 9)
+        text(name,x-#name*3,220,id==1 and 15 or 9)
+    end
+    renderer.flush()
+    text("B: VER PLACAR",169,248,9)
+end
 local function drawResult()
     local r=Game.race
     panel()
-    text(r.place==1 and "PRIMEIRO LUGAR!" or (r.place.." LUGAR - TENTE NOVAMENTE"),132,88,r.place==1 and 14 or 8)
-    text(r.track.name.." / "..string.format("%.1f S",r.time),136,112,9)
-    text("PROVA: "..Save.pointsFor(r.place).." PTS   TOTAL: "..Save.points().."/"..Save.titlePoints,104,138,15)
-    if Save.points()>=Save.titlePoints then text("CAMPEAO DO LUPI COMBAT RALLY!",102,163,14)
-    else text("MELHOR RESULTADO DE CADA PISTA CONTA",64,163,9) end
-    text("1O: 10   2O: 6   3O: 3   4O: 1",103,181,11)
-    text(Save.status,150,196,Save.status=="SAVE INDISPONIVEL" and 7 or 9)
-    text("B: ESCOLHER PISTA   Y: MENU",123,211,9)
+    text(r.track.name.." / "..r.place.." LUGAR / +"..Save.pointsFor(r.place).." PTS NA PROVA",72,78,15)
+    for i,row in ipairs(Save.standings()) do
+        local y=100+(i-1)*18
+        local color=row.id==1 and 15 or 9
+        text(i.."  "..row.name,104,y,color)
+        text(row.points.." PTS",315,y,color)
+    end
+    local total=Save.points()
+    text(total>=Save.titlePoints and "META ATINGIDA: CAMPEAO!" or
+        ("META: "..total.."/"..Save.titlePoints.." PTS"),120,178,14)
+    text("B: ESCOLHER PISTA   Y: MENU",111,210,9)
 end
 local function drawRace()
     local r=Game.race;local p=r.player;local track=r.track
@@ -183,7 +258,7 @@ local function drawRace()
     end
     Game.triangles,Game.dropped=renderer.triangles,renderer.dropped
     rect(0,0,480,20,10);rect(0,228,480,42,10)
-    text("COMBAT RALLY 7.1 / "..r.id,10,6,15);text((Game.detail and "X ALTO " or "X LEVE ")..Game.triangles,282,6,9)
+    text("COMBAT RALLY 7.3 / "..r.id,10,6,15);text((Game.detail and "X ALTO " or "X LEVE ")..Game.triangles,282,6,9)
     text(Game.reported_fps and "FPS "..math.floor(Game.reported_fps+0.5) or "FPS --",390,6,9)
     text(string.format("%03d KM/H  VOLTA %d/3  POS %d/4  VIDA %d",math.floor(p.speed*6+0.5),p.laps,Race.position(r),p.hp),10,235,15)
     local item=p.weapon=="shot" and "TIRO" or p.weapon=="mine" and "MINA" or "SEM ARMA"
@@ -201,6 +276,8 @@ function Game.draw()
     colors.register();ui.camera(0,0);ui.clip(0,0,480,270);ui.cls(colors.index[1])
     if Game.state=="race" then drawRace()
     elseif Game.state=="menu" then drawMenu()
+    elseif Game.state=="name" then drawName()
+    elseif Game.state=="podium" then drawPodium()
     elseif Game.state=="select" then drawSelect()
     else drawResult() end
 end

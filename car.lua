@@ -40,19 +40,6 @@ for _,x in ipairs({-0.44,0.44}) do
     G.quad(m,{x-0.09,0.48,-1.178},{x-0.09,0.62,-1.178},{x+0.09,0.62,-1.178},{x+0.09,0.48,-1.178},7)
     G.quad(m,{x+0.10,0.51,1.178},{x+0.10,0.67,1.178},{x-0.10,0.67,1.178},{x-0.10,0.51,1.178},9)
 end
-m.rival=G.mesh()
-G.append(m.rival,G.box(1.42,0.4,2.35,7,23,7),0,0.52,0)
--- Reuse the cabin's eight vertices, tapering the roof and sloping both windows.
-local cabin=G.box(1.0,0.54,1.3,6,22,7)
-for i=1,#cabin.v,3 do
-    if cabin.v[i+1]>0 then cabin.v[i]=cabin.v[i]*0.84;cabin.v[i+2]=cabin.v[i+2]*0.56 end
-end
-G.append(m.rival,cabin,0,0.96,-0.08)
-for _,x in ipairs({-0.82,0.82}) do for _,z in ipairs({-0.75,0.75}) do
-    local z1,z2=z-0.22,z+0.22
-    if x<0 then G.quad(m.rival,{x,0.08,z2},{x,0.53,z2},{x,0.53,z1},{x,0.08,z1},0)
-    else G.quad(m.rival,{x,0.08,z1},{x,0.53,z1},{x,0.53,z2},{x,0.08,z2},0) end
-end end
 -- Weld exact shared XYZ positions once at load time, reducing per-frame projection.
 local function weld(mesh)
     local positions,vertices,remap={},{},{}
@@ -70,5 +57,62 @@ local function weld(mesh)
     for i=1,#mesh.f,4 do for j=0,2 do mesh.f[i+j]=remap[mesh.f[i+j]] end end
     mesh.v=vertices
 end
-weld(m);weld(m.rival)
+local function build(sections,color,wheelHeight,axle,lights)
+    local car=G.mesh()
+    local function corners(s)
+        local z,w,b,h,roof,glass=table.unpack(s)
+        return {{-w,b,z},{w,b,z},{w,h,z},{roof,h,z},{roof,glass,z},
+            {-roof,glass,z},{-roof,h,z},{-w,h,z}}
+    end
+    local a=corners(sections[1])
+    G.quad(car,a[1],a[8],a[3],a[2],color)
+    for i=2,#sections do
+        local b=corners(sections[i])
+        for j=2,8 do
+            local k=j%8+1
+            local shade=(j==4 or j==6 or j==5 and sections[i][7]) and 6
+                or (j==8 and color+16 or color)
+            G.quad(car,a[j],a[k],b[k],b[j],shade)
+        end
+        a=b
+    end
+    G.quad(car,a[2],a[3],a[8],a[1],color)
+    G.quad(car,a[7],a[6],a[5],a[4],6)
+    for _,x in ipairs({-0.8,0.8}) do for _,z in ipairs({-axle,axle}) do
+        G.append(car,G.box(0.23,wheelHeight,0.47,0,10,0),x,wheelHeight/2,z)
+    end end
+    local nose=sections[#sections][1]+0.005
+    G.quad(car,{0.6,0.34,nose},{0.6,0.44,nose},{-0.6,0.44,nose},{-0.6,0.34,nose},10)
+    for i=1,lights do
+        local x=(i-(lights+1)/2)*(lights==2 and 0.86 or 0.29)
+        G.quad(car,{x+0.10,0.49,nose},{x+0.10,0.62,nose},
+            {x-0.10,0.62,nose},{x-0.10,0.49,nose},9)
+    end
+    weld(car)
+    return car
+end
+weld(m)
+local fiat=build({
+    {-1.02,0.67,0.31,0.71,0.55,0.71},{-0.74,0.68,0.31,0.71,0.53,1.23,true},
+    {0.21,0.69,0.31,0.71,0.52,1.22},{0.57,0.68,0.31,0.70,0.56,0.74,true},
+    {1.02,0.65,0.31,0.66,0.53,0.66}
+},7,0.45,0.68,2)
+local gurgel=build({
+    {-1.08,0.67,0.48,0.81,0.56,0.81},{-0.94,0.69,0.48,0.81,0.56,1.44},
+    {0.19,0.69,0.48,0.81,0.55,1.44},{0.55,0.69,0.48,0.80,0.58,0.80,true},
+    {1.07,0.58,0.43,0.65,0.49,0.65}
+},14,0.59,0.72,2)
+G.append(gurgel,G.box(0.43,0.49,0.22,0,10,0),0,0.91,-1.15)
+weld(gurgel)
+local puma=build({
+    {-1.44,0.69,0.30,0.62,0.56,0.62},{-0.99,0.74,0.30,0.63,0.58,0.66},
+    {-0.56,0.75,0.30,0.65,0.51,1.07,true},{0.12,0.76,0.30,0.65,0.50,1.08},
+    {0.57,0.75,0.30,0.64,0.57,0.65,true},{1.47,0.65,0.30,0.62,0.52,0.62}
+},12,0.46,0.92,4)
+m.models={
+    {name="FUSCA",trait="EQUILIBRADO",mesh=m,speed=15,accel=7,steer=1.5,grass=5},
+    {name="FIAT 147",trait="AGIL NAS CURVAS",mesh=fiat,speed=14.3,accel=7.5,steer=1.7,grass=5},
+    {name="GURGEL X-12",trait="MELHOR NA GRAMA",mesh=gurgel,speed=13.8,accel=7,steer=1.52,grass=7},
+    {name="PUMA GTB TUBARAO",trait="MAIOR VELOCIDADE",mesh=puma,speed=16.3,accel=7.2,steer=1.4,grass=5}
+}
 return m
