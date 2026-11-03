@@ -40,7 +40,7 @@ for i=1,#S.blast.f,4 do S.blast.f[i+1],S.blast.f[i+2]=S.blast.f[i+2],S.blast.f[i
 function S.populate(T)
     T.decor={};T.markings={}
     for i,s in ipairs(T.parts) do
-        if i%3==1 and (T.id~=2 or s.x*s.x+s.z*s.z>64) then
+        if i%3==1 and not s.raised and (T.id~=2 or s.x*s.x+s.z*s.z>64) then
             local len=s.length;local dx,dz=s.dx/len,s.dz/len;local nx,nz=-dz*0.07,dx*0.07
             local m=G.mesh();local h=math.min(1,len*0.3)
             G.quad(m,{-dx*h+nx,0,-dz*h+nz},{dx*h+nx,0,dz*h+nz},{dx*h-nx,0,dz*h-nz},{-dx*h-nx,0,-dz*h-nz},9)
@@ -53,7 +53,8 @@ function S.populate(T)
         x,z=x+math.cos(yaw)*offset,z-math.sin(yaw)*offset
         local _,d=T.locate(x,z)
         if d>36 then
-            local kind=i%6==0 and "house" or i%3==0 and "fence" or "rock"
+            local kind=T.id==4 and "rock" or T.id==7 and "house" or T.id==9 and "fence"
+                or i%6==0 and "house" or i%3==0 and "fence" or "rock"
             T.decor[#T.decor+1]={x=x,y=0,z=z,yaw=kind=="house" and 0.7 or yaw,mesh=S[kind],radius=kind=="house" and 5 or 3,kind=kind}
         end
     end

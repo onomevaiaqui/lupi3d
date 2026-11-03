@@ -18,8 +18,8 @@ function Race.new(id)
     local r={track=track,id=id,cars={},time=0,countdown=3,finished=false,place=0}
     for i=1,4 do
         local progress=i==1 and track.segments-0.35 or 0.2+(i-2)*0.6
-        local x,z,yaw=track.sample(progress)
-        r.cars[i]={player=i==1,x=x,y=0,z=z,yaw=yaw,speed=0,progress=progress,laps=0,
+        local x,z,yaw,_,y=track.sample(progress)
+        r.cars[i]={player=i==1,x=x,y=y,z=z,yaw=yaw,speed=0,progress=progress,laps=0,
             started=i~=1,checkpoint=3,done=false,mesh=i==1 and mesh or enemyMeshes[i-1],radius=2,
             hp=100,respawn=0,stun=0,nitro=0,cooldown=0,ammo=0,weapon=nil,
             total=i==1 and -0.35 or progress,aiSpeed=9.1+(i-2)*0.7,decision=0}
@@ -32,6 +32,8 @@ local function progressPlayer(r)
     local p=r.player
     local progress,distance=r.track.locate(p.x,p.z,p.progress)
     p.progress=progress;p.offroad=distance>r.track.halfWidth^2
+    local _,_,_,_,height=r.track.sample(progress)
+    p.y=height
     local sector=math.floor(progress/(r.track.segments/4))
     if not p.offroad then
         if sector==p.checkpoint+1 and sector<=3 then p.checkpoint=sector
@@ -73,7 +75,7 @@ function Race.step(r,dt,input)
             if p.stun>0 then p.speed=math.min(p.speed,4) end
             p.yaw=(p.yaw+input.steer*cfg.steering*math.min(p.speed/5,1)*h+math.pi)%(2*math.pi)-math.pi
             p.x=p.x+math.sin(p.yaw)*p.speed*h;p.z=p.z+math.cos(p.yaw)*p.speed*h
-            if math.abs(p.x)>55 or math.abs(p.z)>55 then p.x=math.max(-55,math.min(55,p.x));p.z=math.max(-55,math.min(55,p.z));p.speed=0 end
+            if math.abs(p.x)>r.track.bound or math.abs(p.z)>r.track.bound then p.x=math.max(-r.track.bound,math.min(r.track.bound,p.x));p.z=math.max(-r.track.bound,math.min(r.track.bound,p.z));p.speed=0 end
             progressPlayer(r)
         end
         for i=2,4 do
@@ -84,7 +86,8 @@ function Race.step(r,dt,input)
                 local _,_,_,length=r.track.sample(car.total)
                 car.total=car.total+car.speed*h/length
                 car.progress=car.total%r.track.segments;car.laps=math.floor(car.total/r.track.segments)
-                car.x,car.z,car.yaw=r.track.sample(car.progress)
+                local x,z,yaw,_,height=r.track.sample(car.progress)
+                car.x,car.z,car.yaw,car.y=x,z,yaw,height
                 if car.laps>=3 then car.done=true;car.speed=0 end
             end
         end
@@ -92,6 +95,7 @@ function Race.step(r,dt,input)
         if p.respawn>0 then p.x,p.z,p.yaw=r.track.sample(p.progress) end
         if r.finished then break end
     end
+    if input.select then combat.select(r.player) end
     if input.fire then combat.fire(r.combat,r.player,r.cars) end
     -- AI decisions are limited to four evaluations/second per opponent.
     for i=2,4 do

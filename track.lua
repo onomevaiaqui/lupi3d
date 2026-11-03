@@ -1,20 +1,28 @@
 local G=require "geometry"
-local names={"VALE OVAL","CRUZAMENTO 8","SERRA VERDE"}
+local names={"VALE OVAL","CRUZAMENTO 8","SERRA VERDE","PEDREIRA","LAGOA","VIADUTO NORTE","ESTRADA REAL","VIADUTO SUL","AUTODROMO"}
 local function new(id)
-assert(id>=1 and id<=3)
-local T={id=id,name=names[id],segments=id==1 and 40 or 48,halfWidth=3.6,parts={},trees={}}
+assert(id>=1 and id<=#names)
+local T={id=id,name=names[id],segments=({40,48,48,36,48,64,64,72,80})[id],bridge=id==6 or id==8,halfWidth=3.6,parts={},trees={}}
+T.bound=({55,55,55,55,60,70,78,85,95})[id]
 local tau=2*math.pi
 local function p(t)
     if id==1 then return 20*math.sin(t),32*math.cos(t) end
     if id==2 then return 30*math.sin(t),44*math.sin(t)*math.cos(t) end
+    if id==4 then return 16*math.sin(t)+3*math.sin(2*t),23*math.cos(t) end
+    if id==5 then return 28*math.sin(t)+8*math.cos(2*t),27*math.cos(t)+5*math.sin(2*t) end
+    if id==6 then return 38*math.sin(t),56*math.sin(t)*math.cos(t) end
+    if id==7 then return 34*math.sin(t)+9*math.sin(3*t),51*math.cos(t) end
+    if id==8 then return 62*math.sin(t)*math.cos(t)+10*math.sin(t),47*math.sin(t) end
+    if id==9 then return 48*math.sin(t)+8*math.sin(3*t),68*math.cos(t)+9*math.cos(2*t) end
     return 24*math.sin(t)+5*math.sin(3*t),30*math.cos(t)
 end
 local points={}
 for i=0,T.segments do
-    local t=i*tau/T.segments;local x,z=p(t)
+    local t=((i+(T.bridge and T.segments/8 or 0))%T.segments)*tau/T.segments;local x,z=p(t)
     local xa,za=p(t-0.001);local xb,zb=p(t+0.001)
     local dx,dz=xb-xa,zb-za;local n=math.sqrt(dx*dx+dz*dz)
-    points[i]={x=x,z=z,nx=dz/n,nz=-dx/n}
+    local y=T.bridge and 5*math.max(0,1-math.abs(t-math.pi)/0.8) or 0
+    points[i]={x=x,y=y,z=z,nx=dz/n,nz=-dx/n}
 end
 T.length=0
 for i=0,T.segments-1 do
@@ -22,9 +30,18 @@ for i=0,T.segments-1 do
     local s={x=(a.x+b.x)/2,y=0,z=(a.z+b.z)/2,mesh=G.mesh(),a=a,b=b,dx=dx,dz=dz,len2=dx*dx+dz*dz}
     s.length=math.sqrt(s.len2);T.length=T.length+s.length
     s.radius=s.length/2+T.halfWidth+0.35
-    local function edge(v,w) return {v.x+v.nx*w-s.x,0,v.z+v.nz*w-s.z} end
+    s.raised=a.y>0 or b.y>0
+    local function edge(v,w) return {v.x+v.nx*w-s.x,v.y,v.z+v.nz*w-s.z} end
     -- Winding follows +Y regardless of the turn direction.
     G.quad(s.mesh,edge(a,-T.halfWidth),edge(b,-T.halfWidth),edge(b,T.halfWidth),edge(a,T.halfWidth),4)
+    if s.raised then
+        for _,side in ipairs({-1,1}) do
+            local u,v=edge(a,T.halfWidth*side),edge(b,T.halfWidth*side)
+            local lowU,lowV={u[1],u[2]-0.45,u[3]},{v[1],v[2]-0.45,v[3]}
+            if side<0 then G.quad(s.mesh,v,u,lowU,lowV,11)
+            else G.quad(s.mesh,u,v,lowV,lowU,11) end
+        end
+    end
     s.trim={x=s.x,y=0,z=s.z,mesh=G.mesh(),radius=s.radius}
     for _,side in ipairs({-1,1}) do
         local w=T.halfWidth*side;local o=(T.halfWidth+0.28)*side
@@ -36,7 +53,7 @@ for i=0,T.segments-1 do
 end
 function T.sample(progress)
     local f=progress%T.segments;local i=math.floor(f);local u=f-i;local s=T.parts[i+1]
-    return s.a.x+s.dx*u,s.a.z+s.dz*u,math.atan(s.dx,s.dz),s.length
+    return s.a.x+s.dx*u,s.a.z+s.dz*u,math.atan(s.dx,s.dz),s.length,s.a.y+(s.b.y-s.a.y)*u
 end
 function T.locate(x,z,hint)
     local best,progress=math.huge,0
@@ -48,7 +65,7 @@ function T.locate(x,z,hint)
         if d<best then best,progress=d,(i%T.segments)+u end
     end
     if hint then for i=math.floor(hint)-4,math.floor(hint)+4 do check(i) end end
-    if not hint or best>144 then for i=0,T.segments-1 do check(i) end end
+    if not hint or (best>144 and not T.bridge) then for i=0,T.segments-1 do check(i) end end
     return progress%T.segments,best
 end
 T.finish={x=points[0].x,y=0.018,z=points[0].z,mesh=G.mesh(),radius=4}

@@ -1,5 +1,11 @@
 local cfg=require "config"
-local S={ranks={0,0,0},last=1,sequence=0,status="SEM SAVE"}
+local count=#require("track").names
+local function emptyRanks()
+    local ranks={}
+    for i=1,count do ranks[i]=0 end
+    return ranks
+end
+local S={ranks=emptyRanks(),last=1,sequence=0,status="SEM SAVE"}
 local base=cfg.save_dir
 if not base then
     local path
@@ -17,12 +23,20 @@ local function checksum(s)
 end
 local function decode(s)
     if type(s)~="string" or #s>128 then return nil end
-    local seq,a,b,c,last,sum=s:match("^RALLY4|(%d+)|(%d)|(%d)|(%d)|(%d)|(%d+)$")
-    if not seq then return nil end
-    local prefix=s:match("^(.*)|%d+$")
-    seq,a,b,c,last,sum=tonumber(seq),tonumber(a),tonumber(b),tonumber(c),tonumber(last),tonumber(sum)
-    if seq>100000000 or a>4 or b>4 or c>4 or last<1 or last>3 or checksum(prefix)~=sum then return nil end
-    return {sequence=seq,ranks={a,b,c},last=last}
+    local prefix,sum=s:match("^(.*)|(%d+)$")
+    if not prefix or checksum(prefix)~=tonumber(sum) then return nil end
+    local seq,packed,last=prefix:match("^RALLY9|(%d+)|([0-4]+)|(%d+)$")
+    if not seq then
+        local a,b,c
+        seq,a,b,c,last=prefix:match("^RALLY4|(%d+)|([0-4])|([0-4])|([0-4])|([1-3])$")
+        if not seq then return nil end
+        packed=a..b..c..string.rep("0",count-3)
+    end
+    seq,last=tonumber(seq),tonumber(last)
+    if #packed~=count or seq>100000000 or last<1 or last>count then return nil end
+    local ranks={}
+    for i=1,count do ranks[i]=tonumber(packed:sub(i,i)) end
+    return {sequence=seq,ranks=ranks,last=last}
 end
 local function read(slot)
     if not io or type(io.open)~="function" then return nil end
@@ -45,7 +59,7 @@ end
 function S.canContinue() return S.wins()>0 end
 function S.write()
     local seq=S.sequence+1
-    local data=string.format("RALLY4|%d|%d|%d|%d|%d",seq,S.ranks[1],S.ranks[2],S.ranks[3],S.last)
+    local data=string.format("RALLY9|%d|%s|%d",seq,table.concat(S.ranks),S.last)
     data=data.."|"..checksum(data)
     local ok=pcall(function()
         assert(io and type(io.open)=="function","io unavailable")
@@ -58,12 +72,12 @@ function S.write()
     S.status="SAVE INDISPONIVEL";return false
 end
 function S.newGame()
-    S.ranks={0,0,0};S.last=1;return S.write()
+    S.ranks=emptyRanks();S.last=1;return S.write()
 end
 function S.record(track,rank)
-    assert(track>=1 and track<=3 and rank>=1 and rank<=4)
+    assert(track>=1 and track<=count and rank>=1 and rank<=4)
     if S.ranks[track]==0 or rank<S.ranks[track] then S.ranks[track]=rank end
-    S.last=track%3+1
+    S.last=track%count+1
     return S.write()
 end
 if not io or type(io.open)~="function" then S.status="SAVE INDISPONIVEL" end

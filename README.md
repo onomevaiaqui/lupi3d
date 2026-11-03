@@ -1,3 +1,9 @@
+# Lupi Combat Rally 3D 7.0
+
+Nove pistas selecionaveis. Novos circuitos: Pedreira, Lagoa, Viaduto Norte, Estrada Real, Viaduto Sul e Autodromo. O campeonato continua exigindo duas vitorias em pistas diferentes. Saves das tres pistas originais sao carregados automaticamente.
+
+Controle SNES: B acelera, A freia, esquerda/direita viram, L reinicia a corrida com contagem de largada, Y usa a arma selecionada e R alterna entre tiros e minas disponiveis. X alterna a qualidade grafica na corrida e testa o som no menu.
+
 # Lupi Combat Rally 3D — restauração da versão 5.1 (6.3)
 
 Campeonato 3D para Lupi, com três pistas, quatro carros, combate, power-ups, menu Novo Jogo/Continue e save entre provas. A câmera permanece alta e inclinada, com orientação fixa, acompanhando a posição do jogador.

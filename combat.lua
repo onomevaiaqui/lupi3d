@@ -16,8 +16,8 @@ function C.new(track)
     local c={pickups={},mines={},traces={},blasts={},track=track}
     local kinds={"shot","mine","nitro","shot","mine","nitro","shot","nitro"}
     for i,kind in ipairs(kinds) do
-        local x,z=track.sample((i-0.3)*track.segments/8)
-        c.pickups[i]={kind=kind,x=x,y=0,z=z,mesh=meshes[kind],radius=1,cooldown=0}
+        local x,z,_,_,y=track.sample((i-0.3)*track.segments/8)
+        c.pickups[i]={kind=kind,x=x,y=y,z=z,mesh=meshes[kind],radius=1,cooldown=0}
     end
     for i=1,8 do c.mines[i]={active=false,mesh=mineMesh,radius=1,y=0.12} end
     for i=1,4 do c.blasts[i]={active=false,mesh=S.blast,radius=3,y=0.12} end
@@ -26,18 +26,29 @@ function C.new(track)
 end
 function C.collect(car,kind)
     if kind=="nitro" then car.nitro=5;if car.player then audio.play("nitro") end
+    elseif car.player then
+        car.stock=car.stock or {}
+        car.stock[kind]=kind=="shot" and 3 or 2
+        if car.ammo==0 then car.weapon=kind end
+        car.ammo=car.stock[car.weapon]
     else car.weapon=kind;car.ammo=kind=="shot" and 3 or 2 end
     if car.player and kind~="nitro" then audio.play("pickup") end
 end
-local function blast(c,x,z)
-    if c then for _,b in ipairs(c.blasts) do if not b.active then b.active=true;b.x=x;b.z=z;b.ttl=0.4;break end end end
+function C.select(car)
+    local other=car.weapon=="shot" and "mine" or "shot"
+    if car.stock and (car.stock[other] or 0)>0 then
+        car.weapon,car.ammo=other,car.stock[other]
+    end
+end
+local function blast(c,x,z,y)
+    if c then for _,b in ipairs(c.blasts) do if not b.active then b.active=true;b.x=x;b.z=z;b.y=y+0.12;b.ttl=0.4;break end end end
     audio.play("explosion",x,z)
 end
 local function damage(car,amount,c)
     if car.respawn>0 or car.done then return end
     car.hp=math.max(0,car.hp-amount);car.speed=car.speed*0.45;car.stun=0.55
     if car.player then audio.play("hit") end
-    if car.hp==0 then blast(c,car.x,car.z);car.respawn=2;car.weapon=nil;car.ammo=0;car.nitro=0;car.speed=0 end
+    if car.hp==0 then blast(c,car.x,car.z,car.y);car.respawn=2;car.weapon=nil;car.ammo=0;car.stock=nil;car.nitro=0;car.speed=0 end
 end
 C.damage=damage
 function C.fire(c,car,cars)
@@ -48,11 +59,11 @@ function C.fire(c,car,cars)
         for _,other in ipairs(cars) do if other~=car and other.respawn==0 and not other.done then
             local x,z=other.x-car.x,other.z-car.z
             local along=x*dx+z*dz;local side=x*dz-z*dx
-            if along>0 and along<nearest and math.abs(side)<0.85 then nearest,best=along,other end
+            if along>0 and along<nearest and math.abs(side)<0.85 and math.abs(other.y-car.y)<1.5 then nearest,best=along,other end
         end end
         if best then damage(best,35,c) end
         for _,t in ipairs(c.traces) do if not t.active then
-            t.active=true;t.x=car.x;t.z=car.z;t.yaw=car.yaw;t.ttl=0.09;break
+            t.active=true;t.x=car.x;t.z=car.z;t.y=car.y+0.65;t.yaw=car.yaw;t.ttl=0.09;break
         end end
         audio.play("shot",car.x,car.z)
     elseif car.weapon=="mine" then
@@ -60,10 +71,11 @@ function C.fire(c,car,cars)
         for _,m in ipairs(c.mines) do if not m.active then free=m;break end end
         if not free then return false end
         free.active=true;free.owner=car;free.x=car.x-math.sin(car.yaw)*1.6;free.z=car.z-math.cos(car.yaw)*1.6
-        free.ttl=18;free.arm=0.5
+        free.y=car.y+0.12;free.ttl=18;free.arm=0.5
         audio.play("mine",car.x,car.z)
     else return false end
     car.ammo=car.ammo-1;car.cooldown=0.35
+    if car.stock then car.stock[car.weapon]=car.ammo end
     return true
 end
 function C.step(c,cars,dt)
@@ -76,7 +88,7 @@ function C.step(c,cars,dt)
         elseif not car.done then
             for _,p in ipairs(c.pickups) do
                 local x,z=p.x-car.x,p.z-car.z
-                if p.cooldown==0 and x*x+z*z<3.4 then C.collect(car,p.kind);p.cooldown=9;break end
+                if p.cooldown==0 and x*x+z*z<3.4 and math.abs(p.y-car.y)<1.5 then C.collect(car,p.kind);p.cooldown=9;break end
             end
         end
     end
@@ -86,7 +98,7 @@ function C.step(c,cars,dt)
         elseif m.arm==0 then
             for _,car in ipairs(cars) do if car.respawn==0 and not car.done then
                 local x,z=car.x-m.x,car.z-m.z
-                if x*x+z*z<1.3 then damage(car,50,c);if car.hp>0 then blast(c,m.x,m.z) end;m.active=false;break end
+                if x*x+z*z<1.3 and math.abs(m.y-car.y)<1.5 then damage(car,50,c);if car.hp>0 then blast(c,m.x,m.z,car.y) end;m.active=false;break end
             end end
         end
     end end
