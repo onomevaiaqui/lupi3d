@@ -3,6 +3,7 @@ local tracks=require "track"
 local mesh=require "car"
 local combat=require "combat"
 local audio=require "audio"
+local pace=1.15
 local Race={names={"Lino","Carol","Lucas"}}
 function Race.new(id,modelId)
     modelId=modelId or 1
@@ -21,7 +22,7 @@ function Race.new(id,modelId)
         r.cars[i]={lane=lane,targetLane=i==4 and 0 or lane,player=i==1,x=x,y=y,z=z,yaw=yaw,speed=0,progress=progress,laps=0,
             started=false,checkpoint=3,done=false,model=model,mesh=model.mesh,radius=2,
             hp=100,respawn=0,stun=0,nitro=0,cooldown=0,ammo=0,weapon=nil,
-            total=grid,aiSpeed=9.1+(i-2)*0.7,decision=0}
+            total=grid,aiSpeed=(9.1+(i-2)*0.7)*pace,decision=0}
     end
     r.player=r.cars[1];r.combat=combat.new(track)
     audio.play("red")
@@ -115,10 +116,10 @@ function Race.step(r,dt,input)
         if p.respawn==0 and not p.done then
             local boost=p.nitro>0 and 1.1 or 1
             local model=p.model
-            local accel=input.brake and -cfg.brake or input.gas and model.accel*boost or -1.8
+            local accel=input.brake and -cfg.brake or input.gas and model.accel*boost*pace or -1.8
             if p.offroad then accel=accel-5 end
-            local cap=p.offroad and model.grass or model.speed*boost
-            p.speed=math.max(0,math.min(model.speed*boost,p.speed+accel*h))
+            local cap=p.offroad and model.grass*pace or model.speed*boost*pace
+            p.speed=math.max(0,math.min(model.speed*boost*pace,p.speed+accel*h))
             if p.speed>cap then p.speed=math.max(cap,p.speed-9*h) end
             if p.stun>0 then p.speed=math.min(p.speed,4) end
             p.yaw=(p.yaw+input.steer*model.steer*math.min(p.speed/5,1)*h+math.pi)%(2*math.pi)-math.pi
