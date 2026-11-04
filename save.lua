@@ -1,6 +1,7 @@
 local cfg=require "config"
 local count=#require("track").names
 local rivals=require("race").names
+local savedOrderWidth=5
 local function emptyRanks()
     local ranks={}
     for i=1,count do ranks[i]=0 end
@@ -26,7 +27,7 @@ local function decode(s)
     if type(s)~="string" or #s>128 then return nil end
     local prefix,sum=s:match("^(.*)|(%d+)$")
     if not prefix or checksum(prefix)~=tonumber(sum) then return nil end
-    local width=#rivals
+    local width=savedOrderWidth
     local seq,packed,last,name,orders,model=prefix:match("^RALLY12|(%d+)|([0-6]+)|(%d+)|([A-Z0-9 ]+)|([0-5]+)|([1-4])$")
     if seq then
         if #name>8 or #orders~=count*width then return nil end
@@ -50,17 +51,22 @@ local function decode(s)
     seq,last=tonumber(seq),tonumber(last)
     if #packed~=count or seq>100000000 or last<1 or last>count then return nil end
     local ranks={}
-    for i=1,count do ranks[i]=tonumber(packed:sub(i,i)) end
+    for i=1,count do ranks[i]=math.min(#rivals+1,tonumber(packed:sub(i,i))) end
     local results={}
     for i=1,count do
         local order=orders and orders:sub((i-1)*width+1,i*width):gsub("0+$","")
         if order and order~="" then
-            if #order~=3 and #order~=#rivals then return nil end
+            if #order~=3 and #order~=savedOrderWidth then return nil end
             for n=1,#order do
                 local _,occurrences=order:gsub(tostring(n),"")
                 if occurrences~=1 then return nil end
             end
-            results[i]=order
+            if #order==savedOrderWidth and ranks[i]>0 then
+                local originalRank=tonumber(packed:sub(i,i))
+                local _,removed=order:sub(1,originalRank-1):gsub("[45]","")
+                ranks[i]=originalRank-removed
+            end
+            results[i]=order:gsub("[45]","")
         end
     end
     return {sequence=seq,ranks=ranks,last=last,name=name or "PILOTO",orders=results,model=model}
@@ -83,7 +89,7 @@ end
 function S.wins()
     local n=0;for _,rank in ipairs(S.ranks) do if rank==1 then n=n+1 end end;return n
 end
-local pointsByPlace={10,6,3,1,0,0}
+local pointsByPlace={10,6,3,1}
 function S.completed()
     local total=0
     for _,rank in ipairs(S.ranks) do if rank>0 then total=total+1 end end
@@ -101,7 +107,7 @@ function S.standings()
     local rows={}
     local names={S.name,table.unpack(rivals)}
     for id,name in ipairs(names) do
-        rows[id]={name=name,id=id,points=0,places={0,0,0,0,0,0}}
+        rows[id]={name=name,id=id,points=0,places={0,0,0,0}}
     end
     local function score(row,place)
         row.points=row.points+S.pointsFor(place)
@@ -134,7 +140,7 @@ function S.write()
     local orders={}
     for i=1,count do
         local order=S.orders[i] or ""
-        orders[i]=order..string.rep("0",#rivals-#order)
+        orders[i]=order..string.rep("0",savedOrderWidth-#order)
     end
     local data=string.format("RALLY12|%d|%s|%d|%s|%s|%d",seq,table.concat(S.ranks),S.last,S.name,table.concat(orders),S.model)
     data=data.."|"..checksum(data)

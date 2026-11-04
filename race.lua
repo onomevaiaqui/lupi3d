@@ -3,7 +3,7 @@ local tracks=require "track"
 local mesh=require "car"
 local combat=require "combat"
 local audio=require "audio"
-local Race={names={"Lino","Carol","Lucas","Bia","Davi"}}
+local Race={names={"Lino","Carol","Lucas"}}
 function Race.new(id,modelId)
     modelId=modelId or 1
     local track=tracks.new(id)
@@ -17,7 +17,7 @@ function Race.new(id,modelId)
         local lane=i%2==1 and -2.35 or 2.35
         x,z=x+math.cos(yaw)*lane,z-math.sin(yaw)*lane
         r.grid[i]={x=x,y=y+0.025,z=z,yaw=yaw,radius=2}
-        local model=mesh.models[models[i] or (i-1)%#mesh.models+1]
+        local model=mesh.models[models[i]]
         r.cars[i]={lane=lane,player=i==1,x=x,y=y,z=z,yaw=yaw,speed=0,progress=progress,laps=0,
             started=false,checkpoint=3,done=false,model=model,mesh=model.mesh,radius=2,
             hp=100,respawn=0,stun=0,nitro=0,cooldown=0,ammo=0,weapon=nil,
