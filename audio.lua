@@ -2,9 +2,13 @@
 -- It is one music stream: brief effects interrupt the engine/theme, then restore it.
 local A={available=false,error=false,current=nil,mode="menu",hold=0,priority=0,change=0,brake=0,lastError="",retry=0}
 local events={menu={"navigate",0.13,3},confirm={"confirm",0.22,4},red={"red",0.2,4},green={"green",0.3,5},shot={"shot",0.12,6},mine={"mine",0.16,5},hit={"hit",0.18,7},pickup={"pickup",0.2,5},nitro={"nitro",0.5,6},explosion={"explosion",0.45,9},brake={"brake",0.16,2},win={"win",0.8,10},lose={"lose",0.6,10}}
+local function hasSfx()
+    return type(sfx)=="table" and type(sfx.fx)=="function"
+end
 local function backend()
+    if A.useSfx and hasSfx() then return "SFX" end
     if type(music)=="table" and type(music.loop)=="function" then return "FUR" end
-    if type(sfx)=="table" and type(sfx.fx)=="function" then return "SFX" end
+    if hasSfx() then return "SFX" end
     return "SEM API"
 end
 local function start(name,fade)
@@ -55,15 +59,22 @@ local function fileProbe()
     return ok and result or "ARQ: LEITURA FALHOU"
 end
 function A.test()
+    if hasSfx() and type(music)=="table" and type(music.loop)=="function" then
+        A.useSfx=not A.useSfx
+    end
     A.retry=0;A.hold=0;A.priority=0;A.current=nil;A.volumeReady=false
     local kind=backend()
     if kind=="FUR" then
         if start("menu",0.6) then A.hold=8;A.priority=100 end
         local volume=A.volumeReady and ("VOL OK "..A.volumeKind) or A.volumeError and "ERRO VOL" or "SEM API VOLUME"
         A.testInfo=volume.." | "..fileProbe().." | RET:"..(A.playResult or "?")
+        if hasSfx() and not A.error then A.testInfo="TESTE FUR / X ALTERNA PARA SFX" end
         if A.volumeError and not A.error then A.testInfo="VOLUME: "..A.volumeError:sub(1,56) end
     elseif kind=="SFX" then
-        A.play("confirm");A.testInfo="TESTE SAMPLE 62 / SEM FURNACE"
+        if type(music)=="table" and type(music.stop)=="function" then pcall(music.stop,0) end
+        A.play("confirm")
+        A.legacyTimer=0.3
+        A.testInfo="TESTE SFX / X ALTERNA PARA FUR"
     else A.testInfo="FIRMWARE SEM API DE AUDIO" end
     A.testTimer=8
 end
