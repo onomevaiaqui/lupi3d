@@ -11,7 +11,7 @@ function Race.new(id,modelId)
     local models={modelId}
     for id=1,#mesh.models do if id~=modelId then models[#models+1]=id end end
     for i=1,#Race.names+1 do
-        local grid=-(1.6+(i-1)*1.75)/track.parts[track.segments].length
+        local grid=-(1.6+(i-1)*2.4)/track.parts[track.segments].length
         local progress=grid%track.segments
         local x,z,yaw,_,y=track.sample(progress)
         local lane=i%2==1 and -2.35 or 2.35

@@ -49,12 +49,12 @@ for i=0,T.segments do
 end
 -- Choose a flat, nearly straight stretch long enough for the starting grid.
 local start,best=0,math.huge
-local span=3
+local span=4
 for i=0,T.segments-1 do
     local a,b=points[(i-span)%T.segments],points[(i+span)%T.segments]
     local dx,dz=b.x-a.x,b.z-a.z
     local length=math.sqrt(dx*dx+dz*dz)
-    if length>=22 then
+    if length>=30 then
         local deviation,flat=0,true
         for j=-span,span do
             local p=points[(i+j)%T.segments]
