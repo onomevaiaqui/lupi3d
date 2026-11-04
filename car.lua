@@ -121,4 +121,11 @@ m.models={
     {name="GURGEL X-12",trait="MELHOR NA GRAMA",mesh=gurgel,speed=13.8,accel=7,steer=1.52,grass=7},
     {name="PUMA GTB TUBARAO",trait="MAIOR VELOCIDADE",mesh=puma,speed=16.3,accel=7.2,steer=1.4,grass=5}
 }
+for _,model in ipairs(m.models) do
+    local faces=model.mesh.f
+    for i=4,#faces,4 do
+        if faces[i]==22 then faces[i]=10
+        elseif faces[i]==6 then faces[i]=1 end
+    end
+end
 return m

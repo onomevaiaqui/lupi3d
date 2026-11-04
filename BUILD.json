@@ -1,5 +1,5 @@
 {
-  "project": "Lupi Combat Rally 8.3",
+  "project": "Lupi Combat Rally 8.4",
   "files": [
     {
       "file": "colors.lua",
@@ -23,7 +23,7 @@
         "type": "lua_code"
       },
       "bytes": 151,
-      "sha256": "8358e6b99108deaee01cd3ab824b940b2baf76dfb0498fd0deb7fbf216fb87a0"
+      "sha256": "5368cfd2f19f340a2ca0cd376fbe26d171675455e51740237c340f5cc905ccd5"
     },
     {
       "file": "geometry.lua",
@@ -38,24 +38,24 @@
       "metadata": {
         "type": "lua_code"
       },
-      "bytes": 5742,
-      "sha256": "da31ddd27d98ae252d80c0cb2d2555a3e642cefc37edc0cea77cf268dc901801"
+      "bytes": 5930,
+      "sha256": "54fd34a605e73721067d20a13e04e1c138c77465215dcae843026b294255fcbc"
     },
     {
       "file": "track.lua",
       "metadata": {
         "type": "lua_code"
       },
-      "bytes": 4676,
-      "sha256": "c4f809f58d5b9a7d846b3f48467ea8f25857eb4848a31447f15b4852c14f7666"
+      "bytes": 4886,
+      "sha256": "8bdbb8e42c61e054842d05d1677cf6e736d43b44534caed10f94a4e7c830fd3a"
     },
     {
       "file": "main.lua",
       "metadata": {
         "type": "lua_code"
       },
-      "bytes": 14106,
-      "sha256": "60d38302cd363030ac89861cc207e2e4acdb271faa2fb828ca62084eb662bd9d"
+      "bytes": 14078,
+      "sha256": "b787c3725e1f79014b45f028f13af9ed61ee3cc60c2f28d2401da53c46192f51"
     },
     {
       "file": "renderer.lua",
@@ -70,16 +70,16 @@
       "metadata": {
         "type": "lua_code"
       },
-      "bytes": 6495,
-      "sha256": "5dfbbb59066fe733485897a79b7eaea2096f550c6c942dcd7f96c7087fec9e05"
+      "bytes": 5893,
+      "sha256": "c5e33419cb9c6bbb9de7bb16b3e4682e1832f872bb8238f981c27a05cb7d7147"
     },
     {
       "file": "combat.lua",
       "metadata": {
         "type": "lua_code"
       },
-      "bytes": 5544,
-      "sha256": "dc7a0942a5c06ed0c409a62b3ede119f3174450ec80dccf469eb03d024c05a56"
+      "bytes": 5448,
+      "sha256": "0dbbb96f00a9c032424f5915477b7e70f378193fe44b672a152caba5d41dd6be"
     },
     {
       "file": "save.lua",
@@ -214,5 +214,5 @@
       "sha256": "09ab62051f935bb3fe74421bf384e11c6b5ef79ae514ebdb306ab98e4cbd37b8"
     }
   ],
-  "totalBytes": 68815
+  "totalBytes": 68487
 }

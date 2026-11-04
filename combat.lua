@@ -8,12 +8,11 @@ local function itemMesh(color)
     for i=1,#m.f,4 do m.f[i+1],m.f[i+2]=m.f[i+2],m.f[i+1] end
     return m
 end
-local meshes={shot=itemMesh(8),mine=itemMesh(7),nitro=itemMesh(6)}
 local mineMesh=G.box(0.55,0.12,0.55,7,23,8)
 local traceMesh=G.mesh()
 G.quad(traceMesh,{-0.035,0,0},{-0.035,0,10},{0.035,0,10},{0.035,0,0},15)
-local quarryMeshes={shot=itemMesh(15),mine=itemMesh(7),nitro=itemMesh(1)}
-for kind,mesh in pairs(quarryMeshes) do
+local pickupMeshes={shot=itemMesh(15),mine=itemMesh(7),nitro=itemMesh(1)}
+for kind,mesh in pairs(pickupMeshes) do
     for i=1,#mesh.v,3 do
         if kind=="mine" then mesh.v[i+1]=mesh.v[i+1]*0.52
         elseif kind=="shot" then mesh.v[i]=mesh.v[i]*0.65;mesh.v[i+1]=mesh.v[i+1]*1.25
@@ -25,7 +24,7 @@ function C.new(track)
     local kinds={"shot","mine","nitro","shot","mine","nitro","shot","nitro"}
     for i,kind in ipairs(kinds) do
         local x,z,_,_,y=track.sample((i-0.3)*track.segments/8)
-        c.pickups[i]={kind=kind,x=x,y=y,z=z,mesh=(track.quarry and quarryMeshes or meshes)[kind],radius=1,cooldown=0}
+        c.pickups[i]={kind=kind,x=x,y=y,z=z,mesh=pickupMeshes[kind],radius=1,cooldown=0}
     end
     for i=1,8 do c.mines[i]={active=false,mesh=mineMesh,radius=1,y=0.12} end
     for i=1,4 do c.blasts[i]={active=false,mesh=S.blast,radius=3,y=0.12} end

@@ -9,7 +9,7 @@ local Race=require "race"
 local Save=require "save"
 local audio=require "audio"
 local scenery=require "scenery"
-Game={version="8.3",state="menu",menu=1,selected=1,triangles=0,race=nil,detail=true}
+Game={version="8.4",state="menu",menu=1,selected=1,triangles=0,race=nil,detail=true}
 -- Fixed oblique top-down view; follows position, never the car's heading.
 local camera={x=0,y=18,z=0,yaw=math.atan(12,14),pitch=-math.atan(18/math.sqrt(340))}
 local frame=0
@@ -97,7 +97,7 @@ local function rect(x,y,w,h,c) ui.rectfill(x,y,x+w,y+h,colors.index[c]) end
 local function text(s,x,y,c) ui.print(s,x,y,colors.index[c or 9]) end
 local function panel()
     rect(40,38,400,190,10);rect(40,38,400,3,8)
-    text("LUPI COMBAT RALLY 8.3",122,53,15)
+    text("LUPI COMBAT RALLY 8.4",122,53,15)
 end
 local function drawTitleArt()
     rect(0,0,480,104,10)
@@ -115,7 +115,7 @@ local function drawTitleArt()
     rect(x+5,y+9,9,7,10);rect(x+34,y+9,9,7,10)
     rect(x+8,y+11,3,3,11);rect(x+37,y+11,3,3,11)
     text("LUPI COMBAT RALLY 3D",137,16,15)
-    text("CAMPEONATO 8.3",160,42,8)
+    text("CAMPEONATO 8.4",160,42,8)
 end
 local function drawMenu()
     drawTitleArt()
@@ -217,7 +217,7 @@ geometry.quad(dustMesh,{-0.38,0,-0.50},{-0.58,0,0.38},{0.58,0,0.38},{0.38,0,-0.5
 local dust={mesh=dustMesh,radius=1}
 local function drawRace()
     local r=Game.race;local p=r.player;local track=r.track
-    rect(0,20,480,208,track.quarry and 13 or 14)
+    rect(0,20,480,208,track.theme[1])
     camera.x=p.x-12;camera.z=p.z-14;camera.y=18+p.y*0.4
     renderer.begin(camera)
     local function drawRoad(raised)
@@ -259,7 +259,7 @@ local function drawRace()
     for _,trace in ipairs(r.combat.traces) do if trace.active then submit(trace,0.65) end end
     renderer.flush()
     end
-    if track.quarry and Game.detail and p.speed>3 and p.respawn==0
+    if Game.detail and p.speed>3 and p.respawn==0
         and (p.offroad or r.sliding) then
         local distance=1.6+(frame%12)*0.07
         dust.x=p.x-math.sin(p.yaw)*distance
@@ -275,7 +275,7 @@ local function drawRace()
     end
     Game.triangles,Game.dropped=renderer.triangles,renderer.dropped
     rect(0,0,480,20,10);rect(0,228,480,42,10)
-    text("COMBAT RALLY 8.3 / "..r.id,10,6,15);text((Game.detail and "X ALTO " or "X LEVE ")..Game.triangles,282,6,9)
+    text("COMBAT RALLY 8.4 / "..r.id,10,6,15);text((Game.detail and "X ALTO " or "X LEVE ")..Game.triangles,282,6,9)
     text(Game.reported_fps and "FPS "..math.floor(Game.reported_fps+0.5) or "FPS --",390,6,9)
     text(string.format("%03d KM/H  VOLTA %d/3  POS %d/4  VIDA %d",math.floor(p.speed*6+0.5),p.laps,Race.position(r),p.hp),10,235,15)
     local item=p.weapon=="shot" and "TIRO" or p.weapon=="mine" and "MINA" or "SEM ARMA"
