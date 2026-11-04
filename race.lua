@@ -43,23 +43,43 @@ end
 local function progressPlayer(r)
     local p=r.player
     local previous=p.progress
-    local wasOnRoad=not p.offroad
     local track=r.track
     local progress,distance=track.locate(p.x,p.z,previous)
     p.progress=progress;p.offroad=distance>track.halfWidth^2
     local _,_,_,_,height=track.sample(progress)
     p.y=height
 
-    -- A gate counts only when crossed forward from the preceding road segment.
-    local advance=(progress-previous)%track.segments
-    local crossed=math.floor(previous+advance)>math.floor(previous)
-    if not p.done and p.respawn==0 and wasOnRoad and not p.offroad and advance>0 and advance<=1
-        and crossed and math.floor(progress)==p.nextGate%track.segments then
-        if p.nextGate>0 and p.nextGate%track.segments==0 then
-            p.laps=p.laps+1
-            if p.laps>=track.laps then p.done=true;r.finished=true end
+    -- Grass slows the car, but the shoulders still count for lap validation.
+    local inCorridor=distance<=(track.halfWidth+2.5)^2
+    local departure=p.leftCorridor
+    local anchor=departure or previous
+    if not inCorridor then
+        p.leftCorridor=anchor
+    else
+        p.leftCorridor=nil
+    end
+    local advance=(progress-anchor)%track.segments
+    local skipped=advance>=math.max(4,math.ceil(track.segments*0.12))
+        and advance<=track.segments*0.60
+    local shortcut=p.nextGate>0 and inCorridor and departure~=nil and skipped
+        and p.respawn==0 and not p.done
+    if shortcut then
+        p.laps,p.nextGate,p.shortcutNotice=0,0,2.5
+    end
+
+    -- Resume a short excursion at the same gate, or at the next adjacent gate.
+    local maxAdvance=departure and 2 or 1
+    if not p.done and p.respawn==0 and inCorridor and not shortcut
+        and advance>0 and advance<=maxAdvance then
+        for gate=math.floor(anchor)+1,math.floor(anchor+advance) do
+            if gate%track.segments~=p.nextGate%track.segments then break end
+            if p.nextGate>0 and p.nextGate%track.segments==0 then
+                p.laps=p.laps+1
+                if p.laps>=track.laps then p.done=true;r.finished=true end
+            end
+            p.nextGate=p.nextGate+1
+            if p.done then break end
         end
-        p.nextGate=p.nextGate+1
     end
     if p.nextGate==0 then
         p.total=-((track.segments-progress)%track.segments)
@@ -132,6 +152,7 @@ function Race.step(r,dt,input)
         return
     end
     r.time=r.time+dt
+    r.player.shortcutNotice=math.max(0,(r.player.shortcutNotice or 0)-dt)
     r.sliding=input.brake and input.steer~=0
     local steps=math.max(1,math.ceil(dt*40));local h=dt/steps
     for _=1,steps do

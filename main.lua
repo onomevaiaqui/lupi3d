@@ -11,7 +11,7 @@ local Save=require "save"
 local audio=require "audio"
 local scenery=require "scenery"
 local garagePart,garageReturn,garageMessage=1,"select",""
-Game={version="11.1",state="menu",menu=1,selected=1,triangles=0,race=nil,detail=true}
+Game={version="11.2",state="menu",menu=1,selected=1,triangles=0,race=nil,detail=true}
 -- Fixed oblique top-down view; follows position, never the car's heading.
 local camera={x=0,y=18,z=0,yaw=math.atan(12,14),pitch=-math.atan(18/math.sqrt(340))}
 local frame=0
@@ -131,7 +131,7 @@ end
 local function text(s,x,y,c) ui.print(s,x,y,colors.index[c or 9]) end
 local function panel()
     rect(40,38,400,190,10);rect(40,38,400,3,8)
-    text("LUPI COMBAT RALLY 11.1",122,53,15)
+    text("LUPI COMBAT RALLY 11.2",122,53,15)
 end
 local titleCamera={x=-1.90,y=1.83,z=-4.85,yaw=0,pitch=-0.075}
 local titleMesh=geometry.mesh()
@@ -263,10 +263,33 @@ local function drawGarage()
     text(garageMessage,82,188,8)
     text("B: COMPRAR   Y: VOLTAR",105,208,9)
 end
+local function flag(country,x,y)
+    if country=="BRASIL" then
+        rect(x,y,30,18,14)
+        ui.trisfill(x+3,y+9,x+15,y+2,x+27,y+9,colors.index[8])
+        ui.trisfill(x+3,y+9,x+27,y+9,x+15,y+16,colors.index[8])
+        rect(x+12,y+6,6,6,6)
+    else
+        local top,bottom=7,1
+        if country=="ARGENTINA" then top=1
+        elseif country=="CHILE" then top,bottom=9,7 end
+        rect(x,y,30,6,top)
+        rect(x,y+6,30,6,9)
+        rect(x,y+12,30,6,bottom)
+        if country=="CHILE" then
+            rect(x,y+9,30,9,7)
+            rect(x,y,10,9,6)
+            rect(x+4,y+3,2,3,9)
+        else
+            rect(x+14,y+8,3,3,8)
+        end
+    end
+end
 local function drawSelect()
     panel()
     local range=tracks.worlds[Save.currentWorld()]
-    text(range.name.." / TOP 3 PARA AVANCAR",100,80,15)
+    flag(range.name,63,75)
+    text(range.name.." / TOP 3 PARA AVANCAR",106,80,15)
     for i=range.first,range.last do
         local y=104+(i-range.first)*21
         local rank=Save.ranks[i]
@@ -307,7 +330,9 @@ end
 local function drawPodium()
     local r=Game.race
     rect(0,0,480,270,10)
-    text("PODIO / "..tracks.worlds[r.track.world].name,146,26,15)
+    local country=tracks.worlds[r.track.world].name
+    flag(country,106,20)
+    text("PODIO / "..country,146,26,15)
     local standings=Save.standings(r.track.world)
     renderer.begin(podiumCamera)
     for place,block in ipairs(podiumBlocks) do
@@ -411,7 +436,7 @@ local function drawRace()
     end
     Game.triangles,Game.dropped=renderer.triangles,renderer.dropped
     rect(0,0,480,20,10);rect(0,228,480,42,10)
-    text("COMBAT RALLY 11.1 / "..r.id,10,6,15);text((Game.detail and "X ALTO " or "X LEVE ")..Game.triangles,282,6,9)
+    text("COMBAT RALLY 11.2 / "..r.id,10,6,15);text((Game.detail and "X ALTO " or "X LEVE ")..Game.triangles,282,6,9)
     text(Game.reported_fps and "FPS "..math.floor(Game.reported_fps+0.5) or "FPS --",390,6,9)
     text(string.format("%03d KM/H  VOLTA %d/%d  POS %d/4  VIDA %d",math.floor(p.speed*6+0.5),p.laps,track.laps,Race.position(r),p.hp),10,235,15)
     local item=p.weapon=="shot" and "TIRO" or p.weapon=="mine" and "MINA" or "SEM ARMA"
@@ -423,6 +448,7 @@ local function drawRace()
         text(stage==3 and "JA!" or stage==2 and "ATENCAO" or "PREPARE",213,78,15)
     end
     if p.respawn>0 then text("CARRO DESTRUIDO / RETORNANDO",133,116,7)
+    elseif (p.shortcutNotice or 0)>0 then text("ATALHO / CONTAGEM ZERADA",150,210,7)
     elseif p.offroad then text("GRAMA",215,210,8) end
 end
 local function drawTrophy()
