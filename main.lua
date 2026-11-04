@@ -9,7 +9,7 @@ local Race=require "race"
 local Save=require "save"
 local audio=require "audio"
 local scenery=require "scenery"
-Game={version="9.5",state="menu",menu=1,selected=1,triangles=0,race=nil,detail=true}
+Game={version="9.6",state="menu",menu=1,selected=1,triangles=0,race=nil,detail=true}
 -- Fixed oblique top-down view; follows position, never the car's heading.
 local camera={x=0,y=18,z=0,yaw=math.atan(12,14),pitch=-math.atan(18/math.sqrt(340))}
 local frame=0
@@ -96,12 +96,20 @@ local function rect(x,y,w,h,c) ui.rectfill(x,y,x+w,y+h,colors.index[c]) end
 local function text(s,x,y,c) ui.print(s,x,y,colors.index[c or 9]) end
 local function panel()
     rect(40,38,400,190,10);rect(40,38,400,3,8)
-    text("LUPI COMBAT RALLY 9.5",122,53,15)
+    text("LUPI COMBAT RALLY 9.6",122,53,15)
 end
 local titleCamera={x=-2.22,y=1.86,z=-6.25,yaw=0,pitch=-0.075}
 local titleCar={mesh=models[1].mesh,x=0,y=0,z=0,yaw=2.45}
+local stars={{239,27},{268,47},{310,20},{361,39},{398,17},{449,51},{470,23}}
 local function drawTitleArt()
     rect(0,0,479,269,10)
+    for _,star in ipairs(stars) do rect(star[1],star[2],1,1,9) end
+    for y=-9,9 do
+        local width=math.floor(math.sqrt(100-y*y))
+        rect(418-width,45+y,width*2,1,15)
+    end
+    ui.trisfill(215,123,302,64,396,123,colors.index[27])
+    ui.trisfill(317,123,413,71,479,123,colors.index[11])
     rect(0,123,479,112,26)
     rect(0,125,479,4,11)
     for i=0,15 do
@@ -109,6 +117,11 @@ local function drawTitleArt()
         rect(i*30,223,29,5,i%2==0 and 9 or 10)
         rect(i*30,229,29,5,i%2==0 and 10 or 9)
     end
+    ui.trisfill(262,207,310,153,315,153,colors.index[9])
+    ui.trisfill(262,207,315,153,267,207,colors.index[9])
+    ui.trisfill(262,207,439,207,439,210,colors.index[9])
+    ui.trisfill(262,207,439,210,262,210,colors.index[9])
+    rect(297,69,111,3,11)
     rect(297,76,111,3,11)
     rect(406,76,4,56,11)
     rect(307,83,87,27,0)
@@ -123,45 +136,9 @@ local function drawTitleArt()
     text("LUPI COMBAT",29,32,9)
     text("RALLY 3D",29,51,15)
     rect(29,71,174,2,8)
-    text("CAMPEONATO 9.5",29,82,11)
-end
-local function drawImageMenu()
-    if not Sprites or not Sprites.nightgrid or type(ui.spr)~="function" then return false end
-    if not Palette then pcall(require,"palette") end
-    if type(Palette)~="table" or #Palette==0 or #Palette>32 then return false end
-    for i,color in ipairs(Palette) do ui.palset(i-1,color) end
-    ui.spr(Sprites.nightgrid,0,0)
-    local function nearest(target)
-        local best,index=math.huge,0
-        local r,g,b=target%32,(target>>5)%32,(target>>10)%32
-        for i,color in ipairs(Palette) do
-            if i>1 then
-                local d=(color%32-r)^2+((color>>5)%32-g)^2+((color>>10)%32-b)^2
-                if d<best then best,index=d,i-1 end
-            end
-        end
-        return index
-    end
-    local dark,light,accent=nearest(1+1*32+3*1024),nearest(30+30*32+26*1024),nearest(31+27*32)
-    ui.rectfill(15,118,160,179,dark)
-    for i,label in ipairs({"NOVO JOGO","CONTINUE"}) do
-        local y=120+(i-1)*30
-        local selected=Game.menu==i
-        ui.rectfill(17,y,157,y+23,selected and accent or light)
-        ui.rectfill(19,y+2,155,y+21,dark)
-        ui.print((selected and "> " or "  ")..label,25,y+8,selected and accent or light)
-    end
-    ui.rectfill(15,181,188,207,dark)
-    ui.print(Save.completed().."/"..trackCount.." PISTAS  "..Save.points().." PTS",21,184,light)
-    ui.print("9.5  /  B CONFIRMAR",21,196,accent)
-    if audio.testInfo and audio.testTimer>0 or audio.error then
-        ui.rectfill(0,250,479,269,dark)
-        ui.print((audio.error and audio.lastError or audio.testInfo):sub(1,68),12,255,light)
-    end
-    return true
+    text("CAMPEONATO 9.6",29,82,11)
 end
 local function drawMenu()
-    if drawImageMenu() then return end
     drawTitleArt()
     rect(20,103,220,108,10)
     for i,label in ipairs({"NOVO JOGO","CONTINUE"}) do
@@ -332,7 +309,7 @@ local function drawRace()
     end
     Game.triangles,Game.dropped=renderer.triangles,renderer.dropped
     rect(0,0,480,20,10);rect(0,228,480,42,10)
-    text("COMBAT RALLY 9.5 / "..r.id,10,6,15);text((Game.detail and "X ALTO " or "X LEVE ")..Game.triangles,282,6,9)
+    text("COMBAT RALLY 9.6 / "..r.id,10,6,15);text((Game.detail and "X ALTO " or "X LEVE ")..Game.triangles,282,6,9)
     text(Game.reported_fps and "FPS "..math.floor(Game.reported_fps+0.5) or "FPS --",390,6,9)
     text(string.format("%03d KM/H  VOLTA %d/3  POS %d/4  VIDA %d",math.floor(p.speed*6+0.5),p.laps,Race.position(r),p.hp),10,235,15)
     local item=p.weapon=="shot" and "TIRO" or p.weapon=="mine" and "MINA" or "SEM ARMA"
