@@ -1,5 +1,5 @@
 {
-  "project": "Lupi Combat Rally 11.5",
+  "project": "Lupi Combat Rally 11.6",
   "files": [
     {
       "file": "colors.lua",
@@ -23,7 +23,7 @@
         "type": "lua_code"
       },
       "bytes": 153,
-      "sha256": "b8dfe14114bc76f2026089753c5e71efa12d4173ff7d6e5f5fe6fd2f99b822a8"
+      "sha256": "eb32199060138e4f9b59cc78ec929ffa0a4d30114641eb5882f1e622e42cf042"
     },
     {
       "file": "geometry.lua",
@@ -54,8 +54,8 @@
       "metadata": {
         "type": "lua_code"
       },
-      "bytes": 22756,
-      "sha256": "d1fd0a78b28fe9a62607dc79cace1a65f8e91356b94f198dc95f23372d3c8575"
+      "bytes": 22551,
+      "sha256": "f449127e2af71692cf9720bbdeba9c796bf5f7d92bd6c9e26d05e7ae813cd654"
     },
     {
       "file": "renderer.lua",
@@ -110,8 +110,8 @@
       "metadata": {
         "type": "lua_code"
       },
-      "bytes": 7071,
-      "sha256": "7fc2442345952c78abbe0ee1d46ef7c5bf8a38a688b50017ccac559c2079f395"
+      "bytes": 5581,
+      "sha256": "f0c17084b5948e0040143b57dc725fcadadd0c1ffbb2a26c930d26eb6b446b8c"
     },
     {
       "file": "music/brake.fur",
@@ -222,5 +222,5 @@
       "sha256": "09ab62051f935bb3fe74421bf384e11c6b5ef79ae514ebdb306ab98e4cbd37b8"
     }
   ],
-  "totalBytes": 96990
+  "totalBytes": 95295
 }
