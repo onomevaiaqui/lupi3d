@@ -9,7 +9,8 @@ local Race=require "race"
 local Save=require "save"
 local audio=require "audio"
 local scenery=require "scenery"
-Game={version="10.4",state="menu",menu=1,selected=1,triangles=0,race=nil,detail=true}
+local Turbo=require "turbo"
+Game={version="10.5",state="menu",menu=1,selected=1,triangles=0,race=nil,detail=true}
 -- Fixed oblique top-down view; follows position, never the car's heading.
 local camera={x=0,y=18,z=0,yaw=math.atan(12,14),pitch=-math.atan(18/math.sqrt(340))}
 local frame=0
@@ -51,11 +52,16 @@ function Game.step(dt)
     if Game.state=="menu" then
         titleTime=(titleTime+dt)%12
         if pressed("test") then audio.test() end
-        if pressed("up") or pressed("down") then Game.menu=3-Game.menu;audio.play("menu") end
+        if pressed("up") or pressed("down") then Game.menu=(Game.menu-1+(pressed("up") and -1 or 1))%3+1;audio.play("menu") end
         if pressed("ok") then
             if Game.menu==1 then nameLetters={1,37,37,37,37,37,37,37};nameCursor=1;modelId=1;Game.state="name";audio.play("confirm")
+            elseif Game.menu==3 then Game.turbo=Turbo.new();Game.state="turbo"
             elseif Save.canContinue() then Game.selected=Save.last;Game.state="select";audio.play("menu") end
         end
+    elseif Game.state=="turbo" then
+        if pressed("fire") or pressed("back") then Game.state="menu"
+        elseif pressed("reset") then Game.turbo=Turbo.new()
+        else Turbo.step(Game.turbo,dt,current.ok,(current.right and 1 or 0)-(current.left and 1 or 0),pressed("up"),pressed("down")) end
     elseif Game.state=="name" then
         if pressed("reset") then modelId=(modelId-2)%#models+1 end
         if pressed("selectItem") then modelId=modelId%#models+1 end
@@ -102,7 +108,7 @@ end
 local function text(s,x,y,c) ui.print(s,x,y,colors.index[c or 9]) end
 local function panel()
     rect(40,38,400,190,10);rect(40,38,400,3,8)
-    text("LUPI COMBAT RALLY 10.4",122,53,15)
+    text("LUPI COMBAT RALLY 10.5",122,53,15)
 end
 local titleCamera={x=-1.90,y=1.83,z=-4.85,yaw=0,pitch=-0.075}
 local titleMesh=geometry.mesh()
@@ -207,7 +213,7 @@ local function drawTitleArt()
 end
 local function drawMenu()
     drawTitleArt()
-    for i,label in ipairs({"NOVO JOGO","CONTINUE"}) do
+    for i,label in ipairs({"NOVO JOGO","CONTINUE","TESTE TURBO"}) do
         local y=120+(i-1)*28
         local selected=Game.menu==i
         local color=selected and 8 or 9
@@ -372,7 +378,7 @@ local function drawRace()
     end
     Game.triangles,Game.dropped=renderer.triangles,renderer.dropped
     rect(0,0,480,20,10);rect(0,228,480,42,10)
-    text("COMBAT RALLY 10.4 / "..r.id,10,6,15);text((Game.detail and "X ALTO " or "X LEVE ")..Game.triangles,282,6,9)
+    text("COMBAT RALLY 10.5 / "..r.id,10,6,15);text((Game.detail and "X ALTO " or "X LEVE ")..Game.triangles,282,6,9)
     text(Game.reported_fps and "FPS "..math.floor(Game.reported_fps+0.5) or "FPS --",390,6,9)
     text(string.format("%03d KM/H  VOLTA %d/3  POS %d/4  VIDA %d",math.floor(p.speed*6+0.5),p.laps,Race.position(r),p.hp),10,235,15)
     local item=p.weapon=="shot" and "TIRO" or p.weapon=="mine" and "MINA" or "SEM ARMA"
@@ -389,6 +395,7 @@ end
 function Game.draw()
     colors.register();ui.camera(0,0);ui.clip(0,0,480,270);ui.cls(colors.index[1])
     if Game.state=="race" then drawRace()
+    elseif Game.state=="turbo" then Turbo.draw(Game.turbo)
     elseif Game.state=="menu" then drawMenu()
     elseif Game.state=="name" then drawName()
     elseif Game.state=="podium" and Game.race.titleWon and Save.completed()==trackCount then drawPodium()
