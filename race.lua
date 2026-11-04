@@ -18,7 +18,7 @@ function Race.new(id,modelId)
         x,z=x+math.cos(yaw)*lane,z-math.sin(yaw)*lane
         r.grid[i]={x=x,y=y+0.025,z=z,yaw=yaw,radius=2}
         local model=mesh.models[models[i]]
-        r.cars[i]={lane=lane,player=i==1,x=x,y=y,z=z,yaw=yaw,speed=0,progress=progress,laps=0,
+        r.cars[i]={lane=lane,targetLane=i==4 and 0 or lane,player=i==1,x=x,y=y,z=z,yaw=yaw,speed=0,progress=progress,laps=0,
             started=false,checkpoint=3,done=false,model=model,mesh=model.mesh,radius=2,
             hp=100,respawn=0,stun=0,nitro=0,cooldown=0,ammo=0,weapon=nil,
             total=grid,aiSpeed=9.1+(i-2)*0.7,decision=0}
@@ -87,7 +87,7 @@ local function collide(r)
                         moveSide(b,nx*push,nz*push)
                         local closing=(math.sin(a.yaw)*a.speed-math.sin(b.yaw)*b.speed)*nx
                             +(math.cos(a.yaw)*a.speed-math.cos(b.yaw)*b.speed)*nz
-                        if closing>0.5 then
+                        if closing>0.5 and a.bump==0 and b.bump==0 then
                             a.speed=a.speed*0.72;b.speed=b.speed*0.82
                             a.bump,b.bump=0.22,0.22
                         end
@@ -136,7 +136,9 @@ function Race.step(r,dt,input)
                 car.total=car.total+car.speed*h/length
                 car.progress=car.total%r.track.segments;car.laps=math.max(0,math.floor(car.total/r.track.segments))
                 local x,z,yaw,_,height=r.track.sample(car.progress)
-                car.lane=car.lane*math.max(0,1-h*(car.total>0 and 0.22 or 0))
+                if car.total>0 then
+                    car.lane=car.lane+(car.targetLane-car.lane)*math.min(1,h*0.6)
+                end
                 car.x,car.z,car.yaw,car.y=x+math.cos(yaw)*car.lane,z-math.sin(yaw)*car.lane,yaw,height
                 if car.laps>=3 then
                     r.finishedOpponents=(r.finishedOpponents or 0)+1
