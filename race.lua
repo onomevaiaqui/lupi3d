@@ -20,7 +20,7 @@ function Race.new(id,modelId,parts)
         r.grid[i]={x=x,y=y+0.025,z=z,yaw=yaw,radius=2}
         local model=mesh.models[models[i]]
         r.cars[i]={lane=lane,targetLane=i==4 and 0 or lane,player=i==1,x=x,y=y,z=z,yaw=yaw,speed=0,progress=progress,laps=0,
-            started=false,checkpoint=3,done=false,model=model,mesh=model.mesh,radius=2,
+            nextGate=0,offroad=false,done=false,model=model,mesh=model.mesh,radius=2,
             hp=100,respawn=0,stun=0,nitro=0,cooldown=0,ammo=0,weapon=nil,
             total=grid,aiSpeed=(9.1+(i-2)*0.7)*pace,decision=0}
     end
@@ -40,20 +40,32 @@ function Race.new(id,modelId,parts)
 end
 local function progressPlayer(r)
     local p=r.player
-    local progress,distance=r.track.locate(p.x,p.z,p.progress)
-    p.progress=progress;p.offroad=distance>r.track.halfWidth^2
-    local _,_,_,_,height=r.track.sample(progress)
+    local previous=p.progress
+    local wasOnRoad=not p.offroad
+    local track=r.track
+    local progress,distance=track.locate(p.x,p.z,previous)
+    p.progress=progress;p.offroad=distance>track.halfWidth^2
+    local _,_,_,_,height=track.sample(progress)
     p.y=height
-    local sector=math.floor(progress/(r.track.segments/4))
-    if not p.offroad then
-        if sector==p.checkpoint+1 and sector<=3 then p.checkpoint=sector
-        elseif sector==0 and p.checkpoint==3 then
-            if p.started then p.laps=p.laps+1 end
-            p.started=true;p.checkpoint=0
+
+    -- A gate counts only when crossed forward from the preceding road segment.
+    local advance=(progress-previous)%track.segments
+    local crossed=math.floor(previous+advance)>math.floor(previous)
+    if not p.done and p.respawn==0 and wasOnRoad and not p.offroad and advance>0 and advance<=1
+        and crossed and math.floor(progress)==p.nextGate%track.segments then
+        if p.nextGate>0 and p.nextGate%track.segments==0 then
+            p.laps=p.laps+1
             if p.laps>=3 then p.done=true;r.finished=true end
         end
+        p.nextGate=p.nextGate+1
     end
-    p.total=(p.started and p.laps*r.track.segments or -r.track.segments)+p.progress
+    if p.nextGate==0 then
+        p.total=-((track.segments-progress)%track.segments)
+    else
+        local last=p.nextGate-1
+        local fraction=progress-last%track.segments
+        p.total=last+(fraction>=0 and fraction<1 and fraction or 0)
+    end
 end
 local function position(r)
     local n=1

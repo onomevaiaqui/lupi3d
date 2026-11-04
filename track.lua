@@ -8,7 +8,7 @@ local themes={
 }
 local function new(id)
 assert(id>=1 and id<=#names)
-local T={id=id,name=names[id],segments=({40,48,48,36,48,64,64,72,80})[id],bridge=id==6 or id==8,quarry=id==4,halfWidth=5.4,parts={},trees={}}
+local T={id=id,name=names[id],segments=({40,48,48,36,48,64,64,72,80})[id],bridge=id==2 or id==6 or id==8,quarry=id==4,halfWidth=5.4,parts={},trees={}}
 local scale=({1.32,1.20,1.32,1.65,1.30,1.17,1.16,1.13,1.10})[id]*1.2
 T.bound=math.ceil(({55,55,55,55,60,70,78,85,95})[id]*scale)
 T.theme=themes[id]
@@ -58,7 +58,7 @@ for i=0,T.segments-1 do
         local deviation,flat=0,true
         for j=-span,span do
             local p=points[(i+j)%T.segments]
-            flat=flat and p.y==0
+            flat=flat and p.y==0 and (not T.bridge or p.x^2+p.z^2>8^2)
             deviation=math.max(deviation,math.abs((p.x-a.x)*dz-(p.z-a.z)*dx)/length)
         end
         local center=points[i]
