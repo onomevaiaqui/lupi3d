@@ -1,5 +1,5 @@
 local G=require "geometry"
-local names={"VALE OVAL","CRUZAMENTO 8","SERRA VERDE","PEDREIRA","LAGOA","VIADUTO NORTE","ESTRADA REAL","VIADUTO SUL","AUTODROMO","SAKURA","LAGO YPACARAI","CHACO","ITAIPU","PAMPAS","ANDES"}
+local names={"VALE OVAL","CRUZAMENTO 8","SERRA VERDE","PEDREIRA","LAGUNA ANDINA","VIADUTO NORTE","ATACAMA","VIADUTO SUL","AUTODROMO","AREGUA","LAGO YPACARAI","CHACO","ITAIPU","PAMPAS","ANDES"}
 -- Ground, alternating asphalt shades and curb accent from the 32-color palette.
 local themes={
     {14,2,3,7},{30,3,4,8},{14,2,3,15},
@@ -7,14 +7,14 @@ local themes={
     {15,2,3,13},{30,2,3,7},{27,2,3,7}
 }
 local worlds={
-    {name="BRASIL",first=1,last=4},
-    {name="JAPAO",first=5,last=8},
+    {name="CHILE",first=5,last=8},
     {name="PARAGUAI",first=9,last=12},
-    {name="ARGENTINA",first=13,last=15}
+    {name="ARGENTINA",first=13,last=15},
+    {name="BRASIL",first=1,last=4}
 }
 local laps={2,3,3,2,2,3,2,5,3,2,3,2,3,2,5}
 local function worldOf(id)
-    for i,world in ipairs(worlds) do if id<=world.last then return i end end
+    for i,world in ipairs(worlds) do if id>=world.first and id<=world.last then return i end end
 end
 local function new(id)
 assert(id>=1 and id<=#names)

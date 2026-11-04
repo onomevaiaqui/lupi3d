@@ -51,13 +51,25 @@ local function landmark(boxes)
     end
     return mesh
 end
-landmarks[1]=landmark({{0.36,3.1,0.36,0,1.55,0,13},{2.8,0.55,0.35,0,2.55,0,14},
+landmarks[4]=landmark({{0.36,3.1,0.36,0,1.55,0,13},{2.8,0.55,0.35,0,2.55,0,14},
     {1.45,0.26,0.38,0,2.55,0.02,8}})
-landmarks[2]=landmark({{0.32,2.6,0.36,-1,1.3,0,7},{0.32,2.6,0.36,1,1.3,0,7},
-    {2.65,0.24,0.42,0,2.13,0,7},{3.0,0.25,0.52,0,2.64,0,7}})
-landmarks[3]=landmark({{2.9,1.65,2.0,0,0.825,0,9},{3.24,0.26,2.35,0,1.78,0,7},
+local andes=G.mesh()
+for _,peak in ipairs({{-1.15,2.6},{0.75,3.5}}) do
+    local x,h=table.unpack(peak)
+    for _,side in ipairs({-1,1}) do
+        local a,b,c={x-side*1.35,0,side*0.55},{x,0,-side*0.9},{x,h,0}
+        local snowA={a[1]*0.28+x*0.72,h*0.72,a[3]*0.28}
+        local snowB={x,h*0.72,b[3]*0.28}
+        G.quad(andes,a,b,snowB,snowA,side==1 and 11 or 27)
+        G.quad(andes,snowA,snowB,c,c,9)
+        G.quad(andes,snowA,snowB,b,a,side==1 and 27 or 11)
+        G.quad(andes,c,c,snowB,snowA,12)
+    end
+end
+landmarks[1]=andes
+landmarks[2]=landmark({{2.9,1.65,2.0,0,0.825,0,9},{3.24,0.26,2.35,0,1.78,0,7},
     {3.24,0.16,2.35,0,1.56,0,1}})
-landmarks[4]=landmark({{0.56,3.4,0.56,0,1.7,0,9},{0.78,0.45,0.78,0,0.225,0,1},
+landmarks[3]=landmark({{0.56,3.4,0.56,0,1.7,0,9},{0.78,0.45,0.78,0,0.225,0,1},
     {0.45,0.52,0.45,0,3.47,0,9}})
 function S.populate(T)
     T.decor={};T.markings={}
