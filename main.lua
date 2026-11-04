@@ -12,7 +12,7 @@ local Save=require "save"
 local audio=require "audio"
 local scenery=require "scenery"
 local garagePart,garageReturn,garageMessage=1,"select",""
-Game={version="11.8",state="menu",menu=1,selected=1,triangles=0,race=nil,detail=true}
+Game={version="11.9",state="menu",menu=1,selected=1,triangles=0,race=nil,detail=true}
 -- Fixed oblique top-down view; follows position, never the car's heading.
 local camera={x=0,y=18,z=0,yaw=math.atan(12,14),pitch=-math.atan(18/math.sqrt(340))}
 local frame=0
@@ -146,7 +146,7 @@ end
 local function text(s,x,y,c) ui.print(s,x,y,colors.index[c or 9]) end
 local function panel()
     rect(40,38,400,190,10);rect(40,38,400,3,8)
-    text("LUPI COMBAT RALLY 11.8",122,53,15)
+    text("LUPI COMBAT RALLY 11.9",122,53,15)
 end
 local titleCamera={x=-1.90,y=1.83,z=-4.85,yaw=0,pitch=-0.075}
 local titleMesh=geometry.mesh()
@@ -436,15 +436,6 @@ local function drawRace()
         else tree.mesh=tree.basic or tree.mesh end
         renderer.submit(tree)
     end
-    local nearby=0
-    local packRadius=r.compactPack and 23 or 18
-    for _,car in ipairs(r.cars) do
-        local dx,dz=car.x-p.x,car.z-p.z
-        if not car.player and car.respawn==0 and dx*dx+dz*dz<packRadius^2 then
-            nearby=nearby+1
-        end
-    end
-    r.compactPack=nearby>=3
     local function drawObjects(upper)
     local function submit(obj, offset)
         if (track.bridge and obj.y>(offset or 0) or false)==upper then renderer.submit(obj) end
@@ -452,10 +443,7 @@ local function drawRace()
     for _,item in ipairs(r.combat.pickups) do if item.cooldown==0 then submit(item) end end
     for _,mine in ipairs(r.combat.mines) do if mine.active then submit(mine,0.12) end end
     for _,car in ipairs(r.cars) do if car.respawn==0 then
-        local fullMesh=car.mesh
-        if r.compactPack and not car.player then car.mesh=car.packMesh end
         submit(car)
-        car.mesh=fullMesh
         if Game.detail and car.nitro>0 then
             car.flame=car.flame or {mesh=scenery.flame,y=0,radius=3}
             car.flame.x,car.flame.z,car.flame.yaw,car.flame.y=car.x,car.z,car.yaw,car.y;submit(car.flame)
@@ -481,7 +469,7 @@ local function drawRace()
     end
     Game.triangles,Game.dropped=renderer.triangles,renderer.dropped
     rect(0,0,480,20,10);rect(0,228,480,42,10)
-    text("COMBAT RALLY 11.8 / "..r.id,10,6,15);text((Game.detail and "X ALTO " or "X LEVE ")..Game.triangles,282,6,9)
+    text("COMBAT RALLY 11.9 / "..r.id,10,6,15);text((Game.detail and "X ALTO " or "X LEVE ")..Game.triangles,282,6,9)
     text(Game.reported_fps and "FPS "..math.floor(Game.reported_fps+0.5) or "FPS --",390,6,9)
     text(string.format("%03d KM/H  VOLTA %d/%d  POS %d/6  VIDA %d",math.floor(p.speed*6+0.5),p.laps,track.laps,Race.position(r),p.hp),10,235,15)
     local item=p.weapon=="shot" and "TIRO" or p.weapon=="mine" and "MINA" or "SEM ARMA"

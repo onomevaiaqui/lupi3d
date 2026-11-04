@@ -16,8 +16,9 @@ function R.begin(state)
     R.triangles,R.culled,R.dropped,R.vertices,R.input_triangles=0,0,0,0,0
     count=0
 end
+-- Projection is consumed before the next object is submitted.
+local px,py,pz,sx,syScreen={},{},{},{},{}
 local function project(obj,view)
-    if not obj.px then obj.px,obj.py,obj.pz,obj.sx,obj.sy={},{},{},{},{} end
     local v=obj.mesh.v
     local oc,os
     if obj.yaw then oc,os=cos(obj.yaw),sin(obj.yaw) end
@@ -34,8 +35,8 @@ local function project(obj,view)
             y,z=y*cp-depth*sp,y*sp+depth*cp
         end
         local k=(i+2)/3
-        obj.px[k],obj.py[k],obj.pz[k]=x,y,z
-        if z>=NEAR then local s=projection/z;obj.sx[k]=240+x*s;obj.sy[k]=124-y*s end
+        px[k],py[k],pz[k]=x,y,z
+        if z>=NEAR then local s=projection/z;sx[k]=240+x*s;syScreen[k]=124-y*s end
     end
 end
 local function store(ax,ay,bx,by,dx,dy,color,depth)
@@ -109,18 +110,25 @@ local function emit(obj)
     local f=obj.mesh.f
     for i=1,#f,4 do
         local a,b,c=f[i],f[i+1],f[i+2]
-        local ax,ay,az=obj.px[a],obj.py[a],obj.pz[a]
-        local bx,by,bz=obj.px[b],obj.py[b],obj.pz[b]
-        local cx,cy,cz=obj.px[c],obj.py[c],obj.pz[c]
-        local ux,uy,uz=bx-ax,by-ay,bz-az
-        local vx,vy,vz=cx-ax,cy-ay,cz-az
-        local facing=(uy*vz-uz*vy)*ax+(uz*vx-ux*vz)*ay+(ux*vy-uy*vx)*az
-        if facing>=0 then
-            R.culled=R.culled+1
-        elseif az>=NEAR and bz>=NEAR and cz>=NEAR then
-            -- Usual path: perspective divide already done once per vertex.
-            queue(obj.sx[a],obj.sy[a],obj.sx[b],obj.sy[b],obj.sx[c],obj.sy[c],f[i+3],(az+bz+cz)/3)
+        local ax,ay,az=px[a],py[a],pz[a]
+        local bx,by,bz=px[b],py[b],pz[b]
+        local cx,cy,cz=px[c],py[c],pz[c]
+        if az>=NEAR and bz>=NEAR and cz>=NEAR then
+            local x1,y1,x2,y2,x3,y3=sx[a],syScreen[a],sx[b],syScreen[b],sx[c],syScreen[c]
+            if (x2-x1)*(y3-y1)-(y2-y1)*(x3-x1)>0 then
+                queue(x1,y1,x2,y2,x3,y3,f[i+3],(az+bz+cz)/3)
+            else
+                R.culled=R.culled+1
+            end
         elseif az>=NEAR or bz>=NEAR or cz>=NEAR then
+            -- A triangle crossing the near plane has no complete screen projection.
+            local ux,uy,uz=bx-ax,by-ay,bz-az
+            local vx,vy,vz=cx-ax,cy-ay,cz-az
+            local facing=(uy*vz-uz*vy)*ax+(uz*vx-ux*vz)*ay+(ux*vy-uy*vx)*az
+            if facing>=0 then
+                R.culled=R.culled+1
+                goto nextFace
+            end
             ix[1],iy[1],iz[1]=ax,ay,az
             ix[2],iy[2],iz[2]=bx,by,bz
             ix[3],iy[3],iz[3]=cx,cy,cz
@@ -137,6 +145,7 @@ local function emit(obj)
             local color=f[i+3]
             for k=2,n-1 do submit(ox[1],oy[1],oz[1],ox[k],oy[k],oz[k],ox[k+1],oy[k+1],oz[k+1],color) end
         end
+        ::nextFace::
     end
 end
 
