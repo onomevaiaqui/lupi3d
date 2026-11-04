@@ -9,7 +9,7 @@ local Race=require "race"
 local Save=require "save"
 local audio=require "audio"
 local scenery=require "scenery"
-Game={version="9.7",state="menu",menu=1,selected=1,triangles=0,race=nil,detail=true}
+Game={version="9.8",state="menu",menu=1,selected=1,triangles=0,race=nil,detail=true}
 -- Fixed oblique top-down view; follows position, never the car's heading.
 local camera={x=0,y=18,z=0,yaw=math.atan(12,14),pitch=-math.atan(18/math.sqrt(340))}
 local frame=0
@@ -96,11 +96,32 @@ local function rect(x,y,w,h,c) ui.rectfill(x,y,x+w,y+h,colors.index[c]) end
 local function text(s,x,y,c) ui.print(s,x,y,colors.index[c or 9]) end
 local function panel()
     rect(40,38,400,190,10);rect(40,38,400,3,8)
-    text("LUPI COMBAT RALLY 9.7",122,53,15)
+    text("LUPI COMBAT RALLY 9.8",122,53,15)
 end
-local titleCamera={x=-2.22,y=1.86,z=-6.25,yaw=0,pitch=-0.075}
+local titleCamera={x=-1.90,y=1.83,z=-4.85,yaw=0,pitch=-0.075}
 local titleCar={mesh=models[1].mesh,x=0,y=0,z=0,yaw=2.45}
 local stars={{239,27},{268,47},{310,20},{361,39},{398,17},{449,51},{470,23}}
+local logoGlyphs={
+    L={4,4,4,4,7},U={5,5,5,5,7},P={6,5,6,4,4},I={7,2,2,2,7},
+    C={7,4,4,4,7},O={7,5,5,5,7},M={5,7,7,5,5},B={6,5,6,5,6},
+    A={2,5,7,5,5},T={7,2,2,2,2},R={6,5,6,5,5},Y={5,5,2,2,2},
+    ["3"]={7,1,7,1,7},D={6,5,5,5,6}
+}
+local function drawLogo(label,x,y,scale,color)
+    for i=1,#label do
+        local glyph=logoGlyphs[label:sub(i,i)]
+        if glyph then
+            for row,bits in ipairs(glyph) do
+                for col=0,2 do
+                    if bits & (4 >> col)~=0 then
+                        rect(x+col*scale+math.floor((5-row)*scale/3),y+(row-1)*scale,scale,scale,color)
+                    end
+                end
+            end
+        end
+        x=x+4*scale
+    end
+end
 local function drawTitleArt()
     rect(0,0,479,269,10)
     for _,star in ipairs(stars) do rect(star[1],star[2],1,1,9) end
@@ -111,9 +132,15 @@ local function drawTitleArt()
     ui.trisfill(215,123,302,64,396,123,colors.index[27])
     ui.trisfill(317,123,413,71,479,123,colors.index[11])
     rect(0,123,479,112,26)
-    rect(0,125,479,4,11)
+    rect(190,125,289,4,11)
+    ui.trisfill(260,111,479,87,479,119,colors.index[27])
+    ui.trisfill(260,111,479,119,260,125,colors.index[27])
+    for i=0,8 do
+        local x=266+i*24
+        rect(x,117-i*2,12,3,i%2==0 and 7 or 8)
+    end
     for i=0,15 do
-        rect(i*30,129,29,4,i%2==0 and 7 or 9)
+        if i>=7 then rect(i*30,129,29,4,i%2==0 and 7 or 9) end
         rect(i*30,223,29,5,i%2==0 and 9 or 10)
         rect(i*30,229,29,5,i%2==0 and 10 or 9)
     end
@@ -121,9 +148,15 @@ local function drawTitleArt()
     ui.trisfill(262,207,315,153,267,207,colors.index[9])
     ui.trisfill(262,207,439,207,439,210,colors.index[9])
     ui.trisfill(262,207,439,210,262,210,colors.index[9])
-    rect(297,69,111,3,11)
-    rect(297,76,111,3,11)
-    rect(406,76,4,56,11)
+    rect(292,61,179,3,12)
+    rect(292,75,179,3,11)
+    for x=293,453,20 do
+        ui.trisfill(x,75,x+15,64,x+19,64,colors.index[12])
+        ui.trisfill(x,75,x+19,64,x+4,75,colors.index[12])
+    end
+    rect(467,62,4,66,11)
+    rect(322,76,3,8,11)
+    rect(380,76,3,8,11)
     rect(307,83,87,27,0)
     local active=math.floor(titleTime/0.65)%3+1
     for i,color in ipairs({7,8,14}) do
@@ -133,17 +166,21 @@ local function drawTitleArt()
     renderer.begin(titleCamera)
     renderer.submit(titleCar)
     renderer.flush()
-    text("LUPI COMBAT",29,32,9)
-    text("RALLY 3D",29,51,15)
-    rect(29,71,174,2,8)
+    drawLogo("LUPI COMBAT",25,24,4,9)
+    drawLogo("RALLY",25,50,6,8)
+    drawLogo("3D",86,84,5,7)
+    rect(26,92,44,3,7)
+    rect(137,92,46,3,7)
 end
 local function drawMenu()
     drawTitleArt()
     for i,label in ipairs({"NOVO JOGO","CONTINUE"}) do
-        local y=111+(i-1)*28
+        local y=120+(i-1)*28
         local selected=Game.menu==i
-        if selected then rect(28,y,198,22,8) end
-        local color=selected and 10 or 9
+        local border=selected and 8 or 9
+        rect(28,y,152,1,border);rect(28,y+22,152,1,border)
+        rect(28,y,1,22,border);rect(179,y,1,22,border)
+        local color=selected and 8 or 9
         if i==2 and not Save.canContinue() and not selected then color=11 end
         text((selected and "> " or "  ")..label,38,y+7,color)
     end
@@ -305,7 +342,7 @@ local function drawRace()
     end
     Game.triangles,Game.dropped=renderer.triangles,renderer.dropped
     rect(0,0,480,20,10);rect(0,228,480,42,10)
-    text("COMBAT RALLY 9.7 / "..r.id,10,6,15);text((Game.detail and "X ALTO " or "X LEVE ")..Game.triangles,282,6,9)
+    text("COMBAT RALLY 9.8 / "..r.id,10,6,15);text((Game.detail and "X ALTO " or "X LEVE ")..Game.triangles,282,6,9)
     text(Game.reported_fps and "FPS "..math.floor(Game.reported_fps+0.5) or "FPS --",390,6,9)
     text(string.format("%03d KM/H  VOLTA %d/3  POS %d/4  VIDA %d",math.floor(p.speed*6+0.5),p.laps,Race.position(r),p.hp),10,235,15)
     local item=p.weapon=="shot" and "TIRO" or p.weapon=="mine" and "MINA" or "SEM ARMA"
