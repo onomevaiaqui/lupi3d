@@ -72,9 +72,15 @@ function A.test()
         if A.volumeError and not A.error then A.testInfo="VOLUME: "..A.volumeError:sub(1,56) end
     elseif kind=="SFX" then
         if type(music)=="table" and type(music.stop)=="function" then pcall(music.stop,0) end
-        A.play("confirm")
+        -- Use the same pair of built-in sounds as Balao Gatinho's HUD.
+        if type(sfx.volume)=="function" then pcall(sfx.volume,0.5) end
+        local ok,err,reason=pcall(sfx.fx,62,65,0.5)
+        local ok2,err2,reason2=pcall(sfx.fx,198,65)
+        local failure=not ok and err or not ok2 and err2 or reason or reason2
+        A.error=not ok or not ok2 or err==false or err2==false or type(failure)=="string"
+        A.lastError=A.error and tostring(failure or "SFX RECUSADO"):sub(1,72) or ""
         A.legacyTimer=0.3
-        A.testInfo="TESTE SFX / X ALTERNA PARA FUR"
+        A.testInfo="SFX 62/198 RET: "..tostring(err).."/"..tostring(err2)
     else A.testInfo="FIRMWARE SEM API DE AUDIO" end
     A.testTimer=8
 end
