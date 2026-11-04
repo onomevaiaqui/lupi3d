@@ -35,9 +35,11 @@ function Game.startRace(id)
 end
 function Game.result()
     local r=Game.race
-    local alreadyChampion=Save.points()>=Save.titlePoints
-    Save.record(r.id,r.place,Race.opponentOrder(r))
-    r.titleWon=not alreadyChampion and Save.points()>=Save.titlePoints
+    if Save.completed()<trackCount then
+        Save.record(r.id,r.place,Race.opponentOrder(r))
+        r.championshipEnded=Save.completed()==trackCount
+        r.titleWon=r.championshipEnded and Save.standings()[1].id==1
+    end
     Game.state=r.titleWon and "podium" or "result"
 end
 function Game.step(dt)
@@ -94,7 +96,7 @@ local function rect(x,y,w,h,c) ui.rectfill(x,y,x+w,y+h,colors.index[c]) end
 local function text(s,x,y,c) ui.print(s,x,y,colors.index[c or 9]) end
 local function panel()
     rect(40,38,400,190,10);rect(40,38,400,3,8)
-    text("LUPI COMBAT RALLY 7.9",122,53,15)
+    text("LUPI COMBAT RALLY 8.0",122,53,15)
 end
 local function drawTitleArt()
     rect(0,0,480,104,10)
@@ -112,14 +114,14 @@ local function drawTitleArt()
     rect(x+5,y+9,9,7,10);rect(x+34,y+9,9,7,10)
     rect(x+8,y+11,3,3,11);rect(x+37,y+11,3,3,11)
     text("LUPI COMBAT RALLY 3D",137,16,15)
-    text("CAMPEONATO 7.9",160,42,8)
+    text("CAMPEONATO 8.0",160,42,8)
 end
 local function drawMenu()
     drawTitleArt()
     rect(40,110,400,119,10)
     text((Game.menu==1 and "> " or "  ").."NOVO JOGO",144,119,Game.menu==1 and 15 or 9)
     text((Game.menu==2 and "> " or "  ").."CONTINUE",144,140,Save.canContinue() and (Game.menu==2 and 15 or 9) or 11)
-    text("PLACAR "..Save.points().."/"..Save.titlePoints.." PTS",144,164,14)
+    text(Save.completed().."/"..trackCount.." PISTAS   "..Save.points().." PTS",144,164,14)
     if not Save.canContinue() then text("CONTINUE: VENCA UMA PISTA PARA LIBERAR",80,184,11)
     else text(Save.status,144,184,11) end
     text("CRUZ: ESCOLHER    B: CONFIRMAR",114,204,9)
@@ -139,7 +141,7 @@ local function drawSelect()
         text((Game.selected==i and "> " or "  ")..i.." - "..name,90,y,Game.selected==i and 15 or 9)
         text(status.." "..Save.pointsFor(rank).."P",300,y,rank==1 and 14 or 11)
     end
-    text("PLACAR "..Save.points().."/"..Save.titlePoints.."   B: CORRER   Y: MENU",82,210,9)
+    text(Save.completed().."/"..trackCount.." PISTAS  B: CORRER  Y: MENU",82,210,9)
 end
 local garageCamera={x=-1.3,y=2.0,z=-9,yaw=0,pitch=-0.09}
 local podiumCamera={x=0,y=3.1,z=-10,yaw=0,pitch=-0.14}
@@ -194,7 +196,7 @@ local function drawResult()
     local r=Game.race
     panel()
     text(r.track.name.." / "..r.place.." LUGAR / +"..Save.pointsFor(r.place).." PTS NA PROVA",72,78,15)
-    if r.place==1 or r.titleWon then
+    if r.place==1 or r.championshipEnded then
     for i,row in ipairs(Save.standings()) do
         local y=100+(i-1)*18
         local color=row.id==1 and 15 or 9
@@ -202,9 +204,10 @@ local function drawResult()
         text(row.points.." PTS",315,y,color)
     end
     else text("TENTE NOVAMENTE OU ESCOLHA OUTRA PISTA",67,132,9) end
-    local total=Save.points()
-    text(total>=Save.titlePoints and "META ATINGIDA: CAMPEAO!" or
-        ("META: "..total.."/"..Save.titlePoints.." PTS"),120,178,14)
+    local complete=Save.completed()==trackCount
+    local summary=complete and ("CAMPEAO: "..Save.standings()[1].name)
+        or (Save.completed().."/"..trackCount.." PISTAS   "..Save.points().." PTS")
+    text(summary,120,178,14)
     text("B: ESCOLHER PISTA   Y: MENU",111,210,9)
 end
 local function drawRace()
@@ -259,7 +262,7 @@ local function drawRace()
     end
     Game.triangles,Game.dropped=renderer.triangles,renderer.dropped
     rect(0,0,480,20,10);rect(0,228,480,42,10)
-    text("COMBAT RALLY 7.9 / "..r.id,10,6,15);text((Game.detail and "X ALTO " or "X LEVE ")..Game.triangles,282,6,9)
+    text("COMBAT RALLY 8.0 / "..r.id,10,6,15);text((Game.detail and "X ALTO " or "X LEVE ")..Game.triangles,282,6,9)
     text(Game.reported_fps and "FPS "..math.floor(Game.reported_fps+0.5) or "FPS --",390,6,9)
     text(string.format("%03d KM/H  VOLTA %d/3  POS %d/4  VIDA %d",math.floor(p.speed*6+0.5),p.laps,Race.position(r),p.hp),10,235,15)
     local item=p.weapon=="shot" and "TIRO" or p.weapon=="mine" and "MINA" or "SEM ARMA"

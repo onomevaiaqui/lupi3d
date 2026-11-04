@@ -71,7 +71,11 @@ function S.wins()
     local n=0;for _,rank in ipairs(S.ranks) do if rank==1 then n=n+1 end end;return n
 end
 local pointsByPlace={10,6,3,1}
-S.titlePoints=45
+function S.completed()
+    local total=0
+    for _,rank in ipairs(S.ranks) do if rank>0 then total=total+1 end end
+    return total
+end
 function S.pointsFor(place)
     return pointsByPlace[place] or 0
 end
@@ -81,18 +85,32 @@ function S.points()
     return total
 end
 function S.standings()
-    local rows={{name=S.name,points=S.points(),id=1},{name="Lino",points=0,id=2},
-        {name="Carol",points=0,id=3},{name="Lucas",points=0,id=4}}
-    for track,order in pairs(S.orders) do
-        for i=1,3 do
-            local row=rows[1+tonumber(order:sub(i,i))]
-            local place=i>=S.ranks[track] and i+1 or i
-            row.points=row.points+S.pointsFor(place)
+    local rows={}
+    for id,name in ipairs({S.name,"Lino","Carol","Lucas"}) do
+        rows[id]={name=name,id=id,points=0,places={0,0,0,0}}
+    end
+    local function score(row,place)
+        row.points=row.points+S.pointsFor(place)
+        row.places[place]=row.places[place]+1
+    end
+    for track,place in ipairs(S.ranks) do
+        if place>0 then
+            score(rows[1],place)
+            local order=S.orders[track]
+            if order then
+                for i=1,3 do
+                    local row=rows[1+tonumber(order:sub(i,i))]
+                    score(row,i>=place and i+1 or i)
+                end
+            end
         end
     end
     table.sort(rows,function(a,b)
-        if a.points==b.points then return a.id<b.id end
-        return a.points>b.points
+        if a.points~=b.points then return a.points>b.points end
+        for place=1,4 do
+            if a.places[place]~=b.places[place] then return a.places[place]>b.places[place] end
+        end
+        return a.id<b.id
     end)
     return rows
 end
