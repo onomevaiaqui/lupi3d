@@ -71,6 +71,18 @@ landmarks[2]=landmark({{2.9,1.65,2.0,0,0.825,0,9},{3.24,0.26,2.35,0,1.78,0,7},
     {3.24,0.16,2.35,0,1.56,0,1}})
 landmarks[3]=landmark({{0.56,3.4,0.56,0,1.7,0,9},{0.78,0.45,0.78,0,0.225,0,1},
     {0.45,0.52,0.45,0,3.47,0,9}})
+local rio=landmark({{0.92,0.7,0.92,0,0.35,0,11},{0.48,2.6,0.42,0,1.95,0,9},
+    {2.7,0.32,0.42,0,2.83,0,9},{0.43,0.46,0.42,0,3.42,0,9}})
+local itaipu=landmark({{4.4,1.45,1.9,0,0.725,0,11},{4.5,0.18,0.44,0,1.5,-0.56,12},
+    {0.45,1.35,0.22,-1.35,0.67,-1,6},{0.45,1.35,0.22,0,0.67,-1,6},{0.45,1.35,0.22,1.35,0.67,-1,6}})
+local skyline=landmark({{0.65,2.8,0.8,-1.1,1.4,0,11},{0.85,3.5,0.95,0,1.75,0,12},
+    {0.65,2.3,0.8,1.1,1.15,0,11}})
+local harbor=landmark({{3.1,0.55,1.15,0,0.5,0,6},{1.6,0.5,0.85,0,1,0,9},
+    {0.24,0.5,0.24,-0.4,1.5,0,7}})
+local monument=landmark({{2.8,0.45,1.5,0,0.225,0,12},{0.48,2.8,0.55,0,1.6,0,9},
+    {1.1,0.16,0.22,0.48,2.65,0,1}})
+local cityFeature={rio,skyline,itaipu,andes,andes,harbor,S.quarryRock,harbor,
+    landmarks[2],S.house,harbor,S.quarryRock,landmarks[3],monument,andes}
 function S.populate(T)
     T.decor={};T.markings={}
     for i,s in ipairs(T.parts) do
@@ -94,7 +106,7 @@ function S.populate(T)
         if d>(T.halfWidth+2)^2 then
             local kind=T.id==4 and "rock" or T.id==7 and "house" or T.id==9 and "fence"
                 or i%6==0 and "house" or i%3==0 and "fence" or "rock"
-            local feature=i%4==0 and landmarks[T.world]
+            local feature=i%4==0 and cityFeature[T.id]
             T.decor[#T.decor+1]={
                 x=x,y=0,z=z,yaw=kind=="house" and 0.7 or yaw,
                 mesh=feature or (T.quarry and S.quarryRock or S[kind]),

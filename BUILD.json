@@ -1,5 +1,5 @@
 {
-  "project": "Lupi Combat Rally 11.2",
+  "project": "Lupi Combat Rally 11.3",
   "files": [
     {
       "file": "colors.lua",
@@ -23,7 +23,7 @@
         "type": "lua_code"
       },
       "bytes": 153,
-      "sha256": "9a90f3ec206714128487ded8dba4da06d58dbf7f8e1808711296c536e44b473c"
+      "sha256": "0798c39d68359b614b236b6c32a60c5cb2dfb7a8b1092aee9b2431425684bf33"
     },
     {
       "file": "geometry.lua",
@@ -46,16 +46,16 @@
       "metadata": {
         "type": "lua_code"
       },
-      "bytes": 7952,
-      "sha256": "581b04b7c145ed1663c666198671359ef263eb89e6653c7aa35cf8484da609ce"
+      "bytes": 8194,
+      "sha256": "d22afb7ab6714af90cf9c787af2e6b60a043ad3e7c9ba4c9885e7cd5a895f8bf"
     },
     {
       "file": "main.lua",
       "metadata": {
         "type": "lua_code"
       },
-      "bytes": 21110,
-      "sha256": "610dd5cde09e2a0559350638902b8b7a7200aeb60234878e4536ab420d49649f"
+      "bytes": 23857,
+      "sha256": "f2dccb66d3c728c0469f38edf4bada660f9916de97524dee615af72952b8ac1e"
     },
     {
       "file": "renderer.lua",
@@ -70,8 +70,8 @@
       "metadata": {
         "type": "lua_code"
       },
-      "bytes": 9712,
-      "sha256": "89ed02aba11d96beea6e2d5a3faeb908e76ee83621a1e754ea96aa6974bd7937"
+      "bytes": 10211,
+      "sha256": "f9abb2a60fcac3d0b359de504562dc6d9de7a3af6a314a100f46f511cd4f31fe"
     },
     {
       "file": "combat.lua",
@@ -86,8 +86,8 @@
       "metadata": {
         "type": "lua_code"
       },
-      "bytes": 8415,
-      "sha256": "aeb21ad841f3d623cedf1a827198f2da75b7fab355c7b277d15e2e6aa45d1b01"
+      "bytes": 8340,
+      "sha256": "17d1d8aa1d48842e2a6d8f5aaaa01794e1c3e5573b10cf07b1ef5381ef56e033"
     },
     {
       "file": "audio.lua",
@@ -102,8 +102,8 @@
       "metadata": {
         "type": "lua_code"
       },
-      "bytes": 5090,
-      "sha256": "c68acf0db95108d2244ef6fd493d7f2e64cbddf59d843bcedb8446dd6d9c66bd"
+      "bytes": 5902,
+      "sha256": "b920a5f11396c500015ec06f7bdee71a1979d2a25ed60dd33f4a109b56218cb4"
     },
     {
       "file": "music/brake.fur",
@@ -214,5 +214,5 @@
       "sha256": "09ab62051f935bb3fe74421bf384e11c6b5ef79ae514ebdb306ab98e4cbd37b8"
     }
   ],
-  "totalBytes": 86698
+  "totalBytes": 90924
 }

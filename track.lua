@@ -12,13 +12,17 @@ local worlds={
     {name="ARGENTINA",first=13,last=15},
     {name="BRASIL",first=1,last=4}
 }
+local cities={"RIO DE JANEIRO","SAO PAULO","FOZ DO IGUACU","BELO HORIZONTE",
+    "SANTIAGO","VALPARAISO","SAN PEDRO","PUERTO MONTT",
+    "ASUNCION","AREGUA","SAN BERNARDINO","FILADELFIA",
+    "BUENOS AIRES","ROSARIO","MENDOZA"}
 local laps={2,3,3,2,2,3,2,5,3,2,3,2,3,2,5}
 local function worldOf(id)
     for i,world in ipairs(worlds) do if id>=world.first and id<=world.last then return i end end
 end
 local function new(id)
 assert(id>=1 and id<=#names)
-local T={id=id,name=names[id],world=worldOf(id),laps=laps[id],segments=({40,48,48,36,48,64,64,72,80,48,48,56,56,52,64})[id],bridge=id==2 or id==6 or id==8,quarry=id==4,halfWidth=5.4,parts={},trees={}}
+local T={id=id,name=names[id],world=worldOf(id),laps=laps[id],segments=({40,48,48,36,48,64,64,72,80,48,48,56,56,52,64})[id],bridge=id==2 or id==6 or id==8,quarry=id==4,halfWidth=6.7,parts={},trees={}}
 local scale=({1.32,1.20,1.32,1.65,1.30,1.17,1.16,1.13,1.10,1.10,1.20,1.10,1.10,1.10,1.15})[id]*1.2
 T.bound=math.ceil(({55,55,55,55,60,70,78,85,95,70,75,90,84,82,90})[id]*scale)
 T.theme=themes[id] or ({themes[5],themes[7],themes[6],themes[1],themes[8],themes[9]})[id-9]
@@ -163,4 +167,4 @@ end
 require("scenery").populate(T)
 return T
 end
-return {new=new,names=names,worlds=worlds,worldOf=worldOf,laps=laps}
+return {new=new,names=names,worlds=worlds,worldOf=worldOf,laps=laps,cities=cities}

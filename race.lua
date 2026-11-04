@@ -4,27 +4,27 @@ local mesh=require "car"
 local combat=require "combat"
 local audio=require "audio"
 local pace=1.15
-local Race={names={"Lino","Carol","Lucas"}}
+local Race={names={"Lino","Carol","Lucas","Bia","Davi"}}
 function Race.new(id,modelId,parts)
     modelId=modelId or 1
     local track=tracks.new(id)
     local r={track=track,id=id,cars={},time=0,countdown=3,finished=false,place=0,grid={}}
     local models={modelId}
     for id=1,#mesh.models do if id~=modelId then models[#models+1]=id end end
-    local form={8.8,9.6,10.4}
+    local form={8.7,9.2,9.7,10.2,10.7}
     for i=#form,2,-1 do local j=math.random(i);form[i],form[j]=form[j],form[i] end
     for i=1,#Race.names+1 do
-        local grid=-(1.6+(i-1)*2.4)/track.parts[track.segments].length
+        local grid=-1.75/track.parts[track.segments].length
         local progress=grid%track.segments
         local x,z,yaw,_,y=track.sample(progress)
-        local lane=i%2==1 and -2.35 or 2.35
+        local lane=(i-3.5)*2.2
         x,z=x+math.cos(yaw)*lane,z-math.sin(yaw)*lane
         r.grid[i]={x=x,y=y+0.025,z=z,yaw=yaw,radius=2}
-        local model=mesh.models[models[i]]
-        r.cars[i]={lane=lane,targetLane=i==4 and 0 or lane,player=i==1,x=x,y=y,z=z,yaw=yaw,speed=0,progress=progress,laps=0,
+        local model=mesh.models[models[i] or (i-1)%#mesh.models+1]
+        r.cars[i]={lane=lane,targetLane=lane*0.85,player=i==1,x=x,y=y,z=z,yaw=yaw,speed=0,progress=progress,laps=0,
             nextGate=0,offroad=false,done=false,model=model,mesh=model.mesh,radius=2,
             hp=100,respawn=0,stun=0,nitro=0,cooldown=0,ammo=0,weapon=nil,
-            total=grid,aiSpeed=(form[i-1] or 0)*pace,decision=0}
+            segmentLength=track.parts[track.segments].length,total=grid,aiSpeed=(form[i-1] or 0)*pace,decision=0}
     end
     r.player=r.cars[1]
     if parts then
@@ -111,7 +111,9 @@ end
 local function moveSide(car,x,z)
     car.x,car.z=car.x+x,car.z+z
     if not car.player then
-        car.lane=math.max(-4.1,math.min(4.1,car.lane+x*math.cos(car.yaw)-z*math.sin(car.yaw)))
+        local forward=x*math.sin(car.yaw)+z*math.cos(car.yaw)
+        car.total=car.total+forward/car.segmentLength
+        car.lane=math.max(-5.8,math.min(5.8,car.lane+x*math.cos(car.yaw)-z*math.sin(car.yaw)))
     end
 end
 local function collide(r)
@@ -123,19 +125,20 @@ local function collide(r)
                 if b.respawn==0 and not b.done and math.abs(a.y-b.y)<1.2 then
                     local dx,dz=b.x-a.x,b.z-a.z
                     local d2=dx*dx+dz*dz
-                    if d2<2.45^2 then
+                    if d2<2.08^2 then
                         local distance=math.sqrt(d2)
                         local nx,nz=1,0
                         if distance>0.001 then nx,nz=dx/distance,dz/distance end
-                        local push=(2.45-distance)/2
-                        moveSide(a,-nx*push,-nz*push)
-                        moveSide(b,nx*push,nz*push)
                         local closing=(math.sin(a.yaw)*a.speed-math.sin(b.yaw)*b.speed)*nx
                             +(math.cos(a.yaw)*a.speed-math.cos(b.yaw)*b.speed)*nz
                         if closing>0.5 and a.bump==0 and b.bump==0 then
-                            a.speed=a.speed*0.72;b.speed=b.speed*0.82
                             a.bump,b.bump=0.22,0.22
+                            a.impactX,a.impactZ=-nx*closing*0.24,-nz*closing*0.24
+                            b.impactX,b.impactZ=nx*closing*0.24,nz*closing*0.24
                         end
+                        local push=(2.08-distance)/2
+                        moveSide(a,-nx*push,-nz*push)
+                        moveSide(b,nx*push,nz*push)
                     end
                 end
             end
@@ -177,11 +180,12 @@ function Race.step(r,dt,input)
             local car=r.cars[i]
             if not car.done and car.respawn==0 then
                 local boost=car.nitro>0 and 1.1 or 1
-                car.speed=car.aiSpeed*boost*(car.stun>0 and 0.4 or car.bump>0 and 0.72 or 1)
+                car.speed=car.aiSpeed*boost*(car.stun>0 and 0.4 or 1)
                 local _,_,_,length=r.track.sample(car.total)
                 car.total=car.total+car.speed*h/length
                 car.progress=car.total%r.track.segments;car.laps=math.max(0,math.floor(car.total/r.track.segments))
-                local x,z,yaw,_,height=r.track.sample(car.progress)
+                local x,z,yaw,segmentLength,height=r.track.sample(car.progress)
+                car.segmentLength=segmentLength
                 if car.total>0 then
                     car.lane=car.lane+(car.targetLane-car.lane)*math.min(1,h*0.6)
                 end
@@ -190,6 +194,11 @@ function Race.step(r,dt,input)
                     r.finishedOpponents=(r.finishedOpponents or 0)+1
                     car.finishOrder=r.finishedOpponents;car.done=true;car.speed=0
                 end
+            end
+        end
+        for _,car in ipairs(r.cars) do
+            if car.bump>0 and car.respawn==0 and not car.done then
+                moveSide(car,car.impactX*h,car.impactZ*h)
             end
         end
         collide(r)

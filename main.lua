@@ -11,7 +11,7 @@ local Save=require "save"
 local audio=require "audio"
 local scenery=require "scenery"
 local garagePart,garageReturn,garageMessage=1,"select",""
-Game={version="11.2",state="menu",menu=1,selected=1,triangles=0,race=nil,detail=true}
+Game={version="11.3",state="menu",menu=1,selected=1,triangles=0,race=nil,detail=true}
 -- Fixed oblique top-down view; follows position, never the car's heading.
 local camera={x=0,y=18,z=0,yaw=math.atan(12,14),pitch=-math.atan(18/math.sqrt(340))}
 local frame=0
@@ -34,12 +34,12 @@ function Game.startRace(id)
     Game.selected=id;Game.race=Race.new(id,Save.model,Save.parts);Game.state="race"
     if type(collectgarbage)=="function" then pcall(collectgarbage,"collect") end
 end
+local selectedWorld=1
 local function selectWorld()
     local world,medal=Save.currentWorld()
     if medal then Game.medal=medal;creditsTime=0;Game.state="trophy";return end
-    local range=tracks.worlds[world]
-    Game.selected=Save.last>=range.first and Save.last<=range.last and Save.last or range.first
-    Game.state="select"
+    selectedWorld=world
+    Game.state="countries"
 end
 function Game.result()
     local r=Game.race
@@ -89,12 +89,22 @@ function Game.step(dt)
             local name=table.concat(letters):match("^%s*(.-)%s*$")
             Save.newGame(name~="" and name or "PILOTO",modelId);selectWorld()
         end
+    elseif Game.state=="countries" then
+        local count=#tracks.worlds
+        if pressed("left") or pressed("up") then selectedWorld=(selectedWorld-2)%count+1 end
+        if pressed("right") or pressed("down") then selectedWorld=selectedWorld%count+1 end
+        if pressed("back") then Game.state="menu"
+        elseif pressed("ok") and selectedWorld<=Save.currentWorld() then
+            local range=tracks.worlds[selectedWorld]
+            Game.selected=Save.last>=range.first and Save.last<=range.last and Save.last or range.first
+            Game.state="select"
+        end
     elseif Game.state=="select" then
-        local range=tracks.worlds[Save.currentWorld()]
+        local range=tracks.worlds[selectedWorld]
         local size=range.last-range.first+1
         if pressed("left") or pressed("up") then Game.selected=range.first+(Game.selected-range.first-1)%size;audio.play("menu") end
         if pressed("right") or pressed("down") then Game.selected=range.first+(Game.selected-range.first+1)%size;audio.play("menu") end
-        if pressed("back") then Game.state="menu"
+        if pressed("back") then Game.state="countries"
         elseif pressed("selectItem") then garageReturn="select";garageMessage="";Game.state="garage"
         elseif pressed("ok") then Game.startRace(Game.selected) end
     elseif Game.state=="race" then
@@ -131,7 +141,7 @@ end
 local function text(s,x,y,c) ui.print(s,x,y,colors.index[c or 9]) end
 local function panel()
     rect(40,38,400,190,10);rect(40,38,400,3,8)
-    text("LUPI COMBAT RALLY 11.2",122,53,15)
+    text("LUPI COMBAT RALLY 11.3",122,53,15)
 end
 local titleCamera={x=-1.90,y=1.83,z=-4.85,yaw=0,pitch=-0.075}
 local titleMesh=geometry.mesh()
@@ -285,19 +295,63 @@ local function flag(country,x,y)
         end
     end
 end
+local function drawCountries()
+    panel()
+    text("SELECIONE O PAIS",153,78,15)
+    local unlocked=Save.currentWorld()
+    for i,world in ipairs(tracks.worlds) do
+        local y=98+(i-1)*24
+        flag(world.name,72,y-4)
+        text((selectedWorld==i and "> " or "  ")..world.name,116,y,
+            selectedWorld==i and 15 or i<=unlocked and 9 or 11)
+        text(i>unlocked and "BLOQUEADO" or i<unlocked and "CLASSIFICADO" or "ATUAL",310,y,11)
+    end
+    text("B: ABRIR MAPA   Y: MENU",123,210,9)
+end
+-- Schematic maps. Points use the same local coordinates as their outline.
+local maps={
+    {outline={{66,6},{83,3},{89,23},{80,48},{75,87},{55,96},{49,80},{58,53},{59,24}},
+        center={69,48},nodes={{68,42},{70,29},{73,15},{61,74}}},
+    {outline={{29,17},{64,7},{78,22},{111,28},{119,48},{94,58},{85,84},{65,88},{48,65},{27,51}},
+        center={72,47},nodes={{66,67},{78,64},{90,51},{51,28}}},
+    {outline={{42,7},{80,9},{105,22},{92,38},{75,65},{65,81},{53,99},{42,86},{46,63},{38,42}},
+        center={61,48},nodes={{83,37},{75,24},{49,37}}},
+    {outline={{24,16},{50,8},{69,16},{91,6},{106,15},{137,22},{131,43},{106,67},{96,90},{76,99},{58,74},{49,51},{27,48}},
+        center={79,44},nodes={{111,63},{97,73},{70,79},{105,51}}}
+}
+local landmarks={"CRISTO REDENTOR","ARRANHA-CEUS","ITAIPU BINACIONAL","SERRA DO CURRAL",
+    "CORDILHEIRA DOS ANDES","PORTO E MORROS","DESERTO DO ATACAMA","LAGOS DO SUL",
+    "PALACIO DE LOPEZ","CERAMICA DE AREGUA","LAGO YPACARAI","PAISAGEM DO CHACO",
+    "OBELISCO","MONUMENTO A BANDEIRA","MONTANHAS DOS ANDES"}
 local function drawSelect()
     panel()
-    local range=tracks.worlds[Save.currentWorld()]
-    flag(range.name,63,75)
-    text(range.name.." / TOP 3 PARA AVANCAR",106,80,15)
-    for i=range.first,range.last do
-        local y=104+(i-range.first)*21
-        local rank=Save.ranks[i]
-        local label=(Game.selected==i and "> " or "  ")..tracks.names[i].."  "..tracks.laps[i].."V"
-        text(label,66,y,Game.selected==i and 15 or 9)
-        text(rank>0 and (rank.." LUGAR / "..Save.pointsFor(rank).."P") or "NOVA",315,y,rank==1 and 14 or 11)
+    local range=tracks.worlds[selectedWorld]
+    local map=maps[selectedWorld]
+    flag(range.name,59,73)
+    text(range.name.." / MAPA DE CIDADES",101,78,15)
+    local x,y=60,94
+    rect(x,y,153,104,6)
+    for i,a in ipairs(map.outline) do
+        local b=map.outline[i%#map.outline+1]
+        local c=map.center
+        ui.trisfill(x+c[1],y+c[2],x+a[1],y+a[2],x+b[1],y+b[2],colors.index[14])
     end
-    text("B: CORRER  R: GARAGEM  Y: MENU",82,210,9)
+    for i,point in ipairs(map.nodes) do
+        local id=range.first+i-1
+        if id~=Game.selected then
+            rect(x+point[1]-3,y+point[2]-3,6,6,Save.ranks[id]>0 and 9 or 7)
+        end
+    end
+    local point=map.nodes[Game.selected-range.first+1]
+    rect(x+point[1]-5,y+point[2]-5,10,10,10)
+    rect(x+point[1]-3,y+point[2]-3,6,6,8)
+    text(tracks.cities[Game.selected],227,106,15)
+    text(landmarks[Game.selected],227,125,9)
+    text(tracks.names[Game.selected].." / "..tracks.laps[Game.selected].."V",227,144,9)
+    local rank=Save.ranks[Game.selected]
+    text(rank>0 and (rank.." LUGAR / "..Save.pointsFor(rank).." PTS") or "PROVA NOVA",227,163,14)
+    text("3 PROVAS E TOP 3 PARA AVANCAR",227,184,11)
+    text("B: CORRER  R: GARAGEM  Y: PAISES",82,210,9)
 end
 local garageCamera={x=-1.3,y=2.0,z=-9,yaw=0,pitch=-0.09}
 local podiumCamera={x=0,y=3.1,z=-10,yaw=0,pitch=-0.14}
@@ -356,12 +410,12 @@ local function drawResult()
     text(r.track.name.." / "..r.place.." LUGAR / +"..Save.pointsFor(r.place).." PTS NA PROVA",72,78,15)
     text(r.worldPlace and "CLASSIFICACAO DO MUNDO" or "PLACAR PARCIAL",144,93,8)
     for i,row in ipairs(Save.standings(r.track.world)) do
-        local y=109+(i-1)*16
+        local y=105+(i-1)*12
         local color=row.id==1 and 15 or 9
         text(i.."  "..row.name,104,y,color)
         text(row.points.." PTS",315,y,color)
     end
-    if r.worldPlace==4 then text("MELHORE UMA PROVA PARA AVANCAR",89,178,8)
+    if r.worldPlace and r.worldPlace>3 then text("MELHORE UMA PROVA PARA AVANCAR",89,178,8)
     elseif r.worldPassed then text("MUNDO CLASSIFICADO",120,178,14) end
     text("PREMIO $ "..r.prize.."   SALDO $ "..Save.cash,82,192,8)
     text("B: PISTAS   R: GARAGEM   Y: MENU",82,210,9)
@@ -436,9 +490,9 @@ local function drawRace()
     end
     Game.triangles,Game.dropped=renderer.triangles,renderer.dropped
     rect(0,0,480,20,10);rect(0,228,480,42,10)
-    text("COMBAT RALLY 11.2 / "..r.id,10,6,15);text((Game.detail and "X ALTO " or "X LEVE ")..Game.triangles,282,6,9)
+    text("COMBAT RALLY 11.3 / "..r.id,10,6,15);text((Game.detail and "X ALTO " or "X LEVE ")..Game.triangles,282,6,9)
     text(Game.reported_fps and "FPS "..math.floor(Game.reported_fps+0.5) or "FPS --",390,6,9)
-    text(string.format("%03d KM/H  VOLTA %d/%d  POS %d/4  VIDA %d",math.floor(p.speed*6+0.5),p.laps,track.laps,Race.position(r),p.hp),10,235,15)
+    text(string.format("%03d KM/H  VOLTA %d/%d  POS %d/6  VIDA %d",math.floor(p.speed*6+0.5),p.laps,track.laps,Race.position(r),p.hp),10,235,15)
     local item=p.weapon=="shot" and "TIRO" or p.weapon=="mine" and "MINA" or "SEM ARMA"
     text(item.." "..p.ammo..(p.nitro>0 and "  NITRO +10%" or "").." | B GAS A FREIO Y USAR R TROCAR L RESET",10,255,9)
     if r.countdown>0 or r.time<1 then
@@ -479,6 +533,7 @@ function Game.draw()
     elseif Game.state=="name" then drawName()
     elseif Game.state=="podium" then drawPodium()
     elseif Game.state=="trophy" then drawTrophy()
+    elseif Game.state=="countries" then drawCountries()
     elseif Game.state=="select" then drawSelect()
     else drawResult() end
 end

@@ -71,12 +71,7 @@ local function decode(s)
                 local _,occurrences=order:gsub(tostring(n),"")
                 if occurrences~=1 then return nil end
             end
-            if #order==savedOrderWidth and ranks[i]>0 then
-                local originalRank=tonumber(packed:sub(i,i))
-                local _,removed=order:sub(1,originalRank-1):gsub("[45]","")
-                ranks[i]=originalRank-removed
-            end
-            results[i]=order:gsub("[45]","")
+            results[i]=order
         end
     end
     return {sequence=seq,ranks=ranks,last=last,name=name or "PILOTO",orders=results,model=model,cash=cash,parts=parts}
@@ -99,7 +94,7 @@ end
 function S.wins()
     local n=0;for _,rank in ipairs(S.ranks) do if rank==1 then n=n+1 end end;return n
 end
-local pointsByPlace={10,6,3,1}
+local pointsByPlace={10,6,3,1,0,0}
 function S.completed()
     local total=0
     for _,rank in ipairs(S.ranks) do if rank>0 then total=total+1 end end
@@ -118,7 +113,7 @@ function S.standings(world)
     local rows={}
     local names={S.name,table.unpack(rivals)}
     for id,name in ipairs(names) do
-        rows[id]={name=name,id=id,points=0,places={0,0,0,0}}
+        rows[id]={name=name,id=id,points=0,places={0,0,0,0,0,0}}
     end
     local function score(row,place)
         row.points=row.points+S.pointsFor(place)
@@ -147,7 +142,9 @@ function S.standings(world)
 end
 function S.worldPlace(world)
     local range=tracks.worlds[world]
-    for i=range.first,range.last do if S.ranks[i]==0 then return nil end end
+    local completed=0
+    for i=range.first,range.last do if S.ranks[i]>0 then completed=completed+1 end end
+    if completed<3 then return nil end
     for place,row in ipairs(S.standings(world)) do if row.id==1 then return place end end
 end
 function S.currentWorld()
@@ -175,7 +172,7 @@ function S.buy(part)
     return true
 end
 function S.reward(place)
-    return ({600,400,250,150})[place]
+    return ({600,400,250,150,100,75})[place]
 end
 function S.canContinue() return S.completed()>0 end
 function S.write()
@@ -203,8 +200,11 @@ end
 function S.record(track,rank,order,prize)
     assert(track>=1 and track<=count and rank>=1 and rank<=#rivals+1)
     S.cash=math.min(999999,S.cash+(prize or 0))
-    if S.ranks[track]==0 or rank<S.ranks[track] then S.ranks[track]=rank;S.orders[track]=order
-    elseif rank==S.ranks[track] and not S.orders[track] then S.orders[track]=order end
+    local qualified=S.worldPlace(tracks.worldOf(track))
+    if not qualified or qualified>3 then
+        if S.ranks[track]==0 or rank<S.ranks[track] then S.ranks[track]=rank;S.orders[track]=order
+        elseif rank==S.ranks[track] and not S.orders[track] then S.orders[track]=order end
+    end
     S.last=track%count+1
     return S.write()
 end
