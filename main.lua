@@ -9,7 +9,7 @@ local Race=require "race"
 local Save=require "save"
 local audio=require "audio"
 local scenery=require "scenery"
-Game={version="9.6",state="menu",menu=1,selected=1,triangles=0,race=nil,detail=true}
+Game={version="9.7",state="menu",menu=1,selected=1,triangles=0,race=nil,detail=true}
 -- Fixed oblique top-down view; follows position, never the car's heading.
 local camera={x=0,y=18,z=0,yaw=math.atan(12,14),pitch=-math.atan(18/math.sqrt(340))}
 local frame=0
@@ -96,7 +96,7 @@ local function rect(x,y,w,h,c) ui.rectfill(x,y,x+w,y+h,colors.index[c]) end
 local function text(s,x,y,c) ui.print(s,x,y,colors.index[c or 9]) end
 local function panel()
     rect(40,38,400,190,10);rect(40,38,400,3,8)
-    text("LUPI COMBAT RALLY 9.6",122,53,15)
+    text("LUPI COMBAT RALLY 9.7",122,53,15)
 end
 local titleCamera={x=-2.22,y=1.86,z=-6.25,yaw=0,pitch=-0.075}
 local titleCar={mesh=models[1].mesh,x=0,y=0,z=0,yaw=2.45}
@@ -136,22 +136,18 @@ local function drawTitleArt()
     text("LUPI COMBAT",29,32,9)
     text("RALLY 3D",29,51,15)
     rect(29,71,174,2,8)
-    text("CAMPEONATO 9.6",29,82,11)
 end
 local function drawMenu()
     drawTitleArt()
-    rect(20,103,220,108,10)
     for i,label in ipairs({"NOVO JOGO","CONTINUE"}) do
         local y=111+(i-1)*28
         local selected=Game.menu==i
-        rect(28,y,198,22,selected and 8 or 26)
+        if selected then rect(28,y,198,22,8) end
         local color=selected and 10 or 9
         if i==2 and not Save.canContinue() and not selected then color=11 end
         text((selected and "> " or "  ")..label,38,y+7,color)
     end
-    text(Save.completed().."/"..trackCount.." PISTAS   "..Save.points().." PTS",29,174,15)
-    if Save.canContinue() then text(Save.status,29,190,9)
-    else text("VENCA UMA PISTA PARA CONTINUAR",29,190,11) end
+    text("V"..Game.version,440,255,9)
     text("CRUZ: ESCOLHER  B: CONFIRMAR",18,241,9)
     text("SOM: "..audio.status().."  X: TESTAR",287,241,11)
     if audio.error then text(audio.lastError:sub(1,68),20,256,7)
@@ -309,7 +305,7 @@ local function drawRace()
     end
     Game.triangles,Game.dropped=renderer.triangles,renderer.dropped
     rect(0,0,480,20,10);rect(0,228,480,42,10)
-    text("COMBAT RALLY 9.6 / "..r.id,10,6,15);text((Game.detail and "X ALTO " or "X LEVE ")..Game.triangles,282,6,9)
+    text("COMBAT RALLY 9.7 / "..r.id,10,6,15);text((Game.detail and "X ALTO " or "X LEVE ")..Game.triangles,282,6,9)
     text(Game.reported_fps and "FPS "..math.floor(Game.reported_fps+0.5) or "FPS --",390,6,9)
     text(string.format("%03d KM/H  VOLTA %d/3  POS %d/4  VIDA %d",math.floor(p.speed*6+0.5),p.laps,Race.position(r),p.hp),10,235,15)
     local item=p.weapon=="shot" and "TIRO" or p.weapon=="mine" and "MINA" or "SEM ARMA"
