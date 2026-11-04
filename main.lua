@@ -9,7 +9,7 @@ local Race=require "race"
 local Save=require "save"
 local audio=require "audio"
 local scenery=require "scenery"
-Game={version="9.9",state="menu",menu=1,selected=1,triangles=0,race=nil,detail=true}
+Game={version="10.0",state="menu",menu=1,selected=1,triangles=0,race=nil,detail=true}
 -- Fixed oblique top-down view; follows position, never the car's heading.
 local camera={x=0,y=18,z=0,yaw=math.atan(12,14),pitch=-math.atan(18/math.sqrt(340))}
 local frame=0
@@ -96,19 +96,28 @@ local function rect(x,y,w,h,c) ui.rectfill(x,y,x+w,y+h,colors.index[c]) end
 local function text(s,x,y,c) ui.print(s,x,y,colors.index[c or 9]) end
 local function panel()
     rect(40,38,400,190,10);rect(40,38,400,3,8)
-    text("LUPI COMBAT RALLY 9.9",122,53,15)
+    text("LUPI COMBAT RALLY 10.0",122,53,15)
 end
 local titleCamera={x=-1.90,y=1.83,z=-4.85,yaw=0,pitch=-0.075}
 local titleMesh=geometry.mesh()
 geometry.append(titleMesh,models[1].mesh,0,0,0)
-for _,side in ipairs({-1,1}) do
-    local a,b,c,d={0,0.93,0.62},{0,0.58,1.24},{side*0.32,0.52,1.20},{side*0.38,0.74,0.62}
-    if side<0 then geometry.quad(titleMesh,a,d,c,b,8)
-    else geometry.quad(titleMesh,a,b,c,d,15) end
+local hood={
+    {0.61,0.96,0.39,0.78},{0.82,0.90,0.37,0.76},
+    {1.04,0.84,0.31,0.755},{1.18,0.76,0.26,0.74},{1.27,0.53,0.20,0.53}
+}
+for i=1,#hood-1 do
+    local a,b=hood[i],hood[i+1]
+    local ridgeA,ridgeB={0,a[2],a[1]},{0,b[2],b[1]}
+    geometry.quad(titleMesh,ridgeA,ridgeB,{b[3],b[4],b[1]},{a[3],a[4],a[1]},15)
+    geometry.quad(titleMesh,ridgeA,{-a[3],a[4],a[1]},{-b[3],b[4],b[1]},ridgeB,8)
+end
+geometry.append(titleMesh,geometry.box(1.49,0.10,0.15,12,12,9),0,0.35,1.25)
+for _,x in ipairs({-0.37,0.37}) do
+    geometry.append(titleMesh,geometry.box(0.09,0.22,0.09,12,11,9),x,0.40,1.34)
 end
 for _,side in ipairs({-1,1}) do
     for _,axle in ipairs({-0.75,0.75}) do
-        local fender=geometry.box(0.31,0.21,0.66,8,24,15)
+        local fender=geometry.box(0.39,0.25,0.72,8,24,15)
         for i=1,#fender.v,3 do
             if fender.v[i+1]>0 then
                 fender.v[i]=fender.v[i]*0.74
@@ -117,13 +126,13 @@ for _,side in ipairs({-1,1}) do
         end
         geometry.append(titleMesh,fender,side*0.65,0.61,axle)
     end
-    local x=side*0.48
-    local z=1.19
+    local x=side*0.56
+    local z=1.20
     geometry.quad(titleMesh,{x+0.14,0.53,z},{x+0.14,0.67,z},{x-0.14,0.67,z},{x-0.14,0.53,z},9)
     geometry.quad(titleMesh,{x+0.14,0.67,z},{x+0.07,0.74,z},{x-0.07,0.74,z},{x-0.14,0.67,z},9)
     geometry.quad(titleMesh,{x+0.07,0.46,z},{x+0.14,0.53,z},{x-0.14,0.53,z},{x-0.07,0.46,z},9)
 end
-local titleCar={mesh=titleMesh,x=0,y=0,z=0,yaw=-2.2}
+local titleCar={mesh=titleMesh,x=0,y=0,z=0,yaw=-2.37}
 local stars={{239,27},{268,47},{310,20},{361,39},{398,17},{449,51},{470,23}}
 local logoGlyphs={
     L={16,16,16,16,16,16,31},U={17,17,17,17,17,17,14},
@@ -189,7 +198,7 @@ local function drawTitleArt()
     for i,color in ipairs({7,8,14}) do
         rect(312+(i-1)*27,88,20,16,i==active and color or color+16)
     end
-    titleCar.yaw=-2.2+0.08*math.sin(titleTime*math.pi/2)
+    titleCar.yaw=-2.37+0.08*math.sin(titleTime*math.pi/2)
     renderer.begin(titleCamera)
     renderer.submit(titleCar)
     renderer.flush()
@@ -369,7 +378,7 @@ local function drawRace()
     end
     Game.triangles,Game.dropped=renderer.triangles,renderer.dropped
     rect(0,0,480,20,10);rect(0,228,480,42,10)
-    text("COMBAT RALLY 9.9 / "..r.id,10,6,15);text((Game.detail and "X ALTO " or "X LEVE ")..Game.triangles,282,6,9)
+    text("COMBAT RALLY 10.0 / "..r.id,10,6,15);text((Game.detail and "X ALTO " or "X LEVE ")..Game.triangles,282,6,9)
     text(Game.reported_fps and "FPS "..math.floor(Game.reported_fps+0.5) or "FPS --",390,6,9)
     text(string.format("%03d KM/H  VOLTA %d/3  POS %d/4  VIDA %d",math.floor(p.speed*6+0.5),p.laps,Race.position(r),p.hp),10,235,15)
     local item=p.weapon=="shot" and "TIRO" or p.weapon=="mine" and "MINA" or "SEM ARMA"
