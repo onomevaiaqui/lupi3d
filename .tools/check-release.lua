@@ -6,7 +6,7 @@ ui={btn=function() return false end,palset=function() end,camera=function() end,
 require "game";update(0);assert(Game.state=="menu")
 for i=1,3 do
     triangles=0;Game.startRace(i);update(0)
-    assert(triangles>0 and triangles==Game.triangles and #Game.race.cars==4)
+    assert(triangles>0 and triangles==Game.triangles and #Game.race.cars==6)
 end
 assert(#require("car").v>0)
-print("PASS: built game boots into menu, loads all 3 tracks and 4 cars without audio API, Lua/Furnace package")
+print("PASS: built game boots into menu, loads all 3 tracks and 6 cars without audio API, Lua/Furnace package")

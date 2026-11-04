@@ -18,7 +18,7 @@ assert(require("save").status=="SAVE INDISPONIVEL")
 keys={};Game.step(0)
 for i=1,3 do
     triangles=0;Game.startRace(i);update(0)
-    assert(triangles>0 and #Game.race.cars==4)
+    assert(triangles>0 and #Game.race.cars==6)
     Game.race.finished=true;Game.race.place=1;Game.result();Game.draw()
 end
 assert(require("save").wins()==3 and require("save").canContinue())
