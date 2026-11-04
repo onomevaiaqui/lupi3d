@@ -3,7 +3,7 @@ const root=path.resolve(__dirname,'..'),out=path.join(root,'.build/race-3d-relea
 const required=['lupi.yaml','game.lua','main.lua','config.lua','colors.lua','track.lua','car.lua','geometry.lua','renderer.lua','race.lua','combat.lua','save.lua','audio.lua','scenery.lua'];
 for(const file of required) assert(fs.existsSync(path.join(root,file)),'Missing '+file);
 const yaml=fs.readFileSync(path.join(root,'lupi.yaml'),'utf8');
-assert.match(yaml,/^public:\s*true\s*$/m);assert.match(yaml,/^version:\s*8\.4\s*$/m);
+assert.match(yaml,/^public:\s*true\s*$/m);assert.match(yaml,/^version:\s*8\.5\s*$/m);
 const info=JSON.parse(fs.readFileSync(path.join(root,'BUILD.json'),'utf8'));
 const lines=fs.readFileSync(path.join(out,'lupi_manifest.txt'),'utf8').trim().split('\n');
 assert.equal(lines.length,31);assert.equal(info.files.length,31);

@@ -8,15 +8,16 @@ local themes={
 }
 local function new(id)
 assert(id>=1 and id<=#names)
-local T={id=id,name=names[id],segments=({40,48,48,36,48,64,64,72,80})[id],bridge=id==6 or id==8,quarry=id==4,halfWidth=3.6,parts={},trees={}}
-T.bound=({55,55,55,55,60,70,78,85,95})[id]
+local T={id=id,name=names[id],segments=({40,48,48,36,48,64,64,72,80})[id],bridge=id==6 or id==8,quarry=id==4,halfWidth=5.4,parts={},trees={}}
+local scale=({1.32,1.20,1.32,1.65,1.30,1.17,1.16,1.13,1.10})[id]
+T.bound=math.ceil(({55,55,55,55,60,70,78,85,95})[id]*scale)
 T.theme=themes[id]
 local tau=2*math.pi
 local function p(t)
     if id==1 then return 20*math.sin(t),32*math.cos(t) end
     if id==2 then return 30*math.sin(t),44*math.sin(t)*math.cos(t) end
     if id==4 then return 16*math.sin(t)+3*math.sin(2*t),23*math.cos(t) end
-    if id==5 then return 28*math.sin(t)+8*math.cos(2*t),27*math.cos(t)+5*math.sin(2*t) end
+    if id==5 then return 28*math.sin(t)+5*math.cos(2*t),27*math.cos(t)+3*math.sin(2*t) end
     if id==6 then return 38*math.sin(t),56*math.sin(t)*math.cos(t) end
     if id==7 then return 34*math.sin(t)+9*math.sin(3*t),51*math.cos(t) end
     if id==8 then return 62*math.sin(t)*math.cos(t)+10*math.sin(t),47*math.sin(t) end
@@ -29,7 +30,7 @@ for i=0,T.segments do
     local xa,za=p(t-0.001);local xb,zb=p(t+0.001)
     local dx,dz=xb-xa,zb-za;local n=math.sqrt(dx*dx+dz*dz)
     local y=T.bridge and 5*math.max(0,1-math.abs(t-math.pi)/0.8) or 0
-    points[i]={x=x,y=y,z=z,nx=dz/n,nz=-dx/n}
+    points[i]={x=x*scale,y=y,z=z*scale,nx=dz/n,nz=-dx/n}
 end
 T.length=0
 for i=0,T.segments-1 do
@@ -54,7 +55,7 @@ for i=0,T.segments-1 do
         local w=T.halfWidth*side;local o=(T.halfWidth+0.28)*side
         local q={edge(a,w),edge(a,o),edge(b,o),edge(b,w)}
         if side>0 then q={q[4],q[3],q[2],q[1]} end
-        if id~=2 or s.x*s.x+s.z*s.z>64 then G.quad(s.trim.mesh,q[1],q[2],q[3],q[4],i%2==0 and T.theme[4] or 9) end
+        if id~=2 or s.x*s.x+s.z*s.z>100 then G.quad(s.trim.mesh,q[1],q[2],q[3],q[4],i%2==0 and T.theme[4] or 9) end
     end
     T.parts[i+1]=s
 end
@@ -75,12 +76,13 @@ function T.locate(x,z,hint)
     if not hint or (best>144 and not T.bridge) then for i=0,T.segments-1 do check(i) end end
     return progress%T.segments,best
 end
-T.finish={x=points[0].x,y=0.018,z=points[0].z,mesh=G.mesh(),radius=4}
+T.finish={x=points[0].x,y=0.018,z=points[0].z,mesh=G.mesh(),radius=T.halfWidth+1}
 local a=points[0];local dx,dz=-a.nz,a.nx
 for i=0,7 do
-    local w=-3.2+i*0.8
+    local tile=T.halfWidth/4
+    local w=-T.halfWidth+i*tile
     local function v(u,l) return {a.nx*u+dx*l,0,a.nz*u+dz*l} end
-    G.quad(T.finish.mesh,v(w,0.4),v(w+0.8,0.4),v(w+0.8,-0.4),v(w,-0.4),i%2==0 and 9 or 0)
+    G.quad(T.finish.mesh,v(w,0.4),v(w+tile,0.4),v(w+tile,-0.4),v(w,-0.4),i%2==0 and 9 or 0)
 end
 -- Shared 8-triangle tree: solid pyramid canopy plus two trunk faces.
 local tree=G.mesh()
@@ -92,9 +94,9 @@ G.quad(tree,{0.16,0,-0.16},{0.16,1.4,-0.16},{0.16,1.4,0.16},{0.16,0,0.16},29)
 for i=1,6 do
     local progress=(i-0.3)*T.segments/6
     local x,z,yaw=T.sample(progress)
-    local tx,tz=x+math.cos(yaw)*8,z-math.sin(yaw)*8
+    local tx,tz=x+math.cos(yaw)*9,z-math.sin(yaw)*9
     local _,dist=T.locate(tx,tz)
-    if dist>36 then T.trees[#T.trees+1]={x=tx,y=0,z=tz,mesh=tree,radius=4} end
+    if dist>(T.halfWidth+2)^2 then T.trees[#T.trees+1]={x=tx,y=0,z=tz,mesh=tree,radius=4} end
 end
 require("scenery").populate(T)
 return T

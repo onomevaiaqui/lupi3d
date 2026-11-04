@@ -44,19 +44,24 @@ for i=1,#S.blast.f,4 do S.blast.f[i+1],S.blast.f[i+2]=S.blast.f[i+2],S.blast.f[i
 function S.populate(T)
     T.decor={};T.markings={}
     for i,s in ipairs(T.parts) do
-        if i%3==1 and not s.raised and (T.id~=2 or s.x*s.x+s.z*s.z>64) then
+        if i%3==1 and not s.raised and (T.id~=2 or s.x*s.x+s.z*s.z>100) then
             local len=s.length;local dx,dz=s.dx/len,s.dz/len;local nx,nz=-dz*0.07,dx*0.07
             local m=G.mesh();local h=math.min(1,len*0.3)
-            G.quad(m,{-dx*h+nx,0,-dz*h+nz},{dx*h+nx,0,dz*h+nz},{dx*h-nx,0,dz*h-nz},{-dx*h-nx,0,-dz*h-nz},9)
-            T.markings[#T.markings+1]={x=s.x,y=0.01,z=s.z,radius=2,mesh=m}
+            for _,side in ipairs({-1,1}) do
+                local offset=side*T.halfWidth/3
+                local x,z=-dz*offset,dx*offset
+                G.quad(m,{x-dx*h+nx,0,z-dz*h+nz},{x+dx*h+nx,0,z+dz*h+nz},
+                    {x+dx*h-nx,0,z+dz*h-nz},{x-dx*h-nx,0,z-dz*h-nz},9)
+            end
+            T.markings[#T.markings+1]={x=s.x,y=0.01,z=s.z,radius=3,mesh=m}
         end
     end
     for i=1,12 do
         local p=(i-0.2)*T.segments/12;local x,z,yaw=T.sample(p)
-        local offset=i%4==0 and 11 or 8
+        local offset=i%4==0 and 12 or 9
         x,z=x+math.cos(yaw)*offset,z-math.sin(yaw)*offset
         local _,d=T.locate(x,z)
-        if d>36 then
+        if d>(T.halfWidth+2)^2 then
             local kind=T.id==4 and "rock" or T.id==7 and "house" or T.id==9 and "fence"
                 or i%6==0 and "house" or i%3==0 and "fence" or "rock"
             T.decor[#T.decor+1]={x=x,y=0,z=z,yaw=kind=="house" and 0.7 or yaw,mesh=T.quarry and S.quarryRock or S[kind],radius=kind=="house" and 5 or 3,kind=kind}
