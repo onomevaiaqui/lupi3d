@@ -13,7 +13,7 @@ local keys={};local triangles=0
 ui={btn=function(k) return keys[k] or false end,palset=function() end,camera=function() end,clip=function() end,cls=function() end,rectfill=function() end,print=function() end,trisfill=function() triangles=triangles+1 end}
 require "game";update(0);assert(Game.state=="menu")
 keys={[BTN_X]=true};Game.step(0);assert(require("audio").testInfo=="FIRMWARE SEM API DE AUDIO");keys={};Game.step(0)
-keys={[BTN_Z]=true};Game.step(0);assert(Game.state=="name");keys={};Game.step(0);keys={[BTN_Z]=true};Game.step(0);assert(Game.state=="countries")
+keys={[BTN_Z]=true};Game.step(0);assert(Game.state=="name");keys={};Game.step(0);keys={[BTN_Z]=true};Game.step(0);assert(Game.state=="select")
 assert(require("save").status=="SAVE INDISPONIVEL")
 keys={};Game.step(0)
 for i=1,3 do
@@ -23,5 +23,5 @@ for i=1,3 do
 end
 assert(require("save").wins()==3 and require("save").canContinue())
 Game.state="menu";Game.menu=2;keys={[BTN_Z]=true};Game.step(0)
-assert(Game.state=="countries","in-session Continue works even when disk save unavailable")
+assert(Game.state=="select","in-session Continue works even when disk save unavailable")
 print("PASS: restricted firmware loader without package/io/os/debug/collectgarbage/sfx: boot, New Game, 3 tracks, results and session Continue")

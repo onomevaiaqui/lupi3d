@@ -12,7 +12,7 @@ local Save=require "save"
 local audio=require "audio"
 local scenery=require "scenery"
 local garagePart,garageReturn,garageMessage=1,"select",""
-Game={version="11.4",state="menu",menu=1,selected=1,triangles=0,race=nil,detail=true}
+Game={version="11.5",state="menu",menu=1,selected=1,triangles=0,race=nil,detail=true}
 -- Fixed oblique top-down view; follows position, never the car's heading.
 local camera={x=0,y=18,z=0,yaw=math.atan(12,14),pitch=-math.atan(18/math.sqrt(340))}
 local frame=0
@@ -40,7 +40,8 @@ local function selectWorld()
     local world,medal=Save.currentWorld()
     if medal then Game.medal=medal;creditsTime=0;Game.state="trophy";return end
     selectedWorld=world
-    Game.state="countries"
+    Game.selected=tracks.worldOf(Save.last)==world and Save.last or tracks.worlds[world].ids[1]
+    Game.state="select"
 end
 function Game.result()
     local r=Game.race
@@ -90,19 +91,15 @@ function Game.step(dt)
             local name=table.concat(letters):match("^%s*(.-)%s*$")
             Save.newGame(name~="" and name or "PILOTO",modelId);selectWorld()
         end
-    elseif Game.state=="countries" then
-        local count=#tracks.worlds
-        if pressed("left") or pressed("up") then selectedWorld=(selectedWorld-2)%count+1 end
-        if pressed("right") or pressed("down") then selectedWorld=selectedWorld%count+1 end
-        if pressed("back") then Game.state="menu"
-        elseif pressed("ok") and selectedWorld<=Save.currentWorld() then
-            local range=tracks.worlds[selectedWorld]
-            Game.selected=tracks.worldOf(Save.last)==selectedWorld and Save.last or range.ids[1]
-            Game.state="select"
-        end
     elseif Game.state=="select" then
+        if pressed("left") or pressed("right") then
+            local step=pressed("right") and 1 or -1
+            selectedWorld=(selectedWorld-1+step)%#tracks.worlds+1
+            Game.selected=tracks.worlds[selectedWorld].ids[1]
+            audio.play("menu")
+        end
         local range=tracks.worlds[selectedWorld]
-        local direction=(pressed("right") or pressed("down")) and 1 or (pressed("left") or pressed("up")) and -1
+        local direction=pressed("down") and 1 or pressed("up") and -1
         if direction then
             for index,id in ipairs(range.ids) do
                 if id==Game.selected then
@@ -112,9 +109,9 @@ function Game.step(dt)
             end
             audio.play("menu")
         end
-        if pressed("back") then Game.state="countries"
+        if pressed("back") then Game.state="menu"
         elseif pressed("selectItem") then garageReturn="select";garageMessage="";Game.state="garage"
-        elseif pressed("ok") then Game.startRace(Game.selected) end
+        elseif pressed("ok") and selectedWorld<=Save.currentWorld() then Game.startRace(Game.selected) end
     elseif Game.state=="race" then
         if pressed("detail") then Game.detail=not Game.detail end
         if pressed("reset") then Game.startRace(Game.selected)
@@ -149,7 +146,7 @@ end
 local function text(s,x,y,c) ui.print(s,x,y,colors.index[c or 9]) end
 local function panel()
     rect(40,38,400,190,10);rect(40,38,400,3,8)
-    text("LUPI COMBAT RALLY 11.4",122,53,15)
+    text("LUPI COMBAT RALLY 11.5",122,53,15)
 end
 local titleCamera={x=-1.90,y=1.83,z=-4.85,yaw=0,pitch=-0.075}
 local titleMesh=geometry.mesh()
@@ -303,19 +300,6 @@ local function flag(country,x,y)
         end
     end
 end
-local function drawCountries()
-    panel()
-    text("SELECIONE O PAIS",153,78,15)
-    local unlocked=Save.currentWorld()
-    for i,world in ipairs(tracks.worlds) do
-        local y=98+(i-1)*24
-        flag(world.name,72,y-4)
-        text((selectedWorld==i and "> " or "  ")..world.name,116,y,
-            selectedWorld==i and 15 or i<=unlocked and 9 or 11)
-        text(i>unlocked and "BLOQUEADO" or i<unlocked and "CLASSIFICADO" or "ATUAL",310,y,11)
-    end
-    text("B: ABRIR MAPA   Y: MENU",123,210,9)
-end
 local landmarks={"CRISTO REDENTOR","BAIRRO DA LIBERDADE","ITAIPU BINACIONAL","SERRAS DE CORDOBA",
     "CORDILHEIRA DOS ANDES","PORTO E MORROS","DESERTO DO ATACAMA","LAGOS DO SUL",
     "PALACIO DE LOPEZ","CERAMICA DE AREGUA","LAGO YPACARAI","PAISAGEM DO CHACO",
@@ -348,8 +332,10 @@ local function drawSelect()
     text(tracks.names[Game.selected].." / "..tracks.laps[Game.selected].."V",227,144,9)
     local rank=Save.ranks[Game.selected]
     text(rank>0 and (rank.." LUGAR / "..Save.pointsFor(rank).." PTS") or "PROVA NOVA",227,163,14)
-    text("3 PROVAS E TOP 3 PARA AVANCAR",227,184,11)
-    text("B: CORRER  R: GARAGEM  Y: PAISES",82,210,9)
+    local locked=selectedWorld>Save.currentWorld()
+    text(locked and "PAIS BLOQUEADO" or "3 PROVAS E TOP 3 PARA AVANCAR",227,184,locked and 7 or 11)
+    text("ESQ/DIR: PAIS  CIMA/BAIXO: CIDADE",72,202,9)
+    text(locked and "CLASSIFIQUE-SE NO PAIS ANTERIOR  Y: MENU" or "B: CORRER  R: GARAGEM  Y: MENU",72,217,9)
 end
 local garageCamera={x=-1.3,y=2.0,z=-9,yaw=0,pitch=-0.09}
 local podiumCamera={x=0,y=3.1,z=-10,yaw=0,pitch=-0.14}
@@ -488,7 +474,7 @@ local function drawRace()
     end
     Game.triangles,Game.dropped=renderer.triangles,renderer.dropped
     rect(0,0,480,20,10);rect(0,228,480,42,10)
-    text("COMBAT RALLY 11.4 / "..r.id,10,6,15);text((Game.detail and "X ALTO " or "X LEVE ")..Game.triangles,282,6,9)
+    text("COMBAT RALLY 11.5 / "..r.id,10,6,15);text((Game.detail and "X ALTO " or "X LEVE ")..Game.triangles,282,6,9)
     text(Game.reported_fps and "FPS "..math.floor(Game.reported_fps+0.5) or "FPS --",390,6,9)
     text(string.format("%03d KM/H  VOLTA %d/%d  POS %d/6  VIDA %d",math.floor(p.speed*6+0.5),p.laps,track.laps,Race.position(r),p.hp),10,235,15)
     local item=p.weapon=="shot" and "TIRO" or p.weapon=="mine" and "MINA" or "SEM ARMA"
@@ -531,7 +517,6 @@ function Game.draw()
     elseif Game.state=="name" then drawName()
     elseif Game.state=="podium" then drawPodium()
     elseif Game.state=="trophy" then drawTrophy()
-    elseif Game.state=="countries" then drawCountries()
     elseif Game.state=="select" then drawSelect()
     else drawResult() end
 end
