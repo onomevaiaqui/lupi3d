@@ -5,6 +5,7 @@ local events={menu={"navigate",0.13,3},confirm={"confirm",0.22,4},red={"red",0.2
 local function hasSfx()
     return type(sfx)=="table" and type(sfx.fx)=="function"
 end
+A.useSfx=hasSfx()
 local function backend()
     if A.useSfx and hasSfx() then return "SFX" end
     if type(music)=="table" and type(music.loop)=="function" then return "FUR" end
@@ -15,22 +16,6 @@ local function start(name,fade)
     if A.retry>0 then return false end
     local kind=backend();A.available=kind~="SEM API"
     if kind~="FUR" then return false end
-    if not A.volumeReady then
-        local vok,value,reason
-        A.volumeError=nil
-        if type(music.volume)=="function" then
-            -- NES modules use five channels; 31 selects bits 0..4 when CH_ALL is absent.
-            local mask=type(CH_ALL)=="number" and CH_ALL or 31
-            vok,value,reason=pcall(music.volume,1.0,mask,0.5)
-            A.volumeKind=type(CH_ALL)=="number" and "MUSIC" or "MUSIC M31"
-        elseif type(sfx)=="table" and type(sfx.volume)=="function" then
-            vok,value,reason=pcall(sfx.volume,1.0)
-            A.volumeKind="SFX GLOBAL"
-        else A.volumeKind="API AUSENTE" end
-        if vok and (value==false or value==nil and type(reason)=="string") then vok=false;value=reason or "volume recusou ajuste" end
-        A.volumeReady=vok==true
-        if vok==false then A.volumeError=tostring(value) end
-    end
     local ok,err,reason=pcall(music.loop,"music/"..name,fade or 0.03)
     A.playResult=tostring(err)
     if ok and (err==false or err==nil and type(reason)=="string") then
@@ -62,14 +47,11 @@ function A.test()
     if hasSfx() and type(music)=="table" and type(music.loop)=="function" then
         A.useSfx=not A.useSfx
     end
-    A.retry=0;A.hold=0;A.priority=0;A.current=nil;A.volumeReady=false
+    A.retry=0;A.hold=0;A.priority=0;A.current=nil
     local kind=backend()
     if kind=="FUR" then
         if start("menu",0.6) then A.hold=8;A.priority=100 end
-        local volume=A.volumeReady and ("VOL OK "..A.volumeKind) or A.volumeError and "ERRO VOL" or "SEM API VOLUME"
-        A.testInfo=volume.." | "..fileProbe().." | RET:"..(A.playResult or "?")
-        if hasSfx() and not A.error then A.testInfo="TESTE FUR / X ALTERNA PARA SFX" end
-        if A.volumeError and not A.error then A.testInfo="VOLUME: "..A.volumeError:sub(1,56) end
+        A.testInfo="FUR RET:"..(A.playResult or "?").." | "..fileProbe()
     elseif kind=="SFX" then
         if type(music)=="table" and type(music.stop)=="function" then pcall(music.stop,0) end
         -- Use the same pair of built-in sounds as Balao Gatinho's HUD.

@@ -9,7 +9,7 @@ local Race=require "race"
 local Save=require "save"
 local audio=require "audio"
 local scenery=require "scenery"
-Game={state="menu",menu=1,selected=1,triangles=0,race=nil,detail=true}
+Game={version="8.2",state="menu",menu=1,selected=1,triangles=0,race=nil,detail=true}
 -- Fixed oblique top-down view; follows position, never the car's heading.
 local camera={x=0,y=18,z=0,yaw=math.atan(12,14),pitch=-math.atan(18/math.sqrt(340))}
 local frame=0
@@ -97,7 +97,7 @@ local function rect(x,y,w,h,c) ui.rectfill(x,y,x+w,y+h,colors.index[c]) end
 local function text(s,x,y,c) ui.print(s,x,y,colors.index[c or 9]) end
 local function panel()
     rect(40,38,400,190,10);rect(40,38,400,3,8)
-    text("LUPI COMBAT RALLY 8.1",122,53,15)
+    text("LUPI COMBAT RALLY 8.2",122,53,15)
 end
 local function drawTitleArt()
     rect(0,0,480,104,10)
@@ -115,7 +115,7 @@ local function drawTitleArt()
     rect(x+5,y+9,9,7,10);rect(x+34,y+9,9,7,10)
     rect(x+8,y+11,3,3,11);rect(x+37,y+11,3,3,11)
     text("LUPI COMBAT RALLY 3D",137,16,15)
-    text("CAMPEONATO 8.1",160,42,8)
+    text("CAMPEONATO 8.2",160,42,8)
 end
 local function drawMenu()
     drawTitleArt()
@@ -198,8 +198,9 @@ local function drawResult()
     panel()
     text(r.track.name.." / "..r.place.." LUGAR / +"..Save.pointsFor(r.place).." PTS NA PROVA",72,78,15)
     if r.place==1 or r.championshipEnded then
+    text(r.championshipEnded and "CLASSIFICACAO FINAL" or "PLACAR PARCIAL",144,93,8)
     for i,row in ipairs(Save.standings()) do
-        local y=100+(i-1)*18
+        local y=109+(i-1)*16
         local color=row.id==1 and 15 or 9
         text(i.."  "..row.name,104,y,color)
         text(row.points.." PTS",315,y,color)
@@ -263,7 +264,7 @@ local function drawRace()
     end
     Game.triangles,Game.dropped=renderer.triangles,renderer.dropped
     rect(0,0,480,20,10);rect(0,228,480,42,10)
-    text("COMBAT RALLY 8.1 / "..r.id,10,6,15);text((Game.detail and "X ALTO " or "X LEVE ")..Game.triangles,282,6,9)
+    text("COMBAT RALLY 8.2 / "..r.id,10,6,15);text((Game.detail and "X ALTO " or "X LEVE ")..Game.triangles,282,6,9)
     text(Game.reported_fps and "FPS "..math.floor(Game.reported_fps+0.5) or "FPS --",390,6,9)
     text(string.format("%03d KM/H  VOLTA %d/3  POS %d/4  VIDA %d",math.floor(p.speed*6+0.5),p.laps,Race.position(r),p.hp),10,235,15)
     local item=p.weapon=="shot" and "TIRO" or p.weapon=="mine" and "MINA" or "SEM ARMA"
