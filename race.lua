@@ -5,7 +5,7 @@ local combat=require "combat"
 local audio=require "audio"
 local pace=1.15
 local Race={names={"Lino","Carol","Lucas"}}
-function Race.new(id,modelId)
+function Race.new(id,modelId,parts)
     modelId=modelId or 1
     local track=tracks.new(id)
     local r={track=track,id=id,cars={},time=0,countdown=3,finished=false,place=0,grid={}}
@@ -24,7 +24,17 @@ function Race.new(id,modelId)
             hp=100,respawn=0,stun=0,nitro=0,cooldown=0,ammo=0,weapon=nil,
             total=grid,aiSpeed=(9.1+(i-2)*0.7)*pace,decision=0}
     end
-    r.player=r.cars[1];r.combat=combat.new(track)
+    r.player=r.cars[1]
+    if parts then
+        local base=r.player.model
+        r.player.model={
+            accel=base.accel*(1+parts[1]*0.12),speed=base.speed*(1+parts[1]*0.05),
+            steer=base.steer*(1+parts[2]*0.10),grass=base.grass*(1+parts[2]*0.08)
+        }
+        r.player.maxHP=100+parts[3]*20
+        r.player.hp=r.player.maxHP
+    end
+    r.combat=combat.new(track)
     audio.play("red")
     return r
 end

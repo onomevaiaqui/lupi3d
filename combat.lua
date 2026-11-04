@@ -91,7 +91,7 @@ function C.step(c,cars,dt)
         car.nitro=math.max(0,car.nitro-dt);car.cooldown=math.max(0,car.cooldown-dt);car.stun=math.max(0,car.stun-dt)
         if car.respawn>0 then
             car.respawn=math.max(0,car.respawn-dt)
-            if car.respawn==0 then car.hp=100;car.stun=0;car.speed=0 end
+            if car.respawn==0 then car.hp=car.maxHP or 100;car.stun=0;car.speed=0 end
         elseif not car.done then
             for _,p in ipairs(c.pickups) do
                 local x,z=p.x-car.x,p.z-car.z

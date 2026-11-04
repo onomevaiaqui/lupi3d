@@ -7,7 +7,7 @@ local function emptyRanks()
     for i=1,count do ranks[i]=0 end
     return ranks
 end
-local S={ranks=emptyRanks(),name="PILOTO",model=1,orders={},last=1,sequence=0,status="SEM SAVE"}
+local S={ranks=emptyRanks(),name="PILOTO",model=1,orders={},last=1,sequence=0,status="SEM SAVE",cash=0,parts={0,0,0}}
 local base=cfg.save_dir
 if not base then
     local path
@@ -27,6 +27,14 @@ local function decode(s)
     if type(s)~="string" or #s>128 then return nil end
     local prefix,sum=s:match("^(.*)|(%d+)$")
     if not prefix or checksum(prefix)~=tonumber(sum) then return nil end
+    local cash,parts=0,{0,0,0}
+    if prefix:match("^RALLY13|") then
+        local previous,balance,levels=prefix:match("^RALLY13(|.-)|(%d+)|([0-3][0-3][0-3])$")
+        if not previous or tonumber(balance)>999999 then return nil end
+        cash=tonumber(balance)
+        for i=1,3 do parts[i]=tonumber(levels:sub(i,i)) end
+        prefix="RALLY12"..previous
+    end
     local width=savedOrderWidth
     local seq,packed,last,name,orders,model=prefix:match("^RALLY12|(%d+)|([0-6]+)|(%d+)|([A-Z0-9 ]+)|([0-5]+)|([1-4])$")
     if seq then
@@ -69,7 +77,7 @@ local function decode(s)
             results[i]=order:gsub("[45]","")
         end
     end
-    return {sequence=seq,ranks=ranks,last=last,name=name or "PILOTO",orders=results,model=model}
+    return {sequence=seq,ranks=ranks,last=last,name=name or "PILOTO",orders=results,model=model,cash=cash,parts=parts}
 end
 local function read(slot)
     if not io or type(io.open)~="function" then return nil end
@@ -83,7 +91,7 @@ end
 function S.load()
     local a,b=read(0),read(1)
     local best=a and b and (a.sequence>b.sequence and a or b) or a or b
-    if best then S.ranks,S.last,S.sequence=best.ranks,best.last,best.sequence;S.name,S.orders,S.model=best.name,best.orders,best.model;S.status="SAVE CARREGADO" end
+    if best then S.ranks,S.last,S.sequence=best.ranks,best.last,best.sequence;S.name,S.orders,S.model=best.name,best.orders,best.model;S.cash,S.parts=best.cash,best.parts;S.status="SAVE CARREGADO" end
     return best~=nil
 end
 function S.wins()
@@ -134,7 +142,25 @@ function S.standings()
     end)
     return rows
 end
-function S.canContinue() return S.wins()>0 end
+S.shop={
+    {name="MOTOR",effect="+ ACELERACAO E FINAL",price=500},
+    {name="PNEUS",effect="+ CONTROLE NAS CURVAS",price=350},
+    {name="BLINDAGEM",effect="+ 20 DE VIDA POR NIVEL",price=400}
+}
+function S.price(part)
+    return S.shop[part].price*(S.parts[part]+1)
+end
+function S.buy(part)
+    local price=S.price(part)
+    if S.parts[part]>=3 or S.cash<price then return false end
+    S.cash=S.cash-price;S.parts[part]=S.parts[part]+1
+    S.write()
+    return true
+end
+function S.reward(place)
+    return ({600,400,250,150})[place]
+end
+function S.canContinue() return S.completed()>0 end
 function S.write()
     local seq=S.sequence+1
     local orders={}
@@ -142,7 +168,7 @@ function S.write()
         local order=S.orders[i] or ""
         orders[i]=order..string.rep("0",savedOrderWidth-#order)
     end
-    local data=string.format("RALLY12|%d|%s|%d|%s|%s|%d",seq,table.concat(S.ranks),S.last,S.name,table.concat(orders),S.model)
+    local data=string.format("RALLY13|%d|%s|%d|%s|%s|%d|%d|%s",seq,table.concat(S.ranks),S.last,S.name,table.concat(orders),S.model,S.cash,table.concat(S.parts))
     data=data.."|"..checksum(data)
     local ok=pcall(function()
         assert(io and type(io.open)=="function","io unavailable")
@@ -155,10 +181,11 @@ function S.write()
     S.status="SAVE INDISPONIVEL";return false
 end
 function S.newGame(name,model)
-    S.ranks=emptyRanks();S.orders={};S.name=name or "PILOTO";S.model=model or 1;S.last=1;return S.write()
+    S.ranks=emptyRanks();S.orders={};S.cash=0;S.parts={0,0,0};S.name=name or "PILOTO";S.model=model or 1;S.last=1;return S.write()
 end
-function S.record(track,rank,order)
+function S.record(track,rank,order,prize)
     assert(track>=1 and track<=count and rank>=1 and rank<=#rivals+1)
+    S.cash=math.min(999999,S.cash+(prize or 0))
     if S.ranks[track]==0 or rank<S.ranks[track] then S.ranks[track]=rank;S.orders[track]=order
     elseif rank==S.ranks[track] and not S.orders[track] then S.orders[track]=order end
     S.last=track%count+1

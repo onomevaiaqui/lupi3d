@@ -9,8 +9,8 @@ local Race=require "race"
 local Save=require "save"
 local audio=require "audio"
 local scenery=require "scenery"
-local Turbo=require "turbo"
-Game={version="10.5",state="menu",menu=1,selected=1,triangles=0,race=nil,detail=true}
+local garagePart,garageReturn,garageMessage=1,"select",""
+Game={version="10.6",state="menu",menu=1,selected=1,triangles=0,race=nil,detail=true}
 -- Fixed oblique top-down view; follows position, never the car's heading.
 local camera={x=0,y=18,z=0,yaw=math.atan(12,14),pitch=-math.atan(18/math.sqrt(340))}
 local frame=0
@@ -30,16 +30,20 @@ local function timestep()
 end
 function Game.startRace(id)
     audio.scene("race",true)
-    Game.selected=id;Game.race=Race.new(id,Save.model);Game.state="race"
+    Game.selected=id;Game.race=Race.new(id,Save.model,Save.parts);Game.state="race"
     if type(collectgarbage)=="function" then pcall(collectgarbage,"collect") end
 end
 function Game.result()
     local r=Game.race
+    if r.prize then return end
+    r.prize=Save.reward(r.place)
     local completedBefore=Save.completed()
     if completedBefore<trackCount then
-        Save.record(r.id,r.place,Race.opponentOrder(r))
+        Save.record(r.id,r.place,Race.opponentOrder(r),r.prize)
         r.championshipEnded=completedBefore==trackCount-1 and Save.completed()==trackCount
         r.titleWon=r.championshipEnded and Save.standings()[1].id==1
+    else
+        Save.cash=math.min(999999,Save.cash+r.prize);Save.write()
     end
     Game.state=r.titleWon and "podium" or "result"
 end
@@ -52,16 +56,20 @@ function Game.step(dt)
     if Game.state=="menu" then
         titleTime=(titleTime+dt)%12
         if pressed("test") then audio.test() end
-        if pressed("up") or pressed("down") then Game.menu=(Game.menu-1+(pressed("up") and -1 or 1))%3+1;audio.play("menu") end
+        if pressed("up") or pressed("down") then Game.menu=3-Game.menu;audio.play("menu") end
         if pressed("ok") then
             if Game.menu==1 then nameLetters={1,37,37,37,37,37,37,37};nameCursor=1;modelId=1;Game.state="name";audio.play("confirm")
-            elseif Game.menu==3 then Game.turbo=Turbo.new();Game.state="turbo"
             elseif Save.canContinue() then Game.selected=Save.last;Game.state="select";audio.play("menu") end
         end
-    elseif Game.state=="turbo" then
-        if pressed("fire") or pressed("back") then Game.state="menu"
-        elseif pressed("reset") then Game.turbo=Turbo.new()
-        else Turbo.step(Game.turbo,dt,current.ok,(current.right and 1 or 0)-(current.left and 1 or 0),pressed("up"),pressed("down")) end
+    elseif Game.state=="garage" then
+        if pressed("up") then garagePart=(garagePart-2)%#Save.shop+1;garageMessage="" end
+        if pressed("down") then garagePart=garagePart%#Save.shop+1;garageMessage="" end
+        if pressed("back") then Game.state=garageReturn
+        elseif pressed("ok") then
+            if Save.buy(garagePart) then garageMessage="PECA INSTALADA";audio.play("confirm")
+            elseif Save.parts[garagePart]>=3 then garageMessage="NIVEL MAXIMO"
+            else garageMessage="SALDO INSUFICIENTE" end
+        end
     elseif Game.state=="name" then
         if pressed("reset") then modelId=(modelId-2)%#models+1 end
         if pressed("selectItem") then modelId=modelId%#models+1 end
@@ -80,6 +88,7 @@ function Game.step(dt)
         if pressed("left") or pressed("up") then Game.selected=(Game.selected-2)%trackCount+1;audio.play("menu") end
         if pressed("right") or pressed("down") then Game.selected=Game.selected%trackCount+1;audio.play("menu") end
         if pressed("back") then Game.state="menu"
+        elseif pressed("selectItem") then garageReturn="select";garageMessage="";Game.state="garage"
         elseif pressed("ok") then Game.startRace(Game.selected) end
     elseif Game.state=="race" then
         if pressed("detail") then Game.detail=not Game.detail end
@@ -92,6 +101,7 @@ function Game.step(dt)
         if pressed("ok") or pressed("back") then Game.state="result" end
     elseif Game.state=="result" then
         if pressed("back") then Game.state="menu"
+        elseif pressed("selectItem") then garageReturn="result";garageMessage="";Game.state="garage"
         elseif pressed("ok") then Game.selected=Save.last;Game.state="select" end
     end
     audio.scene(Game.state=="race" and "race" or "menu")
@@ -108,7 +118,7 @@ end
 local function text(s,x,y,c) ui.print(s,x,y,colors.index[c or 9]) end
 local function panel()
     rect(40,38,400,190,10);rect(40,38,400,3,8)
-    text("LUPI COMBAT RALLY 10.5",122,53,15)
+    text("LUPI COMBAT RALLY 10.6",122,53,15)
 end
 local titleCamera={x=-1.90,y=1.83,z=-4.85,yaw=0,pitch=-0.075}
 local titleMesh=geometry.mesh()
@@ -213,7 +223,7 @@ local function drawTitleArt()
 end
 local function drawMenu()
     drawTitleArt()
-    for i,label in ipairs({"NOVO JOGO","CONTINUE","TESTE TURBO"}) do
+    for i,label in ipairs({"NOVO JOGO","CONTINUE"}) do
         local y=120+(i-1)*28
         local selected=Game.menu==i
         local color=selected and 8 or 9
@@ -225,6 +235,20 @@ local function drawMenu()
     text("SOM: "..audio.status().."  X: TESTAR",287,241,11)
     if audio.error then text(audio.lastError:sub(1,68),20,256,7)
     elseif audio.testInfo and audio.testTimer>0 then text(audio.testInfo:sub(1,72),20,256,9) end
+end
+local function drawGarage()
+    panel()
+    text("GARAGEM / "..models[Save.model].name,82,78,15)
+    text("SALDO $ "..Save.cash,82,96,8)
+    for i,part in ipairs(Save.shop) do
+        local y=115+(i-1)*24
+        local level=Save.parts[i]
+        text((garagePart==i and "> " or "  ")..part.name.." "..level.."/3",80,y,garagePart==i and 15 or 9)
+        text(level==3 and "MAX" or ("$ "..Save.price(i)),310,y,8)
+        text(part.effect,95,y+10,11)
+    end
+    text(garageMessage,82,188,8)
+    text("B: COMPRAR   Y: VOLTAR",105,208,9)
 end
 local function drawSelect()
     panel()
@@ -238,7 +262,7 @@ local function drawSelect()
         text((Game.selected==i and "> " or "  ")..i.." - "..name,90,y,Game.selected==i and 15 or 9)
         text(status.." "..Save.pointsFor(rank).."P",300,y,rank==1 and 14 or 11)
     end
-    text(Save.completed().."/"..trackCount.." PISTAS  B: CORRER  Y: MENU",82,210,9)
+    text(Save.completed().."/"..trackCount.." PISTAS  B: CORRER  R: GARAGEM  Y: MENU",82,210,9)
 end
 local garageCamera={x=-1.3,y=2.0,z=-9,yaw=0,pitch=-0.09}
 local podiumCamera={x=0,y=3.1,z=-10,yaw=0,pitch=-0.14}
@@ -306,7 +330,8 @@ local function drawResult()
     local summary=complete and ("CAMPEAO: "..Save.standings()[1].name)
         or (Save.completed().."/"..trackCount.." PISTAS   "..Save.points().." PTS")
     text(summary,120,178,14)
-    text("B: ESCOLHER PISTA   Y: MENU",111,210,9)
+    text("PREMIO $ "..r.prize.."   SALDO $ "..Save.cash,82,192,8)
+    text("B: PISTAS   R: GARAGEM   Y: MENU",82,210,9)
 end
 local dustMesh=geometry.mesh()
 geometry.quad(dustMesh,{-0.38,0,-0.50},{-0.58,0,0.38},{0.58,0,0.38},{0.38,0,-0.50},15)
@@ -378,7 +403,7 @@ local function drawRace()
     end
     Game.triangles,Game.dropped=renderer.triangles,renderer.dropped
     rect(0,0,480,20,10);rect(0,228,480,42,10)
-    text("COMBAT RALLY 10.5 / "..r.id,10,6,15);text((Game.detail and "X ALTO " or "X LEVE ")..Game.triangles,282,6,9)
+    text("COMBAT RALLY 10.6 / "..r.id,10,6,15);text((Game.detail and "X ALTO " or "X LEVE ")..Game.triangles,282,6,9)
     text(Game.reported_fps and "FPS "..math.floor(Game.reported_fps+0.5) or "FPS --",390,6,9)
     text(string.format("%03d KM/H  VOLTA %d/3  POS %d/4  VIDA %d",math.floor(p.speed*6+0.5),p.laps,Race.position(r),p.hp),10,235,15)
     local item=p.weapon=="shot" and "TIRO" or p.weapon=="mine" and "MINA" or "SEM ARMA"
@@ -395,7 +420,7 @@ end
 function Game.draw()
     colors.register();ui.camera(0,0);ui.clip(0,0,480,270);ui.cls(colors.index[1])
     if Game.state=="race" then drawRace()
-    elseif Game.state=="turbo" then Turbo.draw(Game.turbo)
+    elseif Game.state=="garage" then drawGarage()
     elseif Game.state=="menu" then drawMenu()
     elseif Game.state=="name" then drawName()
     elseif Game.state=="podium" and Game.race.titleWon and Save.completed()==trackCount then drawPodium()
