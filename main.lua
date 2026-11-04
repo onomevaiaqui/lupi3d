@@ -35,9 +35,10 @@ function Game.startRace(id)
 end
 function Game.result()
     local r=Game.race
-    if Save.completed()<trackCount then
+    local completedBefore=Save.completed()
+    if completedBefore<trackCount then
         Save.record(r.id,r.place,Race.opponentOrder(r))
-        r.championshipEnded=Save.completed()==trackCount
+        r.championshipEnded=completedBefore==trackCount-1 and Save.completed()==trackCount
         r.titleWon=r.championshipEnded and Save.standings()[1].id==1
     end
     Game.state=r.titleWon and "podium" or "result"
@@ -96,7 +97,7 @@ local function rect(x,y,w,h,c) ui.rectfill(x,y,x+w,y+h,colors.index[c]) end
 local function text(s,x,y,c) ui.print(s,x,y,colors.index[c or 9]) end
 local function panel()
     rect(40,38,400,190,10);rect(40,38,400,3,8)
-    text("LUPI COMBAT RALLY 8.0",122,53,15)
+    text("LUPI COMBAT RALLY 8.1",122,53,15)
 end
 local function drawTitleArt()
     rect(0,0,480,104,10)
@@ -114,7 +115,7 @@ local function drawTitleArt()
     rect(x+5,y+9,9,7,10);rect(x+34,y+9,9,7,10)
     rect(x+8,y+11,3,3,11);rect(x+37,y+11,3,3,11)
     text("LUPI COMBAT RALLY 3D",137,16,15)
-    text("CAMPEONATO 8.0",160,42,8)
+    text("CAMPEONATO 8.1",160,42,8)
 end
 local function drawMenu()
     drawTitleArt()
@@ -186,7 +187,7 @@ local function drawPodium()
         renderer.submit(car)
         local x=({240,140,340})[place]
         local name=row.name
-        text(place.."O",x-8,203,place==1 and 15 or 9)
+        text(tostring(place),x-3,203,place==1 and 15 or 9)
         text(name,x-#name*3,220,id==1 and 15 or 9)
     end
     renderer.flush()
@@ -262,7 +263,7 @@ local function drawRace()
     end
     Game.triangles,Game.dropped=renderer.triangles,renderer.dropped
     rect(0,0,480,20,10);rect(0,228,480,42,10)
-    text("COMBAT RALLY 8.0 / "..r.id,10,6,15);text((Game.detail and "X ALTO " or "X LEVE ")..Game.triangles,282,6,9)
+    text("COMBAT RALLY 8.1 / "..r.id,10,6,15);text((Game.detail and "X ALTO " or "X LEVE ")..Game.triangles,282,6,9)
     text(Game.reported_fps and "FPS "..math.floor(Game.reported_fps+0.5) or "FPS --",390,6,9)
     text(string.format("%03d KM/H  VOLTA %d/3  POS %d/4  VIDA %d",math.floor(p.speed*6+0.5),p.laps,Race.position(r),p.hp),10,235,15)
     local item=p.weapon=="shot" and "TIRO" or p.weapon=="mine" and "MINA" or "SEM ARMA"
@@ -281,7 +282,7 @@ function Game.draw()
     if Game.state=="race" then drawRace()
     elseif Game.state=="menu" then drawMenu()
     elseif Game.state=="name" then drawName()
-    elseif Game.state=="podium" then drawPodium()
+    elseif Game.state=="podium" and Game.race.titleWon and Save.completed()==trackCount then drawPodium()
     elseif Game.state=="select" then drawSelect()
     else drawResult() end
 end
