@@ -9,7 +9,7 @@ local Race=require "race"
 local Save=require "save"
 local audio=require "audio"
 local scenery=require "scenery"
-Game={version="10.1",state="menu",menu=1,selected=1,triangles=0,race=nil,detail=true}
+Game={version="10.2",state="menu",menu=1,selected=1,triangles=0,race=nil,detail=true}
 -- Fixed oblique top-down view; follows position, never the car's heading.
 local camera={x=0,y=18,z=0,yaw=math.atan(12,14),pitch=-math.atan(18/math.sqrt(340))}
 local frame=0
@@ -96,74 +96,34 @@ local function rect(x,y,w,h,c) ui.rectfill(x,y,x+w,y+h,colors.index[c]) end
 local function text(s,x,y,c) ui.print(s,x,y,colors.index[c or 9]) end
 local function panel()
     rect(40,38,400,190,10);rect(40,38,400,3,8)
-    text("LUPI COMBAT RALLY 10.1",122,53,15)
+    text("LUPI COMBAT RALLY 10.2",122,53,15)
 end
-local titleCamera={x=-1.95,y=1.56,z=-4.75,yaw=0,pitch=-0.04}
+local titleCamera={x=-1.90,y=1.83,z=-4.85,yaw=0,pitch=-0.075}
 local titleMesh=geometry.mesh()
--- Cross sections run from the rear to the nose. Each has a rounded shoulder.
-local function shell(sections,paint)
-    local previous
-    for i,section in ipairs(sections) do
-        local z,width,sill,shoulder,peak=table.unpack(section)
-        local ring={
-            {-width*0.84,sill,z},{-width,shoulder,z},{-width*0.61,peak-0.045,z},
-            {0,peak,z},{width*0.61,peak-0.045,z},{width,shoulder,z},{width*0.84,sill,z}
-        }
-        if previous then
-            for j=1,6 do
-                geometry.quad(titleMesh,previous[j],ring[j],ring[j+1],previous[j+1],paint(i,j))
-            end
-        end
-        previous=ring
-    end
-    geometry.quad(titleMesh,previous[7],previous[6],previous[2],previous[1],8)
-end
-shell({
-    {-1.34,0.34,0.34,0.49,0.55},{-1.18,0.59,0.28,0.62,0.71},
-    {-0.75,0.70,0.26,0.70,0.79},{-0.10,0.72,0.26,0.72,0.82},
-    {0.52,0.67,0.27,0.69,0.85},{0.83,0.60,0.29,0.61,0.80},
-    {1.10,0.49,0.31,0.53,0.70},{1.31,0.32,0.34,0.46,0.56}
-},function(_,j) return ({24,8,8,15,8,24})[j] end)
-shell({
-    {-1.02,0.46,0.68,0.70,0.73},{-0.73,0.57,0.72,0.88,1.07},
-    {-0.43,0.58,0.75,1.01,1.29},{-0.03,0.59,0.76,1.05,1.39},
-    {0.32,0.57,0.76,1.01,1.33},{0.62,0.49,0.77,0.84,0.88}
-},function(i,j)
-    if i==2 or i==6 then return (j==1 or j==6) and 8 or 27 end
-    return (j==2 or j==5) and 26 or 8
-end)
--- Wheel arches follow the tire profile, with a gold crown and darker outer lip.
+geometry.append(titleMesh,models[1].mesh,0,0,0)
 for _,side in ipairs({-1,1}) do
-    for _,axle in ipairs({-0.84,0.84}) do
-        for segment=0,7 do
-            local a,b=segment*math.pi/4,(segment+1)*math.pi/4
-            local function wheel(angle,x,r)
-                return {side*x,0.32+math.sin(angle)*r,axle+math.cos(angle)*r}
-            end
-            local function face(a,b,c,d,color)
-                if side<0 then geometry.quad(titleMesh,a,b,c,d,color)
-                else geometry.quad(titleMesh,d,c,b,a,color) end
-            end
-            face(wheel(a,0.83,0.30),wheel(b,0.83,0.30),wheel(b,0.63,0.30),wheel(a,0.63,0.30),0)
-            face(wheel(a,0.835,0.30),wheel(a,0.835,0.15),wheel(b,0.835,0.15),wheel(b,0.835,0.30),0)
-            face(wheel(a,0.836,0.15),{side*0.836,0.32,axle},wheel(b,0.836,0.15),wheel(b,0.836,0.15),11)
-            if segment<4 then
-                face(wheel(a,0.87,0.32),wheel(b,0.87,0.32),wheel(b,0.74,0.43),wheel(a,0.74,0.43),8)
-                face(wheel(a,0.74,0.43),wheel(b,0.74,0.43),wheel(b,0.52,0.39),wheel(a,0.52,0.39),15)
+    local a,b,c,d={0,0.93,0.62},{0,0.58,1.24},{side*0.32,0.52,1.20},{side*0.38,0.74,0.62}
+    if side<0 then geometry.quad(titleMesh,a,d,c,b,8)
+    else geometry.quad(titleMesh,a,b,c,d,15) end
+end
+for _,side in ipairs({-1,1}) do
+    for _,axle in ipairs({-0.75,0.75}) do
+        local fender=geometry.box(0.31,0.21,0.66,8,24,15)
+        for i=1,#fender.v,3 do
+            if fender.v[i+1]>0 then
+                fender.v[i]=fender.v[i]*0.74
+                fender.v[i+2]=fender.v[i+2]*0.66
             end
         end
+        geometry.append(titleMesh,fender,side*0.65,0.61,axle)
     end
-    local x=side*0.56
+    local x=side*0.48
     local z=1.19
-    geometry.quad(titleMesh,{x+0.14,0.51,z},{x+0.14,0.68,z},{x-0.14,0.68,z},{x-0.14,0.51,z},9)
-    geometry.quad(titleMesh,{x+0.14,0.68,z},{x+0.08,0.75,z-0.04},{x-0.08,0.75,z-0.04},{x-0.14,0.68,z},15)
-    geometry.quad(titleMesh,{x+0.08,0.45,z},{x+0.14,0.51,z},{x-0.14,0.51,z},{x-0.08,0.45,z},9)
+    geometry.quad(titleMesh,{x+0.14,0.53,z},{x+0.14,0.67,z},{x-0.14,0.67,z},{x-0.14,0.53,z},9)
+    geometry.quad(titleMesh,{x+0.14,0.67,z},{x+0.07,0.74,z},{x-0.07,0.74,z},{x-0.14,0.67,z},9)
+    geometry.quad(titleMesh,{x+0.07,0.46,z},{x+0.14,0.53,z},{x-0.14,0.53,z},{x-0.07,0.46,z},9)
 end
-geometry.append(titleMesh,geometry.box(1.50,0.10,0.16,12,12,9),0,0.33,1.28)
-for _,x in ipairs({-0.39,0.39}) do
-    geometry.append(titleMesh,geometry.box(0.10,0.20,0.10,12,11,9),x,0.38,1.38)
-end
-local titleCar={mesh=titleMesh,x=0,y=0,z=0,yaw=-2.37}
+local titleCar={mesh=titleMesh,x=0,y=0,z=0,yaw=-2.2}
 local stars={{239,27},{268,47},{310,20},{361,39},{398,17},{449,51},{470,23}}
 local logoGlyphs={
     L={16,16,16,16,16,16,31},U={17,17,17,17,17,17,14},
@@ -229,7 +189,7 @@ local function drawTitleArt()
     for i,color in ipairs({7,8,14}) do
         rect(312+(i-1)*27,88,20,16,i==active and color or color+16)
     end
-    titleCar.yaw=-2.37+0.08*math.sin(titleTime*math.pi/2)
+    titleCar.yaw=-2.2+0.08*math.sin(titleTime*math.pi/2)
     renderer.begin(titleCamera)
     renderer.submit(titleCar)
     renderer.flush()
@@ -409,7 +369,7 @@ local function drawRace()
     end
     Game.triangles,Game.dropped=renderer.triangles,renderer.dropped
     rect(0,0,480,20,10);rect(0,228,480,42,10)
-    text("COMBAT RALLY 10.1 / "..r.id,10,6,15);text((Game.detail and "X ALTO " or "X LEVE ")..Game.triangles,282,6,9)
+    text("COMBAT RALLY 10.2 / "..r.id,10,6,15);text((Game.detail and "X ALTO " or "X LEVE ")..Game.triangles,282,6,9)
     text(Game.reported_fps and "FPS "..math.floor(Game.reported_fps+0.5) or "FPS --",390,6,9)
     text(string.format("%03d KM/H  VOLTA %d/3  POS %d/4  VIDA %d",math.floor(p.speed*6+0.5),p.laps,Race.position(r),p.hp),10,235,15)
     local item=p.weapon=="shot" and "TIRO" or p.weapon=="mine" and "MINA" or "SEM ARMA"
