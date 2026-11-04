@@ -22,6 +22,6 @@ for i=1,3 do
     Game.race.finished=true;Game.race.place=1;Game.result();Game.draw()
 end
 assert(require("save").wins()==3 and require("save").canContinue())
-Game.state="menu";Game.menu=3;keys={[BTN_Z]=true};Game.step(0)
+Game.state="menu";Game.menu=2;keys={[BTN_Z]=true};Game.step(0)
 assert(Game.state=="select","in-session Continue works even when disk save unavailable")
 print("PASS: restricted firmware loader without package/io/os/debug/collectgarbage/sfx: boot, New Game, 3 tracks, results and session Continue")

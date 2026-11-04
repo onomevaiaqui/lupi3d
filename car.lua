@@ -121,33 +121,4 @@ m.models={
     {name="GURGEL X-12",trait="MELHOR NA GRAMA",mesh=gurgel,speed=13.8,accel=7,steer=1.52,grass=7},
     {name="PUMA GTB TUBARAO",trait="MAIOR VELOCIDADE",mesh=puma,speed=16.3,accel=7.2,steer=1.4,grass=5}
 }
--- Each local viewport uses a compact silhouette with the model's own proportions.
-local compact={
-    {1.30,2.32,1.05,0.96,8,0.76},
-    {1.32,2.04,1.04,1.19,7,0.68},
-    {1.32,2.15,1.15,1.33,14,0.72},
-    {1.45,2.88,1.09,0.78,12,0.92}
-}
-for i,model in ipairs(m.models) do
-    local w,length,cabinLength,roof,color,axle=table.unpack(compact[i])
-    local car=G.box(w,0.32,length,color,color+16,color)
-    for v=2,#car.v,3 do car.v[v]=car.v[v]+0.52 end
-    local cabin=G.box(w*0.82,roof-0.63,cabinLength,6,22,i==3 and 13 or color)
-    for v=1,#cabin.v,3 do
-        if cabin.v[v+1]>0 then
-            cabin.v[v]=cabin.v[v]*0.84
-            cabin.v[v+2]=cabin.v[v+2]*({0.62,0.85,0.96,0.58})[i]
-        end
-    end
-    G.append(car,cabin,0,(roof+0.63)/2,-(i==4 and 0.38 or 0.06))
-    for _,side in ipairs({-1,1}) do
-        for _,z in ipairs({-axle,axle}) do
-            local x=side*(w/2+0.03)
-            G.quad(car,{x,0.07,z-side*0.22},{x,0.47,z-side*0.22},
-                {x,0.47,z+side*0.22},{x,0.07,z+side*0.22},0)
-        end
-    end
-    weld(car)
-    model.localMesh=car
-end
 return m

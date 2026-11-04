@@ -2,24 +2,14 @@
 local cfg=require "config"
 local colors=require "colors"
 local floor,sin,cos=math.floor,math.sin,math.cos
-local projection,centerX,centerY,left,right,top,bottom
-local halfWidth,up,down,far
+local projection=cfg.projection
 local NEAR=0.12
 local R={triangles=0,culled=0,dropped=0,vertices=0,input_triangles=0}
 local pool,list={},{}
 for i=1,cfg.max_triangles do pool[i]={} end
 local count=0
 local camera,cy,sy,cp,sp
-function R.begin(state,view)
-    left,right,top,bottom=0,479,20,227
-    centerX,centerY,projection,far=240,124,cfg.projection,cfg.draw_distance or 38
-    if view then
-        left,right,top,bottom=view.x,view.x+view.w-1,view.y+14,view.y+view.h-1
-        centerX,centerY=view.x+view.w/2,(top+bottom)/2
-        projection=cfg.projection*view.w/480
-        far=30
-    end
-    halfWidth,up,down=(right-left+1)/2,centerY-top,bottom-centerY
+function R.begin(state)
     camera=state
     cy,sy=cos(state.yaw),sin(state.yaw)
     cp,sp=cos(state.pitch or 0),sin(state.pitch or 0)
@@ -45,7 +35,7 @@ local function project(obj,view)
         end
         local k=(i+2)/3
         obj.px[k],obj.py[k],obj.pz[k]=x,y,z
-        if z>=NEAR then local s=projection/z;obj.sx[k]=centerX+x*s;obj.sy[k]=centerY-y*s end
+        if z>=NEAR then local s=projection/z;obj.sx[k]=240+x*s;obj.sy[k]=124-y*s end
     end
 end
 local function store(ax,ay,bx,by,dx,dy,color,depth)
@@ -53,12 +43,12 @@ local function store(ax,ay,bx,by,dx,dy,color,depth)
     -- Validate the actual integer geometry sent to the native rasterizer.
     -- A valid floating triangle may collapse or reverse winding after flooring.
     ax,ay,bx,by,dx,dy=floor(ax),floor(ay),floor(bx),floor(by),floor(dx),floor(dy)
-    if ax<left then ax=left elseif ax>right then ax=right end
-    if bx<left then bx=left elseif bx>right then bx=right end
-    if dx<left then dx=left elseif dx>right then dx=right end
-    if ay<top then ay=top elseif ay>bottom then ay=bottom end
-    if by<top then by=top elseif by>bottom then by=bottom end
-    if dy<top then dy=top elseif dy>bottom then dy=bottom end
+    if ax<0 then ax=0 elseif ax>479 then ax=479 end
+    if bx<0 then bx=0 elseif bx>479 then bx=479 end
+    if dx<0 then dx=0 elseif dx>479 then dx=479 end
+    if ay<20 then ay=20 elseif ay>227 then ay=227 end
+    if by<20 then by=20 elseif by>227 then by=227 end
+    if dy<20 then dy=20 elseif dy>227 then dy=227 end
     local area=(bx-ax)*(dy-ay)-(by-ay)*(dx-ax)
     if area==0 then return end
     if area<0 then bx,by,dx,dy=dx,dy,bx,by end
@@ -72,10 +62,10 @@ end
 -- Clip to the visible world rectangle before calling ui.trisfill.
 local screenX,screenY,outX,outY={},{},{},{}
 local function queue(ax,ay,bx,by,dx,dy,color,depth)
-    if (ax<left and bx<left and dx<left) or (ax>right and bx>right and dx>right)
-        or (ay<top and by<top and dy<top) or (ay>bottom and by>bottom and dy>bottom) then return end
-    if ax>=left and ax<=right and bx>=left and bx<=right and dx>=left and dx<=right
-        and ay>=top and ay<=bottom and by>=top and by<=bottom and dy>=top and dy<=bottom then
+    if (ax<0 and bx<0 and dx<0) or (ax>479 and bx>479 and dx>479)
+        or (ay<20 and by<20 and dy<20) or (ay>227 and by>227 and dy>227) then return end
+    if ax>=0 and ax<=479 and bx>=0 and bx<=479 and dx>=0 and dx<=479
+        and ay>=20 and ay<=227 and by>=20 and by<=227 and dy>=20 and dy<=227 then
         store(ax,ay,bx,by,dx,dy,color,depth)
         return
     end
@@ -83,7 +73,7 @@ local function queue(ax,ay,bx,by,dx,dy,color,depth)
     local n=3
     for edge=1,4 do
         local horizontal=edge<=2
-        local boundary=edge==1 and left or edge==2 and right or edge==3 and top or bottom
+        local boundary=edge==1 and 0 or edge==2 and 479 or edge==3 and 20 or 227
         local greater=edge==1 or edge==3
         local m=0
         local prev=n
@@ -111,7 +101,7 @@ local function queue(ax,ay,bx,by,dx,dy,color,depth)
     end
 end
 local function submit(ax,ay,az,bx,by,bz,dx,dy,dz,color)
-    queue(centerX+ax*projection/az,centerY-ay*projection/az,centerX+bx*projection/bz,centerY-by*projection/bz,centerX+dx*projection/dz,centerY-dy*projection/dz,color,(az+bz+dz)/3)
+    queue(240+ax*projection/az,124-ay*projection/az,240+bx*projection/bz,124-by*projection/bz,240+dx*projection/dz,124-dy*projection/dz,color,(az+bz+dz)/3)
 end
 -- Sutherland-Hodgman clipping against the near plane. Reused scratch arrays.
 local ix,iy,iz,ox,oy,oz={},{},{},{},{},{}
@@ -159,10 +149,10 @@ function R.submit(obj,view)
         local height=dy*cp-forward*sp
         local side=dx*cy-dz*sy
         local r=obj.radius
-        if depth< -r or depth>far+r
-            or math.abs(side)>math.max(0,depth)*halfWidth/projection+r*1.5
-            or height>math.max(0,depth)*up/projection+r*1.5
-            or height< -math.max(0,depth)*down/projection-r*1.5 then return end
+        if depth< -r or depth>(cfg.draw_distance or 38)+r
+            or math.abs(side)>math.max(0,depth)*240/projection+r*1.5
+            or height>math.max(0,depth)*104/projection+r*1.5
+            or height< -math.max(0,depth)*103/projection-r*1.5 then return end
     end
     project(obj,view);emit(obj)
 end
