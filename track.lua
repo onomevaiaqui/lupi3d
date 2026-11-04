@@ -7,18 +7,20 @@ local themes={
     {15,2,3,13},{30,2,3,7},{27,2,3,7}
 }
 local worlds={
-    {name="CHILE",first=5,last=8},
-    {name="PARAGUAI",first=9,last=12},
-    {name="ARGENTINA",first=13,last=15},
-    {name="BRASIL",first=1,last=4}
+    {name="CHILE",ids={5,6,7,8}},
+    {name="PARAGUAI",ids={9,10,11,12}},
+    {name="ARGENTINA",ids={13,14,15,4}},
+    {name="BRASIL",ids={1,2,3}}
 }
-local cities={"RIO DE JANEIRO","SAO PAULO","FOZ DO IGUACU","BELO HORIZONTE",
+local cities={"RIO DE JANEIRO","SAO PAULO","FOZ DO IGUACU","CORDOBA",
     "SANTIAGO","VALPARAISO","SAN PEDRO","PUERTO MONTT",
     "ASUNCION","AREGUA","SAN BERNARDINO","FILADELFIA",
     "BUENOS AIRES","ROSARIO","MENDOZA"}
 local laps={2,3,3,2,2,3,2,5,3,2,3,2,3,2,5}
 local function worldOf(id)
-    for i,world in ipairs(worlds) do if id>=world.first and id<=world.last then return i end end
+    for i,world in ipairs(worlds) do
+        for _,track in ipairs(world.ids) do if id==track then return i end end
+    end
 end
 local function new(id)
 assert(id>=1 and id<=#names)

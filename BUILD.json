@@ -1,5 +1,5 @@
 {
-  "project": "Lupi Combat Rally 11.3",
+  "project": "Lupi Combat Rally 11.4",
   "files": [
     {
       "file": "colors.lua",
@@ -23,7 +23,7 @@
         "type": "lua_code"
       },
       "bytes": 153,
-      "sha256": "0798c39d68359b614b236b6c32a60c5cb2dfb7a8b1092aee9b2431425684bf33"
+      "sha256": "1f447e8d842b5d5cebfb5cd1ae7078145c0da44cd3ae87fc8794308d2ba56c22"
     },
     {
       "file": "geometry.lua",
@@ -46,16 +46,16 @@
       "metadata": {
         "type": "lua_code"
       },
-      "bytes": 8194,
-      "sha256": "d22afb7ab6714af90cf9c787af2e6b60a043ad3e7c9ba4c9885e7cd5a895f8bf"
+      "bytes": 8211,
+      "sha256": "a84b6087362681774b50487bf8144dca7246f21f5a50c314cdab824488167156"
     },
     {
       "file": "main.lua",
       "metadata": {
         "type": "lua_code"
       },
-      "bytes": 23857,
-      "sha256": "f2dccb66d3c728c0469f38edf4bada660f9916de97524dee615af72952b8ac1e"
+      "bytes": 23331,
+      "sha256": "637952bc0a6c4487e9be8420d0c6d1018d64beaaeb35c46949d15b94b33dbcaa"
     },
     {
       "file": "renderer.lua",
@@ -86,8 +86,8 @@
       "metadata": {
         "type": "lua_code"
       },
-      "bytes": 8340,
-      "sha256": "17d1d8aa1d48842e2a6d8f5aaaa01794e1c3e5573b10cf07b1ef5381ef56e033"
+      "bytes": 8281,
+      "sha256": "de6db15c0de6741a79cc20d05ca5434b95987163a37bec1232303d98f37af963"
     },
     {
       "file": "audio.lua",
@@ -102,8 +102,16 @@
       "metadata": {
         "type": "lua_code"
       },
-      "bytes": 5902,
-      "sha256": "b920a5f11396c500015ec06f7bdee71a1979d2a25ed60dd33f4a109b56218cb4"
+      "bytes": 5991,
+      "sha256": "17edf379fca8d531aed28675bfce7e00325c24874db8ec3b6abe7abca78a6766"
+    },
+    {
+      "file": "maps.lua",
+      "metadata": {
+        "type": "lua_code"
+      },
+      "bytes": 7071,
+      "sha256": "7fc2442345952c78abbe0ee1d46ef7c5bf8a38a688b50017ccac559c2079f395"
     },
     {
       "file": "music/brake.fur",
@@ -214,5 +222,5 @@
       "sha256": "09ab62051f935bb3fe74421bf384e11c6b5ef79ae514ebdb306ab98e4cbd37b8"
     }
   ],
-  "totalBytes": 90924
+  "totalBytes": 97565
 }

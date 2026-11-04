@@ -109,7 +109,6 @@ function S.points()
     return total
 end
 function S.standings(world)
-    local range=world and tracks.worlds[world]
     local rows={}
     local names={S.name,table.unpack(rivals)}
     for id,name in ipairs(names) do
@@ -120,7 +119,7 @@ function S.standings(world)
         row.places[place]=row.places[place]+1
     end
     for track,place in ipairs(S.ranks) do
-        if place>0 and (not range or track>=range.first and track<=range.last) then
+        if place>0 and (not world or tracks.worldOf(track)==world) then
             score(rows[1],place)
             local order=S.orders[track]
             if order then
@@ -143,7 +142,7 @@ end
 function S.worldPlace(world)
     local range=tracks.worlds[world]
     local completed=0
-    for i=range.first,range.last do if S.ranks[i]>0 then completed=completed+1 end end
+    for _,i in ipairs(range.ids) do if S.ranks[i]>0 then completed=completed+1 end end
     if completed<3 then return nil end
     for place,row in ipairs(S.standings(world)) do if row.id==1 then return place end end
 end

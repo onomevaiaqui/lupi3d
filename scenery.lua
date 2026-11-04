@@ -75,13 +75,14 @@ local rio=landmark({{0.92,0.7,0.92,0,0.35,0,11},{0.48,2.6,0.42,0,1.95,0,9},
     {2.7,0.32,0.42,0,2.83,0,9},{0.43,0.46,0.42,0,3.42,0,9}})
 local itaipu=landmark({{4.4,1.45,1.9,0,0.725,0,11},{4.5,0.18,0.44,0,1.5,-0.56,12},
     {0.45,1.35,0.22,-1.35,0.67,-1,6},{0.45,1.35,0.22,0,0.67,-1,6},{0.45,1.35,0.22,1.35,0.67,-1,6}})
-local skyline=landmark({{0.65,2.8,0.8,-1.1,1.4,0,11},{0.85,3.5,0.95,0,1.75,0,12},
-    {0.65,2.3,0.8,1.1,1.15,0,11}})
+local liberdade=landmark({{0.3,2.4,0.35,-1,1.2,0,7},{0.3,2.4,0.35,1,1.2,0,7},
+    {2.6,0.22,0.44,0,1.9,0,7},{3,0.22,0.65,0,2.45,0,29},
+    {0.25,0.39,0.25,-0.55,1.56,0,8},{0.25,0.39,0.25,0.55,1.56,0,8}})
 local harbor=landmark({{3.1,0.55,1.15,0,0.5,0,6},{1.6,0.5,0.85,0,1,0,9},
     {0.24,0.5,0.24,-0.4,1.5,0,7}})
 local monument=landmark({{2.8,0.45,1.5,0,0.225,0,12},{0.48,2.8,0.55,0,1.6,0,9},
     {1.1,0.16,0.22,0.48,2.65,0,1}})
-local cityFeature={rio,skyline,itaipu,andes,andes,harbor,S.quarryRock,harbor,
+local cityFeature={rio,liberdade,itaipu,andes,andes,harbor,S.quarryRock,harbor,
     landmarks[2],S.house,harbor,S.quarryRock,landmarks[3],monument,andes}
 function S.populate(T)
     T.decor={};T.markings={}

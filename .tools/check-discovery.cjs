@@ -1,12 +1,12 @@
 const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict'),crypto=require('node:crypto');
 const root=path.resolve(__dirname,'..'),out=path.join(root,'.build/race-3d-release');
-const required=['lupi.yaml','game.lua','main.lua','config.lua','colors.lua','track.lua','car.lua','geometry.lua','renderer.lua','race.lua','combat.lua','save.lua','audio.lua','scenery.lua'];
+const required=['lupi.yaml','game.lua','main.lua','config.lua','colors.lua','track.lua','car.lua','geometry.lua','renderer.lua','race.lua','combat.lua','save.lua','audio.lua','scenery.lua','maps.lua'];
 for(const file of required) assert(fs.existsSync(path.join(root,file)),'Missing '+file);
 const yaml=fs.readFileSync(path.join(root,'lupi.yaml'),'utf8');
-assert.match(yaml,/^public:\s*true\s*$/m);assert.match(yaml,/^version:\s*11\.3\s*$/m);
+assert.match(yaml,/^public:\s*true\s*$/m);assert.match(yaml,/^version:\s*11\.4\s*$/m);
 const info=JSON.parse(fs.readFileSync(path.join(root,'BUILD.json'),'utf8'));
 const lines=fs.readFileSync(path.join(out,'lupi_manifest.txt'),'utf8').trim().split('\n');
-assert.equal(lines.length,31);assert.equal(info.files.length,31);
+assert.equal(lines.length,32);assert.equal(info.files.length,32);
 for(const line of lines) {
  const m=line.match(/^(\d+) (\d+) (\S+) (.+)$/);assert(m,'Invalid manifest');
  const data=fs.readFileSync(path.join(out,m[3]));assert.equal(data.length,Number(m[2]));
