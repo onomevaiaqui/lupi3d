@@ -18,6 +18,10 @@ for i=1,#S.rock.v,3 do
     S.rock.v[i+1]=y+0.8
     if y>0 then S.rock.v[i]=S.rock.v[i]*0.62+0.2;S.rock.v[i+2]=S.rock.v[i+2]*0.65-0.1 end
 end
+S.quarryRock={v=S.rock.v,f={}}
+for i,value in ipairs(S.rock.f) do
+    S.quarryRock.f[i]=i%4==0 and ({[11]=13,[27]=29,[12]=15})[value] or value
+end
 S.house=G.box(3.8,2.4,3.2,13,29,13)
 for i=2,#S.house.v,3 do S.house.v[i]=S.house.v[i]+1.2 end
 G.quad(S.house,{-2.2,2.4,1.9},{0,3.9,1.9},{0,3.9,-1.9},{-2.2,2.4,-1.9},8)
@@ -55,7 +59,7 @@ function S.populate(T)
         if d>36 then
             local kind=T.id==4 and "rock" or T.id==7 and "house" or T.id==9 and "fence"
                 or i%6==0 and "house" or i%3==0 and "fence" or "rock"
-            T.decor[#T.decor+1]={x=x,y=0,z=z,yaw=kind=="house" and 0.7 or yaw,mesh=S[kind],radius=kind=="house" and 5 or 3,kind=kind}
+            T.decor[#T.decor+1]={x=x,y=0,z=z,yaw=kind=="house" and 0.7 or yaw,mesh=T.quarry and S.quarryRock or S[kind],radius=kind=="house" and 5 or 3,kind=kind}
         end
     end
 end

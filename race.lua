@@ -4,6 +4,7 @@ local mesh=require "car"
 local combat=require "combat"
 local audio=require "audio"
 local Race={}
+local quarryCars={}
 function Race.new(id,modelId)
     modelId=modelId or 1
     local track=tracks.new(id)
@@ -19,6 +20,23 @@ function Race.new(id,modelId)
             total=i==1 and -0.35 or progress,aiSpeed=9.1+(i-2)*0.7,decision=0}
     end
     r.player=r.cars[1];r.combat=combat.new(track)
+    if track.quarry then
+        for i,car in ipairs(r.cars) do
+            local id=models[i]
+            if not quarryCars[id] then
+                local original=car.mesh
+                local faces={}
+                for j,value in ipairs(original.f) do
+                    if j%4==0 then
+                        if value==22 then value=10 elseif value==6 then value=1 end
+                    end
+                    faces[j]=value
+                end
+                quarryCars[id]={v=original.v,f=faces}
+            end
+            car.mesh=quarryCars[id]
+        end
+    end
     audio.play("red")
     return r
 end
@@ -67,6 +85,7 @@ function Race.step(r,dt,input)
         return
     end
     r.time=r.time+dt
+    r.sliding=input.brake and input.steer~=0
     local steps=math.max(1,math.ceil(dt*40));local h=dt/steps
     for _=1,steps do
         local p=r.player

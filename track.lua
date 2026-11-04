@@ -2,7 +2,7 @@ local G=require "geometry"
 local names={"VALE OVAL","CRUZAMENTO 8","SERRA VERDE","PEDREIRA","LAGOA","VIADUTO NORTE","ESTRADA REAL","VIADUTO SUL","AUTODROMO"}
 local function new(id)
 assert(id>=1 and id<=#names)
-local T={id=id,name=names[id],segments=({40,48,48,36,48,64,64,72,80})[id],bridge=id==6 or id==8,halfWidth=3.6,parts={},trees={}}
+local T={id=id,name=names[id],segments=({40,48,48,36,48,64,64,72,80})[id],bridge=id==6 or id==8,quarry=id==4,halfWidth=3.6,parts={},trees={}}
 T.bound=({55,55,55,55,60,70,78,85,95})[id]
 local tau=2*math.pi
 local function p(t)
@@ -33,7 +33,7 @@ for i=0,T.segments-1 do
     s.raised=a.y>0 or b.y>0
     local function edge(v,w) return {v.x+v.nx*w-s.x,v.y,v.z+v.nz*w-s.z} end
     -- Winding follows +Y regardless of the turn direction.
-    G.quad(s.mesh,edge(a,-T.halfWidth),edge(b,-T.halfWidth),edge(b,T.halfWidth),edge(a,T.halfWidth),4)
+    G.quad(s.mesh,edge(a,-T.halfWidth),edge(b,-T.halfWidth),edge(b,T.halfWidth),edge(a,T.halfWidth),T.quarry and (i%9<3 and 3 or 2) or 4)
     if s.raised then
         for _,side in ipairs({-1,1}) do
             local u,v=edge(a,T.halfWidth*side),edge(b,T.halfWidth*side)
@@ -47,7 +47,7 @@ for i=0,T.segments-1 do
         local w=T.halfWidth*side;local o=(T.halfWidth+0.28)*side
         local q={edge(a,w),edge(a,o),edge(b,o),edge(b,w)}
         if side>0 then q={q[4],q[3],q[2],q[1]} end
-        if id~=2 or s.x*s.x+s.z*s.z>64 then G.quad(s.trim.mesh,q[1],q[2],q[3],q[4],i%2==0 and 7 or 9) end
+        if id~=2 or s.x*s.x+s.z*s.z>64 then G.quad(s.trim.mesh,q[1],q[2],q[3],q[4],i%2==0 and (T.quarry and 8 or 7) or 9) end
     end
     T.parts[i+1]=s
 end

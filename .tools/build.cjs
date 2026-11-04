@@ -23,5 +23,5 @@ const files=entries.map((entry,i)=>{
 });
 fs.writeFileSync(path.join(out,'lupi_manifest.txt'),manifest);
 const totalBytes=files.reduce((sum,f)=>sum+f.bytes,Buffer.byteLength(manifest));
-fs.writeFileSync(path.join(root,'BUILD.json'),JSON.stringify({project:'Lupi Combat Rally 8.2',files,totalBytes},null,2)+'\n');
+fs.writeFileSync(path.join(root,'BUILD.json'),JSON.stringify({project:'Lupi Combat Rally 8.3',files,totalBytes},null,2)+'\n');
 console.log('3D race release ready:',out,totalBytes,'bytes');
