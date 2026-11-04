@@ -11,12 +11,13 @@ function Race.new(id,modelId)
     local models={modelId}
     for id=1,#mesh.models do if id~=modelId then models[#models+1]=id end end
     for i=1,4 do
-        local progress=i==1 and track.segments-0.35 or 0.2+(i-2)*0.6
+        local grid=-(1.6+(i-1)*2.95)/track.parts[track.segments].length
+        local progress=grid%track.segments
         local x,z,yaw,_,y=track.sample(progress)
         r.cars[i]={player=i==1,x=x,y=y,z=z,yaw=yaw,speed=0,progress=progress,laps=0,
-            started=i~=1,checkpoint=3,done=false,model=mesh.models[models[i]],mesh=mesh.models[models[i]].mesh,radius=2,
+            started=false,checkpoint=3,done=false,model=mesh.models[models[i]],mesh=mesh.models[models[i]].mesh,radius=2,
             hp=100,respawn=0,stun=0,nitro=0,cooldown=0,ammo=0,weapon=nil,
-            total=i==1 and -0.35 or progress,aiSpeed=9.1+(i-2)*0.7,decision=0}
+            total=grid,aiSpeed=9.1+(i-2)*0.7,decision=0}
     end
     r.player=r.cars[1];r.combat=combat.new(track)
     audio.play("red")
@@ -93,7 +94,7 @@ function Race.step(r,dt,input)
                 car.speed=car.aiSpeed*boost*(car.stun>0 and 0.4 or 1)
                 local _,_,_,length=r.track.sample(car.total)
                 car.total=car.total+car.speed*h/length
-                car.progress=car.total%r.track.segments;car.laps=math.floor(car.total/r.track.segments)
+                car.progress=car.total%r.track.segments;car.laps=math.max(0,math.floor(car.total/r.track.segments))
                 local x,z,yaw,_,height=r.track.sample(car.progress)
                 car.x,car.z,car.yaw,car.y=x,z,yaw,height
                 if car.laps>=3 then

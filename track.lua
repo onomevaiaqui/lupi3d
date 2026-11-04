@@ -32,6 +32,37 @@ for i=0,T.segments do
     local y=T.bridge and 5*math.max(0,1-math.abs(t-math.pi)/0.8) or 0
     points[i]={x=x*scale,y=y,z=z*scale,nx=dz/n,nz=-dx/n}
 end
+-- Choose a flat, nearly straight stretch long enough for the starting grid.
+local start,best=0,math.huge
+local span=3
+for i=0,T.segments-1 do
+    local a,b=points[(i-span)%T.segments],points[(i+span)%T.segments]
+    local dx,dz=b.x-a.x,b.z-a.z
+    local length=math.sqrt(dx*dx+dz*dz)
+    if length>=22 then
+        local deviation,flat=0,true
+        for j=-span,span do
+            local p=points[(i+j)%T.segments]
+            flat=flat and p.y==0
+            deviation=math.max(deviation,math.abs((p.x-a.x)*dz-(p.z-a.z)*dx)/length)
+        end
+        local center=points[i]
+        local awayFromCrossing=(id~=2 and not T.bridge) or center.x^2+center.z^2>18^2
+        if flat and awayFromCrossing and deviation<best then start,best=i,deviation end
+    end
+end
+assert(best<math.huge,"no flat starting straight")
+local ordered={}
+for i=0,T.segments-1 do ordered[i]=points[(i+start)%T.segments] end
+points=ordered
+local a,b=points[T.segments-span],points[span]
+local dx,dz=b.x-a.x,b.z-a.z
+local length=math.sqrt(dx*dx+dz*dz)
+for j=-span+1,span-1 do
+    local u=(j+span)/(2*span)
+    points[j%T.segments]={x=a.x+dx*u,y=0,z=a.z+dz*u,nx=dz/length,nz=-dx/length}
+end
+points[T.segments]=points[0]
 T.length=0
 for i=0,T.segments-1 do
     local a,b=points[i],points[i+1];local dx,dz=b.x-a.x,b.z-a.z
