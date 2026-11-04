@@ -1,5 +1,7 @@
 local cfg=require "config"
-local count=#require("track").names
+local tracks=require "track"
+local count=#tracks.names
+local legacyCount=9
 local rivals=require("race").names
 local savedOrderWidth=5
 local function emptyRanks()
@@ -24,7 +26,7 @@ local function checksum(s)
     return h
 end
 local function decode(s)
-    if type(s)~="string" or #s>128 then return nil end
+    if type(s)~="string" or #s>160 then return nil end
     local prefix,sum=s:match("^(.*)|(%d+)$")
     if not prefix or checksum(prefix)~=tonumber(sum) then return nil end
     local cash,parts=0,{0,0,0}
@@ -38,7 +40,7 @@ local function decode(s)
     local width=savedOrderWidth
     local seq,packed,last,name,orders,model=prefix:match("^RALLY12|(%d+)|([0-6]+)|(%d+)|([A-Z0-9 ]+)|([0-5]+)|([1-4])$")
     if seq then
-        if #name>8 or #orders~=count*width then return nil end
+        if #name>8 or (#orders~=count*width and #orders~=legacyCount*width) then return nil end
         model=tonumber(model)
     else
     width=3
@@ -47,19 +49,19 @@ local function decode(s)
     if modern and not model then return nil end
     if modern then prefix="RALLY10"..prefix:sub(8,-3) else model=1 end
     seq,packed,last,name,orders=prefix:match("^RALLY10|(%d+)|([0-4]+)|(%d+)|([A-Z0-9 ]+)|([0-3]+)$")
-    if name and (#name>8 or #orders~=count*3) then return nil end
+    if name and (#name>8 or #orders~=legacyCount*3) then return nil end
     if not seq then seq,packed,last=prefix:match("^RALLY9|(%d+)|([0-4]+)|(%d+)$") end
     if not seq then
         local a,b,c
         seq,a,b,c,last=prefix:match("^RALLY4|(%d+)|([0-4])|([0-4])|([0-4])|([1-3])$")
         if not seq then return nil end
-        packed=a..b..c..string.rep("0",count-3)
+        packed=a..b..c..string.rep("0",legacyCount-3)
     end
     end
     seq,last=tonumber(seq),tonumber(last)
-    if #packed~=count or seq>100000000 or last<1 or last>count then return nil end
+    if (#packed~=count and #packed~=legacyCount) or seq>100000000 or last<1 or last>count then return nil end
     local ranks={}
-    for i=1,count do ranks[i]=math.min(#rivals+1,tonumber(packed:sub(i,i))) end
+    for i=1,count do ranks[i]=math.min(#rivals+1,tonumber(packed:sub(i,i)) or 0) end
     local results={}
     for i=1,count do
         local order=orders and orders:sub((i-1)*width+1,i*width):gsub("0+$","")
@@ -84,7 +86,7 @@ local function read(slot)
     local ok,data=pcall(function()
         local f=io.open(base.."rally-save-"..slot..".dat","rb")
         if not f then return nil end
-        local s=f:read(129);f:close();return decode(s)
+        local s=f:read(161);f:close();return decode(s)
     end)
     return ok and data or nil
 end
@@ -111,7 +113,8 @@ function S.points()
     for _,rank in ipairs(S.ranks) do total=total+S.pointsFor(rank) end
     return total
 end
-function S.standings()
+function S.standings(world)
+    local range=world and tracks.worlds[world]
     local rows={}
     local names={S.name,table.unpack(rivals)}
     for id,name in ipairs(names) do
@@ -122,7 +125,7 @@ function S.standings()
         row.places[place]=row.places[place]+1
     end
     for track,place in ipairs(S.ranks) do
-        if place>0 then
+        if place>0 and (not range or track>=range.first and track<=range.last) then
             score(rows[1],place)
             local order=S.orders[track]
             if order then
@@ -141,6 +144,20 @@ function S.standings()
         return a.id<b.id
     end)
     return rows
+end
+function S.worldPlace(world)
+    local range=tracks.worlds[world]
+    for i=range.first,range.last do if S.ranks[i]==0 then return nil end end
+    for place,row in ipairs(S.standings(world)) do if row.id==1 then return place end end
+end
+function S.currentWorld()
+    local medal=1
+    for i=1,#tracks.worlds do
+        local place=S.worldPlace(i)
+        if not place or place>3 then return i end
+        medal=math.max(medal,place)
+    end
+    return #tracks.worlds,medal
 end
 S.shop={
     {name="MOTOR",effect="+ ACELERACAO E FINAL",price=500},

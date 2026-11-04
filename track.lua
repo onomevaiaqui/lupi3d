@@ -1,17 +1,27 @@
 local G=require "geometry"
-local names={"VALE OVAL","CRUZAMENTO 8","SERRA VERDE","PEDREIRA","LAGOA","VIADUTO NORTE","ESTRADA REAL","VIADUTO SUL","AUTODROMO"}
+local names={"VALE OVAL","CRUZAMENTO 8","SERRA VERDE","PEDREIRA","LAGOA","VIADUTO NORTE","ESTRADA REAL","VIADUTO SUL","AUTODROMO","SAKURA","LAGO YPACARAI","CHACO","ITAIPU","PAMPAS","ANDES"}
 -- Ground, alternating asphalt shades and curb accent from the 32-color palette.
 local themes={
     {14,2,3,7},{30,3,4,8},{14,2,3,15},
     {13,2,3,8},{6,2,3,12},{29,3,4,8},
     {15,2,3,13},{30,2,3,7},{27,2,3,7}
 }
+local worlds={
+    {name="BRASIL",first=1,last=4},
+    {name="JAPAO",first=5,last=8},
+    {name="PARAGUAI",first=9,last=12},
+    {name="ARGENTINA",first=13,last=15}
+}
+local laps={2,3,3,2,2,3,2,5,3,2,3,2,3,2,5}
+local function worldOf(id)
+    for i,world in ipairs(worlds) do if id<=world.last then return i end end
+end
 local function new(id)
 assert(id>=1 and id<=#names)
-local T={id=id,name=names[id],segments=({40,48,48,36,48,64,64,72,80})[id],bridge=id==2 or id==6 or id==8,quarry=id==4,halfWidth=5.4,parts={},trees={}}
-local scale=({1.32,1.20,1.32,1.65,1.30,1.17,1.16,1.13,1.10})[id]*1.2
-T.bound=math.ceil(({55,55,55,55,60,70,78,85,95})[id]*scale)
-T.theme=themes[id]
+local T={id=id,name=names[id],world=worldOf(id),laps=laps[id],segments=({40,48,48,36,48,64,64,72,80,48,48,56,56,52,64})[id],bridge=id==2 or id==6 or id==8,quarry=id==4,halfWidth=5.4,parts={},trees={}}
+local scale=({1.32,1.20,1.32,1.65,1.30,1.17,1.16,1.13,1.10,1.10,1.20,1.10,1.10,1.10,1.15})[id]*1.2
+T.bound=math.ceil(({55,55,55,55,60,70,78,85,95,70,75,90,84,82,90})[id]*scale)
+T.theme=themes[id] or ({themes[5],themes[7],themes[6],themes[1],themes[8],themes[9]})[id-9]
 local tau=2*math.pi
 local function p(t)
     if id==1 then
@@ -37,6 +47,12 @@ local function p(t)
     if id==7 then return 34*math.sin(t)+9*math.sin(3*t),51*math.cos(t) end
     if id==8 then return 62*math.sin(t)*math.cos(t)+10*math.sin(t),47*math.sin(t) end
     if id==9 then return 48*math.sin(t)+8*math.sin(3*t),68*math.cos(t)+9*math.cos(2*t) end
+    if id==10 then return 30*math.sin(t)+5*math.sin(2*t),36*math.cos(t) end
+    if id==11 then return 39*math.sin(t),32*math.cos(t)+6*math.cos(2*t) end
+    if id==12 then return 35*math.sin(t)+5*math.sin(3*t),47*math.cos(t) end
+    if id==13 then return 38*math.sin(t)+5*math.cos(2*t),40*math.cos(t) end
+    if id==14 then return 32*math.sin(t),50*math.cos(t) end
+    if id==15 then return 35*math.sin(t)+8*math.sin(3*t),52*math.cos(t)+5*math.cos(2*t) end
     return 24*math.sin(t)+5*math.sin(3*t),30*math.cos(t)
 end
 local points={}
@@ -147,4 +163,4 @@ end
 require("scenery").populate(T)
 return T
 end
-return {new=new,names=names}
+return {new=new,names=names,worlds=worlds,worldOf=worldOf,laps=laps}

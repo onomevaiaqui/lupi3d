@@ -11,6 +11,8 @@ function Race.new(id,modelId,parts)
     local r={track=track,id=id,cars={},time=0,countdown=3,finished=false,place=0,grid={}}
     local models={modelId}
     for id=1,#mesh.models do if id~=modelId then models[#models+1]=id end end
+    local form={8.8,9.6,10.4}
+    for i=#form,2,-1 do local j=math.random(i);form[i],form[j]=form[j],form[i] end
     for i=1,#Race.names+1 do
         local grid=-(1.6+(i-1)*2.4)/track.parts[track.segments].length
         local progress=grid%track.segments
@@ -22,7 +24,7 @@ function Race.new(id,modelId,parts)
         r.cars[i]={lane=lane,targetLane=i==4 and 0 or lane,player=i==1,x=x,y=y,z=z,yaw=yaw,speed=0,progress=progress,laps=0,
             nextGate=0,offroad=false,done=false,model=model,mesh=model.mesh,radius=2,
             hp=100,respawn=0,stun=0,nitro=0,cooldown=0,ammo=0,weapon=nil,
-            total=grid,aiSpeed=(9.1+(i-2)*0.7)*pace,decision=0}
+            total=grid,aiSpeed=(form[i-1] or 0)*pace,decision=0}
     end
     r.player=r.cars[1]
     if parts then
@@ -55,7 +57,7 @@ local function progressPlayer(r)
         and crossed and math.floor(progress)==p.nextGate%track.segments then
         if p.nextGate>0 and p.nextGate%track.segments==0 then
             p.laps=p.laps+1
-            if p.laps>=3 then p.done=true;r.finished=true end
+            if p.laps>=track.laps then p.done=true;r.finished=true end
         end
         p.nextGate=p.nextGate+1
     end
@@ -163,7 +165,7 @@ function Race.step(r,dt,input)
                     car.lane=car.lane+(car.targetLane-car.lane)*math.min(1,h*0.6)
                 end
                 car.x,car.z,car.yaw,car.y=x+math.cos(yaw)*car.lane,z-math.sin(yaw)*car.lane,yaw,height
-                if car.laps>=3 then
+                if car.laps>=r.track.laps then
                     r.finishedOpponents=(r.finishedOpponents or 0)+1
                     car.finishOrder=r.finishedOpponents;car.done=true;car.speed=0
                 end

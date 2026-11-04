@@ -41,6 +41,24 @@ plank(-2.15,0.4,2.15,0.53);plank(-2.15,0.9,2.15,1.03)
 S.flame={v={-0.22,0.25,-1.1,0.22,0.25,-1.1,0,0.25,-2.4,0,0.55,-1.2},f={1,4,3,8,4,2,3,15,2,1,3,8}}
 S.blast={v={-0.8,0.5,0,0,0.5,0.8,0.8,0.5,0,0,0.5,-0.8,0,1.9,0,0,-0.1,0},f={1,5,2,8,2,5,3,15,3,5,4,7,4,5,1,8,2,6,1,7,3,6,2,8,4,6,3,7,1,6,4,8}}
 for i=1,#S.blast.f,4 do S.blast.f[i+1],S.blast.f[i+2]=S.blast.f[i+2],S.blast.f[i+1] end
+-- One shared landmark per country. Reused at a few safe roadside locations.
+local landmarks={}
+local function landmark(boxes)
+    local mesh=G.mesh()
+    for _,box in ipairs(boxes) do
+        local w,h,d,x,y,z,color=table.unpack(box)
+        G.append(mesh,G.box(w,h,d,color,color+16,color),x,y,z)
+    end
+    return mesh
+end
+landmarks[1]=landmark({{0.36,3.1,0.36,0,1.55,0,13},{2.8,0.55,0.35,0,2.55,0,14},
+    {1.45,0.26,0.38,0,2.55,0.02,8}})
+landmarks[2]=landmark({{0.32,2.6,0.36,-1,1.3,0,7},{0.32,2.6,0.36,1,1.3,0,7},
+    {2.65,0.24,0.42,0,2.13,0,7},{3.0,0.25,0.52,0,2.64,0,7}})
+landmarks[3]=landmark({{2.9,1.65,2.0,0,0.825,0,9},{3.24,0.26,2.35,0,1.78,0,7},
+    {3.24,0.16,2.35,0,1.56,0,1}})
+landmarks[4]=landmark({{0.56,3.4,0.56,0,1.7,0,9},{0.78,0.45,0.78,0,0.225,0,1},
+    {0.45,0.52,0.45,0,3.47,0,9}})
 function S.populate(T)
     T.decor={};T.markings={}
     for i,s in ipairs(T.parts) do
@@ -64,7 +82,12 @@ function S.populate(T)
         if d>(T.halfWidth+2)^2 then
             local kind=T.id==4 and "rock" or T.id==7 and "house" or T.id==9 and "fence"
                 or i%6==0 and "house" or i%3==0 and "fence" or "rock"
-            T.decor[#T.decor+1]={x=x,y=0,z=z,yaw=kind=="house" and 0.7 or yaw,mesh=T.quarry and S.quarryRock or S[kind],radius=kind=="house" and 5 or 3,kind=kind}
+            local feature=i%4==0 and landmarks[T.world]
+            T.decor[#T.decor+1]={
+                x=x,y=0,z=z,yaw=kind=="house" and 0.7 or yaw,
+                mesh=feature or (T.quarry and S.quarryRock or S[kind]),
+                radius=(feature or kind=="house") and 5 or 3,kind=kind
+            }
         end
     end
 end
