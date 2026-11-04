@@ -22,7 +22,7 @@ function Race.new(id,modelId,parts)
         r.grid[i]={x=x,y=y+0.025,z=z,yaw=yaw,radius=2}
         local model=mesh.models[models[i] or (i-1)%#mesh.models+1]
         r.cars[i]={lane=lane,targetLane=lane*0.85,player=i==1,x=x,y=y,z=z,yaw=yaw,speed=0,progress=progress,laps=0,
-            nextGate=0,offroad=false,done=false,model=model,mesh=model.mesh,radius=2,
+            nextGate=0,offroad=false,done=false,model=model,mesh=model.mesh,packMesh=model.packMesh,radius=2,
             hp=100,respawn=0,stun=0,nitro=0,cooldown=0,ammo=0,weapon=nil,
             segmentLength=track.parts[track.segments].length,total=grid,aiSpeed=(form[i-1] or 0)*pace,decision=0}
     end
