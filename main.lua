@@ -19,13 +19,21 @@ local nameCursor,nameLetters,modelId=1,{},1
 local previous={}
 local players=1
 local extraInputs,extraPrevious={},{}
+local padError={}
 local layouts={
     [2]={{x=0,y=0,w=239,h=270},{x=241,y=0,w=239,h=270}},
     [3]={{x=0,y=0,w=239,h=134},{x=241,y=0,w=239,h=134},{x=0,y=136,w=239,h=134}}
 }
 local function held(k,pad)
     if k==nil then return false end
-    local v=ui.btn(k,pad or 0);return v==true or type(v)=="number" and v>0
+    local v
+    if pad then
+        if padError[pad] then return false end
+        local ok,result=pcall(ui.btn,k,pad)
+        if not ok then padError[pad]=true;return false end
+        v=result
+    else v=ui.btn(k,0) end
+    return v==true or type(v)=="number" and v>0
 end
 local function timestep()
     if frame%15==0 then
@@ -35,6 +43,7 @@ local function timestep()
     frame=frame+1;return math.min(1/(Game.fps or cfg.fallback_fps),0.125)
 end
 function Game.startRace(id)
+    padError={}
     audio.scene("race",true)
     Game.selected=id;Game.race=Race.new(id,players==1 and Save.model or 1,players);Game.state="race"
     if type(collectgarbage)=="function" then pcall(collectgarbage,"collect") end
@@ -82,7 +91,9 @@ function Game.step(dt)
         elseif pressed("ok") then Game.startRace(Game.selected) end
     elseif Game.state=="race" then
         if pressed("detail") then Game.detail=not Game.detail end
-        if pressed("reset") then Game.startRace(Game.selected)
+        if pressed("reset") then
+            if padError[1] or padError[2] then Game.state="select"
+            else Game.startRace(Game.selected) end
         else
             for i=2,players do
                 local pad=i-1
@@ -113,7 +124,7 @@ local function rect(x,y,w,h,c) ui.rectfill(x,y,x+w,y+h,colors.index[c]) end
 local function text(s,x,y,c) ui.print(s,x,y,colors.index[c or 9]) end
 local function panel()
     rect(40,38,400,190,10);rect(40,38,400,3,8)
-    text("LUPI COMBAT RALLY 7.6",122,53,15)
+    text("LUPI COMBAT RALLY 7.7",122,53,15)
 end
 local function drawTitleArt()
     rect(0,0,480,104,10)
@@ -131,7 +142,7 @@ local function drawTitleArt()
     rect(x+5,y+9,9,7,10);rect(x+34,y+9,9,7,10)
     rect(x+8,y+11,3,3,11);rect(x+37,y+11,3,3,11)
     text("LUPI COMBAT RALLY 3D",137,16,15)
-    text("CAMPEONATO 7.6",160,42,8)
+    text("CAMPEONATO 7.7",160,42,8)
 end
 local function drawMenu()
     drawTitleArt()
@@ -240,7 +251,7 @@ local function drawWorld(p,view)
             if part.raised==raised then
                 renderer.submit(part)
                 local dx,dz=part.x-p.x,part.z-p.z
-                if dx*dx+dz*dz<(view and 56 or 225) then renderer.submit(part.trim) end
+                if Game.race.humans~=3 and dx*dx+dz*dz<(view and 56 or 225) then renderer.submit(part.trim) end
             end
         end
     end
@@ -288,7 +299,7 @@ local function drawRace()
     drawWorld(p)
     Game.triangles,Game.dropped=renderer.triangles,renderer.dropped
     rect(0,0,480,20,10);rect(0,228,480,42,10)
-    text("COMBAT RALLY 7.6 / "..r.id,10,6,15);text((Game.detail and "X ALTO " or "X LEVE ")..Game.triangles,282,6,9)
+    text("COMBAT RALLY 7.7 / "..r.id,10,6,15);text((Game.detail and "X ALTO " or "X LEVE ")..Game.triangles,282,6,9)
     text(Game.reported_fps and "FPS "..math.floor(Game.reported_fps+0.5) or "FPS --",390,6,9)
     text(string.format("%03d KM/H  VOLTA %d/3  POS %d/4  VIDA %d",math.floor(p.speed*6+0.5),p.laps,Race.position(r),p.hp),10,235,15)
     local item=p.weapon=="shot" and "TIRO" or p.weapon=="mine" and "MINA" or "SEM ARMA"
@@ -311,12 +322,13 @@ local function drawLocalRace()
         local weapon=p.weapon=="mine" and "M" or p.weapon=="shot" and "T" or "-"
         text(string.format("J%d V%d/3 P%d HP%d %s%d",i,p.laps,Race.position(r,p),p.hp,weapon,p.ammo),
             view.x+4,view.y+3,15)
-        if r.countdown>0 then text(tostring(math.ceil(r.countdown)),view.x+view.w/2,view.y+31,15)
+        if padError[i-1] then text("CONTROLE INDISPONIVEL",view.x+10,view.y+31,8)
+        elseif r.countdown>0 then text(tostring(math.ceil(r.countdown)),view.x+view.w/2,view.y+31,15)
         elseif p.done then text("CHEGADA!",view.x+80,view.y+31,15) end
     end
     if r.humans==3 then
         text(r.track.name,255,154,15)
-        text("L: REINICIAR (J1)",255,180,9)
+        text((padError[1] or padError[2]) and "L: VOLTAR (J1)" or "L: REINICIAR (J1)",255,180,9)
         text("Y: USAR   R: TROCAR",255,201,9)
         if Game.reported_fps then text("FPS "..math.floor(Game.reported_fps+0.5),255,224,9) end
     end

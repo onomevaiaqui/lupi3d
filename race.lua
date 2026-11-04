@@ -15,7 +15,7 @@ function Race.new(id,modelId,humans)
         local progress=i==1 and track.segments-0.35 or 0.2+(i-2)*0.6
         local x,z,yaw,_,y=track.sample(progress)
         r.cars[i]={player=i<=humans,x=x,y=y,z=z,yaw=yaw,speed=0,progress=progress,laps=0,
-            started=i~=1,checkpoint=3,done=false,model=mesh.models[models[i]],mesh=mesh.models[models[i]].mesh,radius=2,
+            started=i~=1,checkpoint=3,done=false,model=mesh.models[models[i]],mesh=humans==3 and mesh.models[models[i]].localMesh or mesh.models[models[i]].mesh,radius=2,
             hp=100,respawn=0,stun=0,nitro=0,cooldown=0,ammo=0,weapon=nil,
             total=i==1 and -0.35 or progress,aiSpeed=9.1+(i-2)*0.7,decision=0}
     end
