@@ -9,7 +9,7 @@ local Race=require "race"
 local Save=require "save"
 local audio=require "audio"
 local scenery=require "scenery"
-Game={version="10.2",state="menu",menu=1,selected=1,triangles=0,race=nil,detail=true}
+Game={version="10.3",state="menu",menu=1,selected=1,triangles=0,race=nil,detail=true}
 -- Fixed oblique top-down view; follows position, never the car's heading.
 local camera={x=0,y=18,z=0,yaw=math.atan(12,14),pitch=-math.atan(18/math.sqrt(340))}
 local frame=0
@@ -93,10 +93,16 @@ function Game.step(dt)
     previous=current
 end
 local function rect(x,y,w,h,c) ui.rectfill(x,y,x+w,y+h,colors.index[c]) end
+local lampWidths={3,5,6,7,7,8,8,8,8,8,8,7,7,6,5,3}
+local function lamp(x,y,color)
+    for row,width in ipairs(lampWidths) do
+        rect(x-width,y+row-1,width*2,1,color)
+    end
+end
 local function text(s,x,y,c) ui.print(s,x,y,colors.index[c or 9]) end
 local function panel()
     rect(40,38,400,190,10);rect(40,38,400,3,8)
-    text("LUPI COMBAT RALLY 10.2",122,53,15)
+    text("LUPI COMBAT RALLY 10.3",122,53,15)
 end
 local titleCamera={x=-1.90,y=1.83,z=-4.85,yaw=0,pitch=-0.075}
 local titleMesh=geometry.mesh()
@@ -187,7 +193,7 @@ local function drawTitleArt()
     rect(307,83,87,27,0)
     local active=math.floor(titleTime/0.65)%3+1
     for i,color in ipairs({7,8,14}) do
-        rect(312+(i-1)*27,88,20,16,i==active and color or color+16)
+        lamp(322+(i-1)*27,88,i==active and color or color+16)
     end
     titleCar.yaw=-2.2+0.08*math.sin(titleTime*math.pi/2)
     renderer.begin(titleCamera)
@@ -369,7 +375,7 @@ local function drawRace()
     end
     Game.triangles,Game.dropped=renderer.triangles,renderer.dropped
     rect(0,0,480,20,10);rect(0,228,480,42,10)
-    text("COMBAT RALLY 10.2 / "..r.id,10,6,15);text((Game.detail and "X ALTO " or "X LEVE ")..Game.triangles,282,6,9)
+    text("COMBAT RALLY 10.3 / "..r.id,10,6,15);text((Game.detail and "X ALTO " or "X LEVE ")..Game.triangles,282,6,9)
     text(Game.reported_fps and "FPS "..math.floor(Game.reported_fps+0.5) or "FPS --",390,6,9)
     text(string.format("%03d KM/H  VOLTA %d/3  POS %d/4  VIDA %d",math.floor(p.speed*6+0.5),p.laps,Race.position(r),p.hp),10,235,15)
     local item=p.weapon=="shot" and "TIRO" or p.weapon=="mine" and "MINA" or "SEM ARMA"
@@ -377,7 +383,7 @@ local function drawRace()
     if r.countdown>0 or r.time<1 then
         rect(190,44,100,28,10)
         local stage=r.countdown>1 and 1 or r.countdown>0 and 2 or 3
-        for i,c in ipairs({7,8,14}) do rect(198+(i-1)*30,50,22,16,stage==i and c or c+16) end
+        for i,c in ipairs({7,8,14}) do lamp(209+(i-1)*30,50,stage==i and c or c+16) end
         text(stage==3 and "JA!" or stage==2 and "ATENCAO" or "PREPARE",213,78,15)
     end
     if p.respawn>0 then text("CARRO DESTRUIDO / RETORNANDO",133,116,7)
