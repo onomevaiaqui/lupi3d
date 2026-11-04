@@ -9,7 +9,7 @@ local Race=require "race"
 local Save=require "save"
 local audio=require "audio"
 local scenery=require "scenery"
-Game={version="9.8",state="menu",menu=1,selected=1,triangles=0,race=nil,detail=true}
+Game={version="9.9",state="menu",menu=1,selected=1,triangles=0,race=nil,detail=true}
 -- Fixed oblique top-down view; follows position, never the car's heading.
 local camera={x=0,y=18,z=0,yaw=math.atan(12,14),pitch=-math.atan(18/math.sqrt(340))}
 local frame=0
@@ -96,30 +96,57 @@ local function rect(x,y,w,h,c) ui.rectfill(x,y,x+w,y+h,colors.index[c]) end
 local function text(s,x,y,c) ui.print(s,x,y,colors.index[c or 9]) end
 local function panel()
     rect(40,38,400,190,10);rect(40,38,400,3,8)
-    text("LUPI COMBAT RALLY 9.8",122,53,15)
+    text("LUPI COMBAT RALLY 9.9",122,53,15)
 end
 local titleCamera={x=-1.90,y=1.83,z=-4.85,yaw=0,pitch=-0.075}
-local titleCar={mesh=models[1].mesh,x=0,y=0,z=0,yaw=2.45}
+local titleMesh=geometry.mesh()
+geometry.append(titleMesh,models[1].mesh,0,0,0)
+for _,side in ipairs({-1,1}) do
+    local a,b,c,d={0,0.93,0.62},{0,0.58,1.24},{side*0.32,0.52,1.20},{side*0.38,0.74,0.62}
+    if side<0 then geometry.quad(titleMesh,a,d,c,b,8)
+    else geometry.quad(titleMesh,a,b,c,d,15) end
+end
+for _,side in ipairs({-1,1}) do
+    for _,axle in ipairs({-0.75,0.75}) do
+        local fender=geometry.box(0.31,0.21,0.66,8,24,15)
+        for i=1,#fender.v,3 do
+            if fender.v[i+1]>0 then
+                fender.v[i]=fender.v[i]*0.74
+                fender.v[i+2]=fender.v[i+2]*0.66
+            end
+        end
+        geometry.append(titleMesh,fender,side*0.65,0.61,axle)
+    end
+    local x=side*0.48
+    local z=1.19
+    geometry.quad(titleMesh,{x+0.14,0.53,z},{x+0.14,0.67,z},{x-0.14,0.67,z},{x-0.14,0.53,z},9)
+    geometry.quad(titleMesh,{x+0.14,0.67,z},{x+0.07,0.74,z},{x-0.07,0.74,z},{x-0.14,0.67,z},9)
+    geometry.quad(titleMesh,{x+0.07,0.46,z},{x+0.14,0.53,z},{x-0.14,0.53,z},{x-0.07,0.46,z},9)
+end
+local titleCar={mesh=titleMesh,x=0,y=0,z=0,yaw=-2.2}
 local stars={{239,27},{268,47},{310,20},{361,39},{398,17},{449,51},{470,23}}
 local logoGlyphs={
-    L={4,4,4,4,7},U={5,5,5,5,7},P={6,5,6,4,4},I={7,2,2,2,7},
-    C={7,4,4,4,7},O={7,5,5,5,7},M={5,7,7,5,5},B={6,5,6,5,6},
-    A={2,5,7,5,5},T={7,2,2,2,2},R={6,5,6,5,5},Y={5,5,2,2,2},
-    ["3"]={7,1,7,1,7},D={6,5,5,5,6}
+    L={16,16,16,16,16,16,31},U={17,17,17,17,17,17,14},
+    P={30,17,17,30,16,16,16},I={31,4,4,4,4,4,31},
+    C={15,16,16,16,16,16,15},O={14,17,17,17,17,17,14},
+    M={17,27,21,21,17,17,17},B={30,17,17,30,17,17,30},
+    A={14,17,17,31,17,17,17},T={31,4,4,4,4,4,4},
+    R={30,17,17,30,20,18,17},Y={17,17,10,4,4,4,4},
+    ["3"]={30,1,1,14,1,1,30},D={28,18,17,17,17,18,28}
 }
 local function drawLogo(label,x,y,scale,color)
     for i=1,#label do
         local glyph=logoGlyphs[label:sub(i,i)]
         if glyph then
             for row,bits in ipairs(glyph) do
-                for col=0,2 do
-                    if bits & (4 >> col)~=0 then
-                        rect(x+col*scale+math.floor((5-row)*scale/3),y+(row-1)*scale,scale,scale,color)
+                for col=0,4 do
+                    if bits & (16 >> col)~=0 then
+                        rect(x+col*scale+math.floor((7-row)*scale/5),y+(row-1)*scale,scale+1,scale,color)
                     end
                 end
             end
         end
-        x=x+4*scale
+        x=x+6*scale
     end
 end
 local function drawTitleArt()
@@ -162,13 +189,13 @@ local function drawTitleArt()
     for i,color in ipairs({7,8,14}) do
         rect(312+(i-1)*27,88,20,16,i==active and color or color+16)
     end
-    titleCar.yaw=2.45+0.14*math.sin(titleTime*math.pi/2)
+    titleCar.yaw=-2.2+0.08*math.sin(titleTime*math.pi/2)
     renderer.begin(titleCamera)
     renderer.submit(titleCar)
     renderer.flush()
-    drawLogo("LUPI COMBAT",25,24,4,9)
-    drawLogo("RALLY",25,50,6,8)
-    drawLogo("3D",86,84,5,7)
+    drawLogo("LUPI COMBAT",25,20,3,9)
+    drawLogo("RALLY",25,46,5,8)
+    drawLogo("3D",79,85,4,7)
     rect(26,92,44,3,7)
     rect(137,92,46,3,7)
 end
@@ -342,7 +369,7 @@ local function drawRace()
     end
     Game.triangles,Game.dropped=renderer.triangles,renderer.dropped
     rect(0,0,480,20,10);rect(0,228,480,42,10)
-    text("COMBAT RALLY 9.8 / "..r.id,10,6,15);text((Game.detail and "X ALTO " or "X LEVE ")..Game.triangles,282,6,9)
+    text("COMBAT RALLY 9.9 / "..r.id,10,6,15);text((Game.detail and "X ALTO " or "X LEVE ")..Game.triangles,282,6,9)
     text(Game.reported_fps and "FPS "..math.floor(Game.reported_fps+0.5) or "FPS --",390,6,9)
     text(string.format("%03d KM/H  VOLTA %d/3  POS %d/4  VIDA %d",math.floor(p.speed*6+0.5),p.laps,Race.position(r),p.hp),10,235,15)
     local item=p.weapon=="shot" and "TIRO" or p.weapon=="mine" and "MINA" or "SEM ARMA"
