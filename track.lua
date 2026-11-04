@@ -9,12 +9,27 @@ local themes={
 local function new(id)
 assert(id>=1 and id<=#names)
 local T={id=id,name=names[id],segments=({40,48,48,36,48,64,64,72,80})[id],bridge=id==6 or id==8,quarry=id==4,halfWidth=5.4,parts={},trees={}}
-local scale=({1.32,1.20,1.32,1.65,1.30,1.17,1.16,1.13,1.10})[id]
+local scale=({1.32,1.20,1.32,1.65,1.30,1.17,1.16,1.13,1.10})[id]*1.2
 T.bound=math.ceil(({55,55,55,55,60,70,78,85,95})[id]*scale)
 T.theme=themes[id]
 local tau=2*math.pi
 local function p(t)
-    if id==1 then return 20*math.sin(t),32*math.cos(t) end
+    if id==1 then
+        local radius,straight=17,29.2
+        local arc=math.pi*radius
+        local distance=(t%tau)/tau*(2*straight+2*arc)
+        local half=straight/2
+        if distance<straight then return radius,distance-half end
+        distance=distance-straight
+        if distance<arc then
+            local angle=distance/radius
+            return radius*math.cos(angle),half+radius*math.sin(angle)
+        end
+        distance=distance-arc
+        if distance<straight then return -radius,half-distance end
+        local angle=math.pi+(distance-straight)/radius
+        return radius*math.cos(angle),-half+radius*math.sin(angle)
+    end
     if id==2 then return 30*math.sin(t),44*math.sin(t)*math.cos(t) end
     if id==4 then return 16*math.sin(t)+3*math.sin(2*t),23*math.cos(t) end
     if id==5 then return 28*math.sin(t)+5*math.cos(2*t),27*math.cos(t)+3*math.sin(2*t) end
