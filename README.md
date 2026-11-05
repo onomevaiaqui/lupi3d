@@ -1,5 +1,9 @@
 # Lupi Combat Rally 3D
 
+## Kombi revisada — 13.1
+
+A Kombi ganhou uma malha própria baseada na referência do modelo antigo: frente inclinada com V, para-brisa dividido, janelas separadas, teto com bordas chanfradas, faróis facetados e calotas claras. São 158 triângulos; a contagem anterior era 90. A revisão não altera seus atributos, os upgrades ou o ícone do catálogo. É necessário conferir o impacto no FPS do console.
+
 ## Progressão e novos carros — 13.0
 
 Agora há seis modelos selecionáveis: Fusca, Fiat 147, Gurgel X-12, Puma GTB, Chevette e Kombi. O grid continua com seis pilotos. O Chevette tem arrancada forte; a Kombi tem 120 de vida base, carroceria alta e teto claro. As características são escolhas de equilíbrio do jogo, não uma simulação das especificações reais.

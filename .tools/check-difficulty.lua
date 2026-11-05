@@ -3,8 +3,8 @@ local cfg=require 'config';cfg.save_dir='.build/difficulty-test/'
 os.remove(cfg.save_dir..'rally-save-0.dat');os.remove(cfg.save_dir..'rally-save-1.dat')
 local Race=require 'race';local tracks=require 'track';local models=require('car').models
 assert(#models==6 and models[5].name=='CHEVETTE' and models[6].name=='KOMBI')
-for _,m in ipairs(models) do
- assert(#m.mesh.f/4<=110)
+for id,m in ipairs(models) do
+ assert(#m.mesh.f/4<=(id==6 and 158 or 110))
  for i=1,#m.mesh.f,4 do
   for j=0,2 do assert(m.mesh.f[i+j]>=1 and m.mesh.f[i+j]<=#m.mesh.v/3) end
   assert(m.mesh.f[i+3]>=0 and m.mesh.f[i+3]<32)

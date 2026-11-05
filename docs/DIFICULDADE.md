@@ -39,9 +39,9 @@ O embaralhamento da forma mantém variação entre provas. Não garante uma orde
 | Modelo | Velocidade base | Aceleração | Direção | Grama | Vida base | Triângulos |
 | --- | --- | --- | --- | --- | --- | --- |
 | Chevette | 15,4 | 7,8 | 1,48 | 5 | 100 | 106 |
-| Kombi | 13,5 | 6,7 | 1,42 | 5,8 | 120 | 90 |
+| Kombi | 13,5 | 6,7 | 1,42 | 5,8 | 120 | 158 |
 
-São unidades internas antes de aplicar ritmo e upgrades. O Chevette tem silhueta de sedã com capô, cabine e porta-malas separados. A Kombi tem frente plana, teto claro, carroceria alta, para-brisa dividido e colunas nas janelas laterais. As quatro rodas são geometria real. Ambas usam a paleta existente e o construtor de malhas compartilhado; nenhuma ultrapassa os 110 triângulos do Puma. O para-brisa frontal do construtor compartilhado teve a orientação das faces corrigida, sem aumentar sua contagem de triângulos.
+São unidades internas antes de aplicar ritmo e upgrades. O Chevette tem silhueta de sedã com capô, cabine e porta-malas separados. A Kombi foi refeita na versão 13.1 seguindo uma referência da versão antiga: frente inclinada com V, teto claro com bordas chanfradas, para-brisa dividido, janelas separadas, faróis facetados e calotas claras. As superfícies de vidro, faróis e calotas são encaixadas na malha, sem sobrepor painéis grandes, para evitar cortes no renderizador por ordenação de profundidade. A Kombi passou de 90 para 158 triângulos para representar esses detalhes; os demais carros mantêm a contagem anterior. Ambas usam a paleta existente. O para-brisa frontal do construtor compartilhado teve a orientação das faces corrigida, sem aumentar sua contagem de triângulos.
 
 Os IDs 1–4 dos carros anteriores foram mantidos; Chevette e Kombi usam 5 e 6. O save atual aceita os seis IDs e continua lendo os formatos antigos. Há seis carros na corrida, não oito.
 
