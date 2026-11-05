@@ -1,4 +1,12 @@
-# Lupi Combat Rally 3D 7.1
+# Lupi Combat Rally 3D
+
+## Ícone animado do catálogo
+
+O `icon.gif` na raiz foi validado no console na versão 12.9: **128 × 64 pixels**, 12 quadros de 120 ms, repetição infinita, sem transparência e **uma única paleta fixa de 16 entradas em toda a animação**. A imagem preenche o quadro inteiro. A compressão usa LZW com código inicial de 8 bits.
+
+Consulte o [guia para criar ícones em outros jogos](docs/ICONE-CATALOGO.md) para conhecer o perfil completo, a organização dos arquivos, a exportação e os limites ainda não determinados. Valide o arquivo com `node .tools/check-icon.cjs`.
+
+## Histórico da versão 7.1
 
 Nove pistas selecionaveis. Novos circuitos: Pedreira, Lagoa, Viaduto Norte, Estrada Real, Viaduto Sul e Autodromo. O campeonato fecha ao registrar um resultado em cada uma das nove pistas. Cada prova vale 10, 6, 3 ou 1 ponto do primeiro ao quarto lugar. Antes de fechar, repetir uma pista so substitui seu resultado se a colocacao do jogador melhorar. Vence quem somar mais pontos, com desempate por mais primeiros, segundos e terceiros lugares, e ordem fixa dos pilotos se persistir. Saves das tres pistas originais sao carregados automaticamente.
 
