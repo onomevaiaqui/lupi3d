@@ -38,7 +38,7 @@ local function decode(s)
         prefix="RALLY12"..previous
     end
     local width=savedOrderWidth
-    local seq,packed,last,name,orders,model=prefix:match("^RALLY12|(%d+)|([0-6]+)|(%d+)|([A-Z0-9 ]+)|([0-5]+)|([1-4])$")
+    local seq,packed,last,name,orders,model=prefix:match("^RALLY12|(%d+)|([0-6]+)|(%d+)|([A-Z0-9 ]+)|([0-5]+)|([1-6])$")
     if seq then
         if #name>8 or (#orders~=count*width and #orders~=legacyCount*width) then return nil end
         model=tonumber(model)

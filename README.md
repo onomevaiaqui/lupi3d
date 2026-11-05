@@ -1,5 +1,13 @@
 # Lupi Combat Rally 3D
 
+## Progressão e novos carros — 13.0
+
+Agora há seis modelos selecionáveis: Fusca, Fiat 147, Gurgel X-12, Puma GTB, Chevette e Kombi. O grid continua com seis pilotos. O Chevette tem arrancada forte; a Kombi tem 120 de vida base, carroceria alta e teto claro. As características são escolhas de equilíbrio do jogo, não uma simulação das especificações reais.
+
+O ritmo dos rivais aumenta por país e pela ordem das pistas dentro de cada país. Cada nível de upgrade comprado pelo jogador também distribui a mesma categoria de peça a um ou dois rivais, com limite de três níveis. As escolhas são reconstruídas a partir do nome e dos níveis salvos: reiniciar a corrida ou usar Continue não refaz a distribuição. Motor, pneus e blindagem têm efeitos reais nos rivais. Há também uma preparação básica adicional nos dois últimos países. Os benefícios do carro do jogador permanecem iguais.
+
+Consulte [dificuldade, parâmetros e referências](docs/DIFICULDADE.md). Teste: `lua .tools/check-difficulty.lua` (crie antes a pasta `.build/difficulty-test`). O ícone animado validado da versão 12.9 foi preservado.
+
 ## Ícone animado do catálogo
 
 O `icon.gif` na raiz foi validado no console na versão 12.9: **128 × 64 pixels**, 12 quadros de 120 ms, repetição infinita, sem transparência e **uma única paleta fixa de 16 entradas em toda a animação**. A imagem preenche o quadro inteiro. A compressão usa LZW com código inicial de 8 bits.

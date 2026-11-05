@@ -5,13 +5,45 @@ local combat=require "combat"
 local audio=require "audio"
 local pace=1.15
 local Race={names={"Lino","Carol","Lucas","Bia","Davi"}}
-function Race.new(id,modelId,parts)
+-- Reconstruct rival purchases from saved player levels/name, without save growth.
+-- A purchase always picks the same one or two distinct rivals, even after reload.
+function Race.rivalParts(parts,world,name)
+    local levels={}
+    for i=1,#Race.names do
+        local base=math.floor((world-1)/2)
+        levels[i]={base,base,base}
+    end
+    local seed=97
+    for i=1,#(name or "PILOTO") do seed=(seed*31+(name or "PILOTO"):byte(i))%2147483647 end
+    for part=1,3 do for level=1,(parts and parts[part] or 0) do
+        local value=(seed+part*1009+level*9176)*48271%2147483647
+        local first=value%#Race.names+1
+        levels[first][part]=math.min(3,levels[first][part]+1)
+        value=value*48271%2147483647
+        if value%2==0 then
+            local second=(first-1+1+value%(#Race.names-1))%#Race.names+1
+            levels[second][part]=math.min(3,levels[second][part]+1)
+        end
+    end end
+    return levels
+end
+local function upgraded(base,parts)
+    return {accel=base.accel*(1+parts[1]*0.12),speed=base.speed*(1+parts[1]*0.05),
+        steer=base.steer*(1+parts[2]*0.10),grass=base.grass*(1+parts[2]*0.08)}
+end
+function Race.new(id,modelId,parts,name)
     modelId=modelId or 1
     local track=tracks.new(id)
-    local r={track=track,id=id,cars={},time=0,countdown=3,finished=false,place=0,grid={}}
+    local world=track.world
+    local stage=world-1
+    for index,trackId in ipairs(tracks.worlds[world].ids) do
+        if trackId==id then stage=stage+(index-1)/#tracks.worlds[world].ids*0.6;break end
+    end
+    local r={track=track,id=id,cars={},time=0,countdown=3,finished=false,place=0,grid={},difficulty=world}
+    local rivalParts=Race.rivalParts(parts,world,name)
     local models={modelId}
     for id=1,#mesh.models do if id~=modelId then models[#models+1]=id end end
-    local form={8.7,9.2,9.7,10.2,10.7}
+    local form={0.92,0.96,1.00,1.03,1.06}
     for i=#form,2,-1 do local j=math.random(i);form[i],form[j]=form[j],form[i] end
     for i=1,#Race.names+1 do
         local grid=-1.75/track.parts[track.segments].length
@@ -21,21 +53,17 @@ function Race.new(id,modelId,parts)
         x,z=x+math.cos(yaw)*lane,z-math.sin(yaw)*lane
         r.grid[i]={x=x,y=y+0.025,z=z,yaw=yaw,radius=2}
         local model=mesh.models[models[i] or (i-1)%#mesh.models+1]
+        local upgrades=i==1 and (parts or {0,0,0}) or rivalParts[i-1]
+        local performance=upgraded(model,upgrades)
+        local maxHP=(model.hp or 100)+upgrades[3]*20
         r.cars[i]={lane=lane,targetLane=lane*0.85,player=i==1,x=x,y=y,z=z,yaw=yaw,speed=0,progress=progress,laps=0,
-            nextGate=0,offroad=false,done=false,model=model,mesh=model.mesh,radius=2,
-            hp=100,respawn=0,stun=0,nitro=0,cooldown=0,ammo=0,weapon=nil,
-            segmentLength=track.parts[track.segments].length,total=grid,aiSpeed=(form[i-1] or 0)*pace,decision=0}
+            nextGate=0,offroad=false,done=false,model=performance,mesh=model.mesh,radius=2,modelId=models[i] or (i-1)%#mesh.models+1,parts=upgrades,
+            hp=maxHP,maxHP=maxHP,respawn=0,stun=0,nitro=0,cooldown=0,ammo=0,weapon=nil,
+            segmentLength=track.parts[track.segments].length,total=grid,
+            aiSpeed=performance.speed*(0.73+stage*0.055)*(form[i-1] or 0)*pace,
+            decision=(i-1)*0.04,aimChance=math.min(0.95,0.65+stage*0.10),laneResponse=0.6+upgrades[2]*0.12}
     end
     r.player=r.cars[1]
-    if parts then
-        local base=r.player.model
-        r.player.model={
-            accel=base.accel*(1+parts[1]*0.12),speed=base.speed*(1+parts[1]*0.05),
-            steer=base.steer*(1+parts[2]*0.10),grass=base.grass*(1+parts[2]*0.08)
-        }
-        r.player.maxHP=100+parts[3]*20
-        r.player.hp=r.player.maxHP
-    end
     r.combat=combat.new(track)
     audio.play("red")
     return r
@@ -180,14 +208,16 @@ function Race.step(r,dt,input)
             local car=r.cars[i]
             if not car.done and car.respawn==0 then
                 local boost=car.nitro>0 and 1.1 or 1
-                car.speed=car.aiSpeed*boost*(car.stun>0 and 0.4 or 1)
+                local target=car.aiSpeed*boost*(car.stun>0 and 0.4 or 1)
+                if car.speed<target then car.speed=math.min(target,car.speed+car.model.accel*pace*h)
+                else car.speed=math.max(target,car.speed-cfg.brake*h) end
                 local length=r.track.segmentLength(car.total)
                 car.total=car.total+car.speed*h/length
                 car.progress=car.total%r.track.segments;car.laps=math.max(0,math.floor(car.total/r.track.segments))
                 local x,z,yaw,segmentLength,height=r.track.sample(car.progress)
                 car.segmentLength=segmentLength
                 if car.total>0 then
-                    car.lane=car.lane+(car.targetLane-car.lane)*math.min(1,h*0.6)
+                    car.lane=car.lane+(car.targetLane-car.lane)*math.min(1,h*car.laneResponse)
                 end
                 car.x,car.z,car.yaw,car.y=x+math.cos(yaw)*car.lane,z-math.sin(yaw)*car.lane,yaw,height
                 if car.laps>=r.track.laps then
@@ -213,6 +243,7 @@ function Race.step(r,dt,input)
         local c=r.cars[i];c.decision=c.decision-dt
         if c.decision<=0 and not c.done then
             c.decision=0.25
+            if c.ammo>0 and c.cooldown==0 and c.respawn==0 and math.random()<c.aimChance then
             if c.weapon=="mine" then
                 for _,other in ipairs(r.cars) do if other~=c then
                     local dx,dz=other.x-c.x,other.z-c.z
@@ -221,8 +252,11 @@ function Race.step(r,dt,input)
             elseif c.weapon=="shot" then
                 for _,other in ipairs(r.cars) do if other~=c then
                     local dx,dz=other.x-c.x,other.z-c.z
-                    if dx*dx+dz*dz<225 and dx*math.sin(c.yaw)+dz*math.cos(c.yaw)>0 then combat.fire(r.combat,c,r.cars);break end
+                    if dx*dx+dz*dz<225 and dx*math.sin(c.yaw)+dz*math.cos(c.yaw)>0
+                        and math.abs(dx*math.cos(c.yaw)-dz*math.sin(c.yaw))<0.85
+                        and math.abs(other.y-c.y)<1.5 then combat.fire(r.combat,c,r.cars);break end
                 end end
+            end
             end
         end
     end

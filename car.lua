@@ -56,6 +56,7 @@ local function build(sections,color,wheelHeight,axle,lights,roofColor,bumperColo
     end
     local a=corners(sections[1])
     G.quad(car,a[1],a[8],a[3],a[2],color)
+    if sections[1][6]>sections[1][4] then G.quad(car,a[7],a[6],a[5],a[4],1) end
     for i=2,#sections do
         local b=corners(sections[i])
         for j=2,8 do
@@ -69,7 +70,7 @@ local function build(sections,color,wheelHeight,axle,lights,roofColor,bumperColo
         a=b
     end
     G.quad(car,a[2],a[3],a[8],a[1],color)
-    G.quad(car,a[7],a[6],a[5],a[4],6)
+    G.quad(car,a[4],a[5],a[6],a[7],6)
     tires(car,0.82,axle,wheelHeight/0.54,1)
     local nose=sections[#sections][1]+0.005
     G.quad(car,{0.6,0.34,nose},{0.6,0.44,nose},{-0.6,0.44,nose},{-0.6,0.34,nose},bumperColor)
@@ -99,11 +100,31 @@ local puma=build({
     {-0.68,0.75,0.30,0.65,0.51,1.03,true},{-0.08,0.76,0.30,0.65,0.50,1.04},
     {0.57,0.75,0.30,0.64,0.57,0.65,true},{1.47,0.65,0.30,0.62,0.52,0.62}
 },12,0.46,0.92,4,12,27,0.10)
+-- Straight hood, three-box sedan cabin and short trunk: Chevette.
+local chevette=build({
+    {-1.30,0.66,0.31,0.68,0.53,0.68},{-0.75,0.70,0.31,0.70,0.53,0.72},
+    {-0.43,0.70,0.31,0.71,0.49,1.19,true},{0.38,0.70,0.31,0.71,0.49,1.19},
+    {0.78,0.68,0.31,0.67,0.54,0.69,true},{1.30,0.63,0.31,0.63,0.52,0.63}
+},8,0.46,0.83,2,8,12,0.15)
+-- Tall, flat-front van; pale roof and continuous side glass distinguish the Kombi.
+local kombi=build({
+    {-1.38,0.69,0.36,0.85,0.62,1.56},{-0.91,0.72,0.36,0.85,0.63,1.67},
+    {0.60,0.72,0.36,0.85,0.63,1.67},{1.31,0.69,0.36,0.85,0.61,1.57,true}
+},6,0.47,0.90,2,9,12,0.10)
+-- Split windshield and side pillars, without adding extra window volumes.
+G.quad(kombi,{-0.025,0.85,1.317},{0.025,0.85,1.317},{0.025,1.57,1.317},{-0.025,1.57,1.317},9)
+for _,z in ipairs({-0.35,0.25}) do
+    G.quad(kombi,{0.635,0.85,z-0.035},{0.635,1.67,z-0.035},{0.635,1.67,z+0.035},{0.635,0.85,z+0.035},9)
+    G.quad(kombi,{-0.635,0.85,z+0.035},{-0.635,1.67,z+0.035},{-0.635,1.67,z-0.035},{-0.635,0.85,z-0.035},9)
+end
+G.weld(kombi)
 m.models={
     {name="FUSCA",trait="EQUILIBRADO",mesh=m,speed=15,accel=7,steer=1.5,grass=5},
     {name="FIAT 147",trait="AGIL NAS CURVAS",mesh=fiat,speed=14.3,accel=7.5,steer=1.7,grass=5},
     {name="GURGEL X-12",trait="MELHOR NA GRAMA",mesh=gurgel,speed=13.8,accel=7,steer=1.52,grass=7},
-    {name="PUMA GTB TUBARAO",trait="MAIOR VELOCIDADE",mesh=puma,speed=16.3,accel=7.2,steer=1.4,grass=5}
+    {name="PUMA GTB TUBARAO",trait="MAIOR VELOCIDADE",mesh=puma,speed=16.3,accel=7.2,steer=1.4,grass=5},
+    {name="CHEVETTE",trait="ARRANCADA FORTE",mesh=chevette,speed=15.4,accel=7.8,steer=1.48,grass=5},
+    {name="KOMBI",trait="ROBUSTA / +20 VIDA",mesh=kombi,speed=13.5,accel=6.7,steer=1.42,grass=5.8,hp=120}
 }
 for _,model in ipairs(m.models) do
     local faces=model.mesh.f
