@@ -1,6 +1,7 @@
 const fs=require('node:fs'),assert=require('node:assert/strict'),path=require('node:path');
 const b=fs.readFileSync(path.join(__dirname,'../icon.gif'));
 assert.equal(b.toString('ascii',0,6),'GIF89a');
+assert(b.length<=6608,'Keep catalog icon no larger than the working Trumpsrun reference');
 assert.equal(b.readUInt16LE(6),64);assert.equal(b.readUInt16LE(8),32);
 assert.equal(b[10],0x83,'Expected 16-entry global palette matching Trumpsrun');
 let p=13+48,frames=0,controls=0,loop=false;

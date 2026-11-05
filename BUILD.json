@@ -1,5 +1,5 @@
 {
-  "project": "Lupi Combat Rally 12.4",
+  "project": "Lupi Combat Rally 12.5",
   "files": [
     {
       "file": "colors.lua",
@@ -23,7 +23,7 @@
         "type": "lua_code"
       },
       "bytes": 153,
-      "sha256": "abf5a0fdd714efca1ee81191bcd30ddb032b9e36df0a097ebd11e85ac70394d8"
+      "sha256": "af37ff9ff117cec3fcefad692fd9defb16e67112f0c4cbdf94df29a898283d36"
     },
     {
       "file": "geometry.lua",
@@ -55,7 +55,7 @@
         "type": "lua_code"
       },
       "bytes": 22551,
-      "sha256": "48a4c58bd9aec5fd35db6df2db87316fbc029426dcd460e466699b94800370f0"
+      "sha256": "c3772488ea84951c90d1fae6bcf7516a689e70df5e9be50d0b524a9cbe2a044f"
     },
     {
       "file": "renderer.lua",
