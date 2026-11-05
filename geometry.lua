@@ -34,4 +34,20 @@ function G.rayBox(b,x,y,z,dx,dy,dz,limit)
     if near>far or far<=0 then return nil end
     return near>0.00001 and near or far
 end
+function G.weld(mesh)
+    local positions,vertices,remap={},{},{}
+    for i=1,#mesh.v,3 do
+        local x,y,z=mesh.v[i],mesh.v[i+1],mesh.v[i+2]
+        positions[x]=positions[x] or {};local ys=positions[x]
+        ys[y]=ys[y] or {};local zs=ys[y]
+        local index=zs[z]
+        if not index then
+            index=#vertices/3+1;zs[z]=index
+            vertices[#vertices+1]=x;vertices[#vertices+1]=y;vertices[#vertices+1]=z
+        end
+        remap[(i+2)/3]=index
+    end
+    for i=1,#mesh.f,4 do for j=0,2 do mesh.f[i+j]=remap[mesh.f[i+j]] end end
+    mesh.v=vertices
+end
 return G

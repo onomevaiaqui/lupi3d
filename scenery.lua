@@ -47,7 +47,7 @@ local function landmark(boxes)
     local mesh=G.mesh()
     for _,box in ipairs(boxes) do
         local w,h,d,x,y,z,color=table.unpack(box)
-        G.append(mesh,G.box(w,h,d,color,color+16,color),x,y,z)
+        G.append(mesh,G.box(w,h,d,color,color%16+16,color),x,y,z)
     end
     return mesh
 end
@@ -116,4 +116,8 @@ function S.populate(T)
         end
     end
 end
+for _,mesh in pairs(S) do
+    if type(mesh)=="table" and mesh.v and mesh.f then G.weld(mesh) end
+end
+for _,mesh in ipairs(cityFeature) do G.weld(mesh) end
 return S

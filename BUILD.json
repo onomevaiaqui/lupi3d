@@ -1,5 +1,5 @@
 {
-  "project": "Lupi Combat Rally 11.9",
+  "project": "Lupi Combat Rally 12.0",
   "files": [
     {
       "file": "colors.lua",
@@ -23,31 +23,31 @@
         "type": "lua_code"
       },
       "bytes": 153,
-      "sha256": "fae38af0a366e8fb8742595ac720208ad6319ed931b2ab42f82c3828e5e428cf"
+      "sha256": "cce5de7413306056792e300d9fddafd2ae2060a395ba4a95188dc9e66f4d4cf9"
     },
     {
       "file": "geometry.lua",
       "metadata": {
         "type": "lua_code"
       },
-      "bytes": 1812,
-      "sha256": "f0e89493ee8db4e126365aef64824e034b6f0069c2cc3bfb113a71b408bd177d"
+      "bytes": 2390,
+      "sha256": "a24ee2c87e748b450b2df73eaecd3b63850257b339d10f4ad324f0b9b8224115"
     },
     {
       "file": "car.lua",
       "metadata": {
         "type": "lua_code"
       },
-      "bytes": 5930,
-      "sha256": "54fd34a605e73721067d20a13e04e1c138c77465215dcae843026b294255fcbc"
+      "bytes": 5354,
+      "sha256": "9e8495b80e356f7990e726953b860b2ad425005340e7a0c119e89a1321781629"
     },
     {
       "file": "track.lua",
       "metadata": {
         "type": "lua_code"
       },
-      "bytes": 8211,
-      "sha256": "a84b6087362681774b50487bf8144dca7246f21f5a50c314cdab824488167156"
+      "bytes": 8506,
+      "sha256": "311b4efbd07c42c535ab3a85d175c24fa1089b5e2ffca9214849648e222ba678"
     },
     {
       "file": "main.lua",
@@ -55,23 +55,23 @@
         "type": "lua_code"
       },
       "bytes": 22551,
-      "sha256": "18650142c97485b5ecf19b086d8d5fb0ad687f87311baacdcdf34cc04f075199"
+      "sha256": "4958180cec81f7a0b5d044e2f2414fc86b8fa20f646be4df0fa8b0ed9de03484"
     },
     {
       "file": "renderer.lua",
       "metadata": {
         "type": "lua_code"
       },
-      "bytes": 7339,
-      "sha256": "1489056f4b5296e26d0a502f5113d0375ad0ae73c4d1ad5147962d0685481d91"
+      "bytes": 7511,
+      "sha256": "7d04785a25dedc8a4550f9551d78c7d53c5085b22fe8e3db5c9a68ef6b32f3bc"
     },
     {
       "file": "race.lua",
       "metadata": {
         "type": "lua_code"
       },
-      "bytes": 10211,
-      "sha256": "f9abb2a60fcac3d0b359de504562dc6d9de7a3af6a314a100f46f511cd4f31fe"
+      "bytes": 10212,
+      "sha256": "ac6f977f9fc752321fe40c20ec3fa6b90c4a043567b204f3b73928f03893c498"
     },
     {
       "file": "combat.lua",
@@ -102,8 +102,8 @@
       "metadata": {
         "type": "lua_code"
       },
-      "bytes": 5991,
-      "sha256": "17edf379fca8d531aed28675bfce7e00325c24874db8ec3b6abe7abca78a6766"
+      "bytes": 6149,
+      "sha256": "b904c72e843c1feeb40d3d5894651c51c94c8b85415ccfc2d508f20e1f82bd42"
     },
     {
       "file": "maps.lua",
@@ -222,5 +222,5 @@
       "sha256": "09ab62051f935bb3fe74421bf384e11c6b5ef79ae514ebdb306ab98e4cbd37b8"
     }
   ],
-  "totalBytes": 95540
+  "totalBytes": 96168
 }

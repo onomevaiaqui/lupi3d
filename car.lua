@@ -47,22 +47,6 @@ for _,x in ipairs({-0.44,0.44}) do
     G.quad(m,{x+0.12,0.59,1.178},{x,0.70,1.178},{x-0.12,0.59,1.178},{x,0.48,1.178},9)
 end
 -- Weld exact shared XYZ positions once at load time, reducing per-frame projection.
-local function weld(mesh)
-    local positions,vertices,remap={},{},{}
-    for i=1,#mesh.v,3 do
-        local x,y,z=mesh.v[i],mesh.v[i+1],mesh.v[i+2]
-        positions[x]=positions[x] or {};local ys=positions[x]
-        ys[y]=ys[y] or {};local zs=ys[y]
-        local index=zs[z]
-        if not index then
-            index=#vertices/3+1;zs[z]=index
-            vertices[#vertices+1]=x;vertices[#vertices+1]=y;vertices[#vertices+1]=z
-        end
-        remap[(i+2)/3]=index
-    end
-    for i=1,#mesh.f,4 do for j=0,2 do mesh.f[i+j]=remap[mesh.f[i+j]] end end
-    mesh.v=vertices
-end
 local function build(sections,color,wheelHeight,axle,lights,roofColor,bumperColor,lightWidth)
     local car=G.mesh()
     local function corners(s)
@@ -94,10 +78,10 @@ local function build(sections,color,wheelHeight,axle,lights,roofColor,bumperColo
         G.quad(car,{x+lightWidth,0.49,nose},{x+lightWidth,0.62,nose},
             {x-lightWidth,0.62,nose},{x-lightWidth,0.49,nose},9)
     end
-    weld(car)
+    G.weld(car)
     return car
 end
-weld(m)
+G.weld(m)
 local fiat=build({
     {-1.02,0.67,0.31,0.73,0.55,0.73},{-0.89,0.68,0.31,0.73,0.53,1.29,true},
     {0.19,0.69,0.31,0.73,0.52,1.28},{0.57,0.68,0.31,0.70,0.56,0.74,true},
@@ -109,7 +93,7 @@ local gurgel=build({
     {1.07,0.58,0.43,0.65,0.49,0.65}
 },14,0.59,0.72,2,13,10,0.09)
 G.append(gurgel,G.box(0.48,0.50,0.22,0,10,0),0,0.92,-1.17)
-weld(gurgel)
+G.weld(gurgel)
 local puma=build({
     {-1.44,0.69,0.30,0.62,0.56,0.62},{-0.99,0.74,0.30,0.63,0.58,0.66},
     {-0.68,0.75,0.30,0.65,0.51,1.03,true},{-0.08,0.76,0.30,0.65,0.50,1.04},

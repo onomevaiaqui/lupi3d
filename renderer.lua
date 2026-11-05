@@ -20,16 +20,19 @@ end
 local px,py,pz,sx,syScreen={},{},{},{},{}
 local function project(obj,view)
     local v=obj.mesh.v
+    local objectX,objectY,objectZ=obj.x,obj.y,obj.z
+    local cameraX,cameraY,cameraZ=camera.x,camera.y,camera.z
+    local eyeHeight=cfg.eye_height
     local oc,os
     if obj.yaw then oc,os=cos(obj.yaw),sin(obj.yaw) end
     R.vertices=R.vertices+#v/3
     R.input_triangles=R.input_triangles+#obj.mesh.f/4
     for i=1,#v,3 do
-        local x,y,z=v[i],v[i+1]+obj.y,v[i+2]
+        local x,y,z=v[i],v[i+1]+objectY,v[i+2]
         if oc then x,z=x*oc+z*os,-x*os+z*oc end
-        x,z=x+obj.x,z+obj.z
+        x,z=x+objectX,z+objectZ
         if not view then
-            x,y,z=x-camera.x,y-camera.y-cfg.eye_height,z-camera.z
+            x,y,z=x-cameraX,y-cameraY-eyeHeight,z-cameraZ
             local depth=x*sy+z*cy
             x=x*cy-z*sy
             y,z=y*cp-depth*sp,y*sp+depth*cp
@@ -110,9 +113,7 @@ local function emit(obj)
     local f=obj.mesh.f
     for i=1,#f,4 do
         local a,b,c=f[i],f[i+1],f[i+2]
-        local ax,ay,az=px[a],py[a],pz[a]
-        local bx,by,bz=px[b],py[b],pz[b]
-        local cx,cy,cz=px[c],py[c],pz[c]
+        local az,bz,cz=pz[a],pz[b],pz[c]
         if az>=NEAR and bz>=NEAR and cz>=NEAR then
             local x1,y1,x2,y2,x3,y3=sx[a],syScreen[a],sx[b],syScreen[b],sx[c],syScreen[c]
             if (x2-x1)*(y3-y1)-(y2-y1)*(x3-x1)>0 then
@@ -122,6 +123,9 @@ local function emit(obj)
             end
         elseif az>=NEAR or bz>=NEAR or cz>=NEAR then
             -- A triangle crossing the near plane has no complete screen projection.
+            local ax,ay=px[a],py[a]
+            local bx,by=px[b],py[b]
+            local cx,cy=px[c],py[c]
             local ux,uy,uz=bx-ax,by-ay,bz-az
             local vx,vy,vz=cx-ax,cy-ay,cz-az
             local facing=(uy*vz-uz*vy)*ax+(uz*vx-ux*vz)*ay+(ux*vy-uy*vx)*az

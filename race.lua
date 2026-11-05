@@ -181,7 +181,7 @@ function Race.step(r,dt,input)
             if not car.done and car.respawn==0 then
                 local boost=car.nitro>0 and 1.1 or 1
                 car.speed=car.aiSpeed*boost*(car.stun>0 and 0.4 or 1)
-                local _,_,_,length=r.track.sample(car.total)
+                local length=r.track.segmentLength(car.total)
                 car.total=car.total+car.speed*h/length
                 car.progress=car.total%r.track.segments;car.laps=math.max(0,math.floor(car.total/r.track.segments))
                 local x,z,yaw,segmentLength,height=r.track.sample(car.progress)

@@ -104,6 +104,7 @@ T.length=0
 for i=0,T.segments-1 do
     local a,b=points[i],points[i+1];local dx,dz=b.x-a.x,b.z-a.z
     local s={x=(a.x+b.x)/2,y=0,z=(a.z+b.z)/2,mesh=G.mesh(),a=a,b=b,dx=dx,dz=dz,len2=dx*dx+dz*dz}
+    s.heading=math.atan(s.dx,s.dz)
     s.length=math.sqrt(s.len2);T.length=T.length+s.length
     s.radius=s.length/2+T.halfWidth+0.35
     s.raised=a.y>0 or b.y>0
@@ -129,7 +130,10 @@ for i=0,T.segments-1 do
 end
 function T.sample(progress)
     local f=progress%T.segments;local i=math.floor(f);local u=f-i;local s=T.parts[i+1]
-    return s.a.x+s.dx*u,s.a.z+s.dz*u,math.atan(s.dx,s.dz),s.length,s.a.y+(s.b.y-s.a.y)*u
+    return s.a.x+s.dx*u,s.a.z+s.dz*u,s.heading,s.length,s.a.y+(s.b.y-s.a.y)*u
+end
+function T.segmentLength(progress)
+    return T.parts[math.floor(progress%T.segments)+1].length
 end
 function T.locate(x,z,hint)
     local best,progress=math.huge,0
@@ -167,6 +171,9 @@ for i=1,6 do
     if dist>(T.halfWidth+2)^2 then T.trees[#T.trees+1]={x=tx,y=0,z=tz,mesh=tree,radius=4} end
 end
 require("scenery").populate(T)
+for _,part in ipairs(T.parts) do G.weld(part.mesh);G.weld(part.trim.mesh) end
+for _,mark in ipairs(T.markings) do G.weld(mark.mesh) end
+G.weld(T.finish.mesh);G.weld(tree)
 return T
 end
 return {new=new,names=names,worlds=worlds,worldOf=worldOf,laps=laps,cities=cities}
