@@ -1,5 +1,11 @@
 # Lupi Combat Rally 3D
 
+## Revisão de compatibilidade e dificuldade — 13.2
+
+Revisado contra a documentação pública do firmware 0.6.8. Os rivais têm +15% de ritmo-alvo e aceleração sobre a versão 13.1. Cada upgrade do jogador continua distribuindo a peça a um ou dois rivais, com sorteio entre os que ainda podem evoluir e resultado estável ao reiniciar. O áudio passa a priorizar `music.loop` e usar `music.play` para eventos, quando disponível, sem comprovação de som no hardware.
+
+Veja o [relatório da revisão das APIs, restrições e testes](docs/REVISAO-LUPI-0.6.8.md). O ícone, os modelos e a física do jogador foram preservados.
+
 ## Kombi revisada — 13.1
 
 A Kombi ganhou uma malha própria baseada na referência do modelo antigo: frente inclinada com V, para-brisa dividido, janelas separadas, teto com bordas chanfradas, faróis facetados e calotas claras. São 158 triângulos; a contagem anterior era 90. A revisão não altera seus atributos, os upgrades ou o ícone do catálogo. É necessário conferir o impacto no FPS do console.

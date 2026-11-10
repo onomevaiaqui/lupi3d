@@ -17,12 +17,16 @@ function Race.rivalParts(parts,world,name)
     for i=1,#(name or "PILOTO") do seed=(seed*31+(name or "PILOTO"):byte(i))%2147483647 end
     for part=1,3 do for level=1,(parts and parts[part] or 0) do
         local value=(seed+part*1009+level*9176)*48271%2147483647
-        local first=value%#Race.names+1
-        levels[first][part]=math.min(3,levels[first][part]+1)
+        local eligible={}
+        for i=1,#Race.names do if levels[i][part]<3 then eligible[#eligible+1]=i end end
+        local index=value%#eligible+1
+        local first=eligible[index]
+        levels[first][part]=levels[first][part]+1
+        table.remove(eligible,index)
         value=value*48271%2147483647
-        if value%2==0 then
-            local second=(first-1+1+value%(#Race.names-1))%#Race.names+1
-            levels[second][part]=math.min(3,levels[second][part]+1)
+        if value%2==0 and #eligible>0 then
+            local second=eligible[value%#eligible+1]
+            levels[second][part]=levels[second][part]+1
         end
     end end
     return levels
@@ -60,7 +64,7 @@ function Race.new(id,modelId,parts,name)
             nextGate=0,offroad=false,done=false,model=performance,mesh=model.mesh,radius=2,modelId=models[i] or (i-1)%#mesh.models+1,parts=upgrades,
             hp=maxHP,maxHP=maxHP,respawn=0,stun=0,nitro=0,cooldown=0,ammo=0,weapon=nil,
             segmentLength=track.parts[track.segments].length,total=grid,
-            aiSpeed=performance.speed*(0.73+stage*0.055)*(form[i-1] or 0)*pace,
+            aiSpeed=performance.speed*(0.73+stage*0.055)*(form[i-1] or 0)*pace*cfg.rival_difficulty,
             decision=(i-1)*0.04,aimChance=math.min(0.95,0.65+stage*0.10),laneResponse=0.6+upgrades[2]*0.12}
     end
     r.player=r.cars[1]
@@ -209,7 +213,7 @@ function Race.step(r,dt,input)
             if not car.done and car.respawn==0 then
                 local boost=car.nitro>0 and 1.1 or 1
                 local target=car.aiSpeed*boost*(car.stun>0 and 0.4 or 1)
-                if car.speed<target then car.speed=math.min(target,car.speed+car.model.accel*pace*h)
+                if car.speed<target then car.speed=math.min(target,car.speed+car.model.accel*pace*cfg.rival_difficulty*h)
                 else car.speed=math.max(target,car.speed-cfg.brake*h) end
                 local length=r.track.segmentLength(car.total)
                 car.total=car.total+car.speed*h/length

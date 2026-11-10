@@ -2,6 +2,10 @@
 
 O `icon.gif` do Combat Rally foi confirmado no console na versão **12.9**, em **128 × 64 pixels**. Este documento descreve um perfil que funcionou no aparelho, e não uma especificação oficial do firmware.
 
+## Atualização da documentação oficial (10/11/2026)
+
+A [documentação de assets do firmware 0.6.8](https://lupi.api.br/docs/assets.html) agora especifica `icon.gif` com tamanho exato de **64 × 32** e até 16 cores, incluindo transparência. O perfil de **128 × 64** abaixo foi confirmado pelo usuário no console nas versões 12.9 em diante, mas não corresponde ao tamanho oficialmente documentado. Para um jogo novo, prefira 64 × 32 se precisar seguir o contrato público; 128 × 64 deve ser tratado como compatibilidade observada neste aparelho. O Rally mantém o ícone funcionando, sem reconvertê-lo nesta revisão.
+
 ## Perfil validado para reutilizar
 
 | Propriedade | Valor usado |

@@ -1,4 +1,4 @@
-# Dificuldade e veículos — 13.0
+# Dificuldade e veículos — 13.2
 
 ## Objetivo
 
@@ -6,7 +6,7 @@ Aumentar o desafio inicial e fazer os rivais evoluírem ao longo de Chile, Parag
 
 ## Upgrades dos rivais
 
-Cada nível comprado de motor, pneus ou blindagem seleciona um ou dois adversários distintos para receber um nível da mesma peça. Cada peça continua limitada ao nível 3. A escolha usa uma sequência pseudoaleatória derivada do nome do jogador, categoria da peça e nível comprado. Isso evita aumentar o formato do save e mantém a distribuição depois de reiniciar ou carregar Continue. Com o mesmo nome e os mesmos níveis, a distribuição é a mesma; não depende da ordem das compras. Ao chegar ao limite, uma seleção pode não produzir outra melhoria.
+Cada nível comprado de motor, pneus ou blindagem seleciona um ou dois adversários distintos para receber um nível da mesma peça. Cada peça continua limitada ao nível 3. A escolha usa uma sequência pseudoaleatória derivada do nome do jogador, categoria da peça e nível comprado. Isso evita aumentar o formato do save e mantém a distribuição depois de reiniciar ou carregar Continue. Com o mesmo nome e os mesmos níveis, a distribuição é a mesma; não depende da ordem das compras. Desde a versão 13.2, o sorteio considera apenas rivais com espaço para melhorar a peça, removendo o primeiro escolhido antes de selecionar um segundo. Uma peça no máximo não desperdiça a distribuição. As escolhas continuam estáveis e não são refeitas a cada corrida.
 
 Na Argentina e no Brasil, os cinco rivais também têm um nível básico de cada peça. Esses níveis se somam às compras reconstruídas, até o limite 3. Repetir uma corrida, receber dinheiro ou comprar uma peça que já está no máximo não cria novos níveis.
 
@@ -25,8 +25,10 @@ O estágio é `país - 1`, com um acréscimo gradual de até 0,45 dentro dos pa�
 O alvo de velocidade é calculado uma vez:
 
 ```text
-velocidade do modelo com motor × (0,73 + estágio × 0,055) × forma × ritmo global
+velocidade do modelo com motor × (0,73 + estágio × 0,055) × forma × ritmo global × 1,15
 ```
+
+A versão 13.2 acrescenta 15% ao ritmo-alvo e à aceleração dos rivais, através de `config.rival_difficulty=1.15`. Esse percentual é relativo à versão 13.1 e não é uma medição da probabilidade de vitória. A física do jogador permanece igual. A IA segue um percurso paramétrico e seu ritmo não corresponde ao limitador usado pelo controle manual do jogador.
 
 O fator de campanha começa em 0,73 e chega a 0,917 na última pista do Brasil, antes da forma individual e do motor. Nitro mantém o bônus de 10%. Os rivais aceleram gradualmente usando o motor, em vez de saltarem imediatamente para sua velocidade de cruzeiro. Stun e dano continuam afetando-os.
 

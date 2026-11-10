@@ -5,18 +5,19 @@ local events={menu={"navigate",0.13,3},confirm={"confirm",0.22,4},red={"red",0.2
 local function hasSfx()
     return type(sfx)=="table" and type(sfx.fx)=="function"
 end
-A.useSfx=hasSfx()
+A.useSfx=hasSfx() and not (type(music)=="table" and type(music.loop)=="function")
 local function backend()
     if A.useSfx and hasSfx() then return "SFX" end
     if type(music)=="table" and type(music.loop)=="function" then return "FUR" end
     if hasSfx() then return "SFX" end
     return "SEM API"
 end
-local function start(name,fade)
+local function start(name,fade,once)
     if A.retry>0 then return false end
     local kind=backend();A.available=kind~="SEM API"
     if kind~="FUR" then return false end
-    local ok,err,reason=pcall(music.loop,"music/"..name,fade or 0.03)
+    local player=once and type(music.play)=="function" and music.play or music.loop
+    local ok,err,reason=pcall(player,"music/"..name,fade or 0.03)
     A.playResult=tostring(err)
     if ok and (err==false or err==nil and type(reason)=="string") then
         ok=false;err=reason or "music.loop recusou arquivo"
@@ -80,7 +81,7 @@ function A.play(event,x,z)
     local kind=backend();A.available=kind~="SEM API"
     if kind=="FUR" then
         if A.hold>0 and e[3]<A.priority then return end
-        if start(e[1]) then A.hold=e[2];A.priority=e[3] end
+        if start(e[1],nil,true) then A.hold=e[2];A.priority=e[3] end
     elseif kind=="SFX" then
         if A.retry>0 then return end
         if type(sfx.volume)=="function" then pcall(sfx.volume,0.65) end

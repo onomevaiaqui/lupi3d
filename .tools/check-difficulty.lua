@@ -28,6 +28,18 @@ for n=1,40 do
   end
  end
 end
+-- Verify the requested increase against the exact same seeded starting grid.
+for id=1,#tracks.names do
+ cfg.rival_difficulty=1;math.randomseed(901);local before=Race.new(id,1,{1,2,1},'TESTE')
+ cfg.rival_difficulty=1.15;math.randomseed(901);local after=Race.new(id,1,{1,2,1},'TESTE')
+ assert(before.player.model.speed==after.player.model.speed)
+ assert(before.player.model.accel==after.player.model.accel)
+ before.countdown=0;after.countdown=0
+ cfg.rival_difficulty=1;Race.step(before,1/60,{gas=false,brake=false,steer=0})
+ cfg.rival_difficulty=1.15;Race.step(after,1/60,{gas=false,brake=false,steer=0})
+ for i=2,6 do assert(math.abs(after.cars[i].speed/before.cars[i].speed-1.15)<1e-10)end
+ for i=2,6 do assert(math.abs(after.cars[i].aiSpeed/before.cars[i].aiSpeed-1.15)<1e-10)end
+end
 local previous=0
 for world=1,4 do
  for _,id in ipairs(tracks.worlds[world].ids) do
@@ -39,7 +51,7 @@ for world=1,4 do
   for i=1,6 do assert(r.cars[i].hp==r.cars[i].maxHP) end
   r.countdown=0
   for frame=1,180 do Race.step(r,1/30,{gas=true,brake=false,steer=0}) end
-  for i=2,6 do assert(r.cars[i].speed>=0 and r.cars[i].speed<=r.cars[i].model.speed*1.15*1.1) end
+  for i=2,6 do assert(r.cars[i].speed>=0 and r.cars[i].speed<=r.cars[i].model.speed*1.15*cfg.rival_difficulty*1.1) end
  end
 end
 for world=1,4 do
