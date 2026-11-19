@@ -32,7 +32,7 @@ function C.new(track)
     return c
 end
 function C.collect(car,kind)
-    if kind=="nitro" then car.nitro=5;if car.player then audio.play("nitro") end
+    if kind=="nitro" then car.nitro=5;car.nitroNotice=0;if car.player then audio.play("nitro") end
     elseif car.player then
         car.stock=car.stock or {}
         car.stock[kind]=kind=="shot" and 3 or 2
@@ -54,7 +54,7 @@ end
 local function damage(car,amount,c)
     if car.respawn>0 or car.done then return end
     car.hp=math.max(0,car.hp-amount);car.speed=car.speed*0.45;car.stun=0.55
-    if car.player then audio.play("hit") end
+    if car.player then car.hitNotice=1.2;audio.play("hit") end
     if car.hp==0 then blast(c,car.x,car.z,car.y);car.respawn=2;car.weapon=nil;car.ammo=0;car.stock=nil;car.nitro=0;car.speed=0 end
 end
 C.damage=damage
@@ -88,6 +88,11 @@ end
 function C.step(c,cars,dt)
     for _,p in ipairs(c.pickups) do p.cooldown=math.max(0,p.cooldown-dt) end
     for _,car in ipairs(cars) do
+        if car.player then
+            car.hitNotice=math.max(0,(car.hitNotice or 0)-dt)
+            car.nitroNotice=math.max(0,(car.nitroNotice or 0)-dt)
+            if car.nitro>0 and car.nitro<=dt then car.nitroNotice=1 end
+        end
         car.nitro=math.max(0,car.nitro-dt);car.cooldown=math.max(0,car.cooldown-dt);car.stun=math.max(0,car.stun-dt)
         if car.respawn>0 then
             car.respawn=math.max(0,car.respawn-dt)

@@ -30,6 +30,8 @@ local T={id=id,name=names[id],world=worldOf(id),laps=laps[id],segments=({40,48,4
 local scale=({1.32,1.20,1.32,1.65,1.30,1.17,1.16,1.13,1.10,1.10,1.20,1.10,1.10,1.10,1.15})[id]*1.2
 T.bound=math.ceil(({55,55,55,55,60,70,78,85,95,70,75,90,84,82,90})[id]*scale)
 T.theme=themes[id]
+T.curbWidth=0.48
+T.driveHalfWidth=T.halfWidth+T.curbWidth
 local tau=2*math.pi
 local function p(t)
     if id==1 then
@@ -123,7 +125,7 @@ for i=0,T.segments-1 do
     end
     s.trim={x=s.x,y=0,z=s.z,mesh=G.mesh(),radius=s.radius}
     for _,side in ipairs({-1,1}) do
-        local w=T.halfWidth*side;local o=(T.halfWidth+0.48)*side
+        local w=T.halfWidth*side;local o=(T.halfWidth+T.curbWidth)*side
         local q={edge(a,w),edge(a,o),edge(b,o),edge(b,w)}
         if side>0 then q={q[4],q[3],q[2],q[1]} end
         if id~=2 or s.x*s.x+s.z*s.z>100 then G.quad(s.trim.mesh,q[1],q[2],q[3],q[4],i%2==0 and T.theme[4] or 9) end
@@ -137,16 +139,39 @@ end
 function T.segmentLength(progress)
     return T.parts[math.floor(progress%T.segments)+1].length
 end
-function T.locate(x,z,hint)
-    local best,progress=math.huge,0
+-- Spatial recovery avoids a full-course scan on every offroad physics substep.
+local cells={}
+for i,s in ipairs(T.parts) do
+    local pad=T.driveHalfWidth
+    for cx=math.floor((math.min(s.a.x,s.b.x)-pad)/16),math.floor((math.max(s.a.x,s.b.x)+pad)/16) do
+        cells[cx]=cells[cx] or {}
+        for cz=math.floor((math.min(s.a.z,s.b.z)-pad)/16),math.floor((math.max(s.a.z,s.b.z)+pad)/16) do
+            local cell=cells[cx][cz]
+            if not cell then cell={};cells[cx][cz]=cell end
+            cell[#cell+1]=i-1
+        end
+    end
+end
+function T.locate(x,z,hint,height)
+    local best,progress,bestScore=math.huge,0,math.huge
     local function check(i)
         local s=T.parts[i%T.segments+1]
         local u=math.max(0,math.min(1,((x-s.a.x)*s.dx+(z-s.a.z)*s.dz)/s.len2))
         local dx,dz=x-s.a.x-s.dx*u,z-s.a.z-s.dz*u
         local d=dx*dx+dz*dz
-        if d<best then best,progress=d,(i%T.segments)+u end
+        local score=d
+        if T.bridge and height then
+            local dy=height-(s.a.y+(s.b.y-s.a.y)*u)
+            score=score+dy*dy*4
+        end
+        if score<bestScore then best,progress,bestScore=d,(i%T.segments)+u,score end
     end
     if hint then for i=math.floor(hint)-4,math.floor(hint)+4 do check(i) end end
+    if hint and bestScore>T.driveHalfWidth^2 then
+        local column=cells[math.floor(x/16)]
+        local cell=column and column[math.floor(z/16)]
+        if cell then for _,i in ipairs(cell) do check(i) end end
+    end
     if not hint or (best>144 and not T.bridge) then for i=0,T.segments-1 do check(i) end end
     return progress%T.segments,best
 end

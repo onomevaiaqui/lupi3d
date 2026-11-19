@@ -76,8 +76,9 @@ local function progressPlayer(r)
     local p=r.player
     local previous=p.progress
     local track=r.track
-    local progress,distance=track.locate(p.x,p.z,previous)
-    p.progress=progress;p.offroad=distance>track.halfWidth^2
+    local progress,distance=track.locate(p.x,p.z,previous,p.y)
+    local edge=track.driveHalfWidth+(p.offroad and 0.05 or 0.25)
+    p.progress=progress;p.offroad=distance>edge^2
     local _,_,_,_,height=track.sample(progress)
     p.y=height
 
@@ -187,6 +188,7 @@ function Race.step(r,dt,input)
         return
     end
     r.time=r.time+dt
+    r.throttle,r.braking=input.gas,input.brake
     r.player.shortcutNotice=math.max(0,(r.player.shortcutNotice or 0)-dt)
     r.sliding=input.brake and input.steer~=0
     local steps=math.max(1,math.ceil(dt*40));local h=dt/steps
@@ -198,9 +200,15 @@ function Race.step(r,dt,input)
             local model=p.model
             local accel=input.brake and -cfg.brake or input.gas and model.accel*boost*pace or -1.8
             if p.offroad then accel=accel-5 end
-            local cap=p.offroad and model.grass*pace or model.speed*boost*pace
-            p.speed=math.max(0,math.min(model.speed*boost*pace,p.speed+accel*h))
-            if p.speed>cap then p.speed=math.max(cap,p.speed-9*h) end
+            local roadCap=model.speed*boost*pace
+            local cap=p.offroad and model.grass*pace or roadCap
+            if p.speed>roadCap then
+                -- Expiring nitro returns to cruise speed gradually, never by a snap.
+                p.speed=math.max(cap,p.speed-math.max(9,-accel)*h)
+            else
+                p.speed=math.max(0,math.min(roadCap,p.speed+accel*h))
+                if p.speed>cap then p.speed=math.max(cap,p.speed-9*h) end
+            end
             if p.stun>0 then p.speed=math.min(p.speed,4) end
             p.yaw=(p.yaw+input.steer*model.steer*math.min(p.speed/5,1)*h+math.pi)%(2*math.pi)-math.pi
             p.x=p.x+math.sin(p.yaw)*p.speed*h;p.z=p.z+math.cos(p.yaw)*p.speed*h

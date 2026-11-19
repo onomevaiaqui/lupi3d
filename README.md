@@ -1,5 +1,11 @@
 # Lupi Combat Rally 3D
 
+## Correção de desaceleração — 13.6
+
+Corrigida a recuperação da referência do trecho quando o carro volta a outra parte da pista, incluindo viadutos: uma referência antiga podia classificar asfalto como grama e reduzir a velocidade sem perda de vida. A busca usa uma grade espacial e considera a altura nos viadutos. Zebras passam a fazer parte da área de rodagem, com uma pequena tolerância de borda. O fim do nitro retorna gradualmente à velocidade normal, em vez de aplicar um corte instantâneo.
+
+Os atributos dos carros e os +15% dos rivais permanecem iguais. Avisos de impacto, freio, fim do nitro e acelerador solto ajudam a identificar perdas de velocidade durante o teste no console. Veja [causas reproduzidas e validação](docs/VELOCIDADE-13.6.md). Teste: `lua .tools/check-speed.lua`.
+
 ## Correção da sincronização — 13.5
 
 O pipeline recusou o ícone experimental de 128 × 64. O `icon.gif` voltou ao formato documentado de **64 × 32**, com a mesma paleta fixa e animação já validadas. O build agora verifica esse asset antes de preparar o pacote. As otimizações 3D da 13.4 permanecem intactas.
