@@ -1,5 +1,13 @@
 # Lupi Combat Rally 3D
 
+## Revisão visual — 13.3
+
+Asfalto mais escuro e uniforme, zebras vermelhas/brancas mais largas e marcações de três faixas mais legíveis. Os seis carros mantêm a contagem de polígonos, com vidros escuros, pintura mais definida, rodas com acabamento claro, Chevette em tom creme e Gurgel com teto claro. A paleta passou de 32 para 36 cores para separar terreno e vegetação, com iluminação fixa mais suave e sem sombras projetadas.
+
+Chile tem terreno seco, pedras e pinheiros nas regiões verdes; Paraguai tem copas mais largas e casas claras; Argentina usa vegetação baixa, pampas e rochas nos Andes; Brasil tem coqueiros, copas tropicais e materiais mais quentes. A decoração foi redistribuída sem aumentar o limite de objetos por pista, com menos repetição de monumentos. ALTO e LEVE preservam as diferenças regionais.
+
+Veja [detalhes, custos e validação visual](docs/VISUAL-13.3.md). O tempo local de desenho ficou próximo ao anterior; FPS ainda precisa de medição no console. Ícone, dificuldade, controles, física e saves foram preservados.
+
 ## Revisão de compatibilidade e dificuldade — 13.2
 
 Revisado contra a documentação pública do firmware 0.6.8. Os rivais têm +15% de ritmo-alvo e aceleração sobre a versão 13.1. Cada upgrade do jogador continua distribuindo a peça a um ou dois rivais, com sorteio entre os que ainda podem evoluir e resultado estável ao reiniciar. O áudio passa a priorizar `music.loop` e usar `music.play` para eventos, quando disponível, sem comprovação de som no hardware.

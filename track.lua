@@ -2,9 +2,11 @@ local G=require "geometry"
 local names={"VALE OVAL","CRUZAMENTO 8","SERRA VERDE","PEDREIRA","LAGUNA ANDINA","VIADUTO NORTE","ATACAMA","VIADUTO SUL","AUTODROMO","AREGUA","LAGO YPACARAI","CHACO","ITAIPU","PAMPAS","ANDES"}
 -- Ground, alternating asphalt shades and curb accent from the 32-color palette.
 local themes={
-    {14,2,3,7},{30,3,4,8},{14,2,3,15},
-    {13,2,3,8},{6,2,3,12},{29,3,4,8},
-    {15,2,3,13},{30,2,3,7},{27,2,3,7}
+    {32,2,3,7},{32,2,3,7},{32,2,3,7},
+    {35,2,3,7},{13,2,3,7},{32,2,3,7},
+    {15,2,3,7},{30,2,3,7},{32,2,3,7},
+    {32,2,3,7},{30,2,3,7},{13,2,3,7},
+    {32,2,3,7},{35,2,3,7},{11,2,3,7}
 }
 local worlds={
     {name="CHILE",ids={5,6,7,8}},
@@ -27,7 +29,7 @@ assert(id>=1 and id<=#names)
 local T={id=id,name=names[id],world=worldOf(id),laps=laps[id],segments=({40,48,48,36,48,64,64,72,80,48,48,56,56,52,64})[id],bridge=id==2 or id==6 or id==8,quarry=id==4,halfWidth=6.7,parts={},trees={}}
 local scale=({1.32,1.20,1.32,1.65,1.30,1.17,1.16,1.13,1.10,1.10,1.20,1.10,1.10,1.10,1.15})[id]*1.2
 T.bound=math.ceil(({55,55,55,55,60,70,78,85,95,70,75,90,84,82,90})[id]*scale)
-T.theme=themes[id] or ({themes[5],themes[7],themes[6],themes[1],themes[8],themes[9]})[id-9]
+T.theme=themes[id]
 local tau=2*math.pi
 local function p(t)
     if id==1 then
@@ -110,7 +112,7 @@ for i=0,T.segments-1 do
     s.raised=a.y>0 or b.y>0
     local function edge(v,w) return {v.x+v.nx*w-s.x,v.y,v.z+v.nz*w-s.z} end
     -- Winding follows +Y regardless of the turn direction.
-    G.quad(s.mesh,edge(a,-T.halfWidth),edge(b,-T.halfWidth),edge(b,T.halfWidth),edge(a,T.halfWidth),T.theme[i%9<3 and 3 or 2])
+    G.quad(s.mesh,edge(a,-T.halfWidth),edge(b,-T.halfWidth),edge(b,T.halfWidth),edge(a,T.halfWidth),T.theme[2])
     if s.raised then
         for _,side in ipairs({-1,1}) do
             local u,v=edge(a,T.halfWidth*side),edge(b,T.halfWidth*side)
@@ -121,7 +123,7 @@ for i=0,T.segments-1 do
     end
     s.trim={x=s.x,y=0,z=s.z,mesh=G.mesh(),radius=s.radius}
     for _,side in ipairs({-1,1}) do
-        local w=T.halfWidth*side;local o=(T.halfWidth+0.28)*side
+        local w=T.halfWidth*side;local o=(T.halfWidth+0.48)*side
         local q={edge(a,w),edge(a,o),edge(b,o),edge(b,w)}
         if side>0 then q={q[4],q[3],q[2],q[1]} end
         if id~=2 or s.x*s.x+s.z*s.z>100 then G.quad(s.trim.mesh,q[1],q[2],q[3],q[4],i%2==0 and T.theme[4] or 9) end
@@ -156,13 +158,15 @@ for i=0,7 do
     local function v(u,l) return {a.nx*u+dx*l,0,a.nz*u+dz*l} end
     G.quad(T.finish.mesh,v(w,0.4),v(w+tile,0.4),v(w+tile,-0.4),v(w,-0.4),i%2==0 and 9 or 0)
 end
--- Shared 8-triangle tree: solid pyramid canopy plus two trunk faces.
+-- Shared 12-triangle simple tree: solid pyramid and a trunk visible from all sides.
 local tree=G.mesh()
 local v={{-1,1,-1},{1,1,-1},{1,1,1},{-1,1,1},{0,3.7,0}}
 for _,q in ipairs(v) do for _,n in ipairs(q) do tree.v[#tree.v+1]=n end end
-tree.f={1,5,2,14,2,5,3,30,3,5,4,14,4,5,1,30}
+tree.f={1,5,2,34,2,5,3,33,3,5,4,34,4,5,1,33}
 G.quad(tree,{-0.16,0,-0.16},{-0.16,1.4,-0.16},{0.16,1.4,-0.16},{0.16,0,-0.16},13)
 G.quad(tree,{0.16,0,-0.16},{0.16,1.4,-0.16},{0.16,1.4,0.16},{0.16,0,0.16},29)
+G.quad(tree,{0.16,0,0.16},{0.16,1.4,0.16},{-0.16,1.4,0.16},{-0.16,0,0.16},13)
+G.quad(tree,{-0.16,0,0.16},{-0.16,1.4,0.16},{-0.16,1.4,-0.16},{-0.16,0,-0.16},29)
 for i=1,6 do
     local progress=(i-0.3)*T.segments/6
     local x,z,yaw=T.sample(progress)

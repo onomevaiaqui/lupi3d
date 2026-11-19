@@ -13,7 +13,7 @@ G.quad(m,{0.54,0.33,1.175},{0.54,0.71,1.175},{-0.54,0.71,1.175},{-0.54,0.33,1.17
 local sections={{-1.12,0.73,0.44},{-0.72,0.80,0.50},{-0.43,1.16,0.49},{0.15,1.35,0.45},{0.60,1.10,0.46},{1.12,0.73,0.44}}
 for i=1,#sections-1 do
     local a,b=sections[i],sections[i+1]
-    G.quad(m,{-a[3],a[2],a[1]},{-b[3],b[2],b[1]},{b[3],b[2],b[1]},{a[3],a[2],a[1]},(i==2 or i==4) and 1 or 15)
+    G.quad(m,{-a[3],a[2],a[1]},{-b[3],b[2],b[1]},{b[3],b[2],b[1]},{a[3],a[2],a[1]},(i==2 or i==4) and 10 or 15)
     G.quad(m,{-0.55,0.72,a[1]},{-0.55,0.72,b[1]},{-b[3],b[2],b[1]},{-a[3],a[2],a[1]},(i==3 or i==4) and 22 or 24)
     G.quad(m,{0.55,0.72,b[1]},{0.55,0.72,a[1]},{a[3],a[2],a[1]},{b[3],b[2],b[1]},(i==3 or i==4) and 6 or 8)
 end
@@ -36,7 +36,7 @@ for _,x in ipairs({-track,track}) do for _,z in ipairs({-axle,axle}) do
         for _,v in ipairs({n+a,n+b,n+c,color}) do m.f[#m.f+1]=v end
     end
     for i=2,5 do triangle(1,i,i+1,0,x<0) end
-    triangle(2,3,7,10,x>0);triangle(6,1,8,10,x>0)
+    triangle(2,3,7,12,x>0);triangle(6,1,8,12,x>0)
 end end
 end
 tires(m,0.72,0.75,1,1)
@@ -63,7 +63,7 @@ local function build(sections,color,wheelHeight,axle,lights,roofColor,bumperColo
             local k=j%8+1
             local shade=color
             if j==4 or j==6 then shade=22
-            elseif j==5 then shade=sections[i][7] and 1 or roofColor
+            elseif j==5 then shade=sections[i][7] and 10 or roofColor
             elseif j==8 then shade=color+16 end
             G.quad(car,a[j],a[k],b[k],b[j],shade)
         end
@@ -92,7 +92,7 @@ local gurgel=build({
     {-1.08,0.67,0.48,0.81,0.56,0.81},{-0.94,0.69,0.48,0.81,0.56,1.48,true},
     {0.19,0.69,0.48,0.81,0.55,1.48},{0.55,0.69,0.48,0.80,0.58,0.80,true},
     {1.07,0.58,0.43,0.65,0.49,0.65}
-},14,0.59,0.72,2,13,10,0.09)
+},14,0.59,0.72,2,9,12,0.09)
 G.append(gurgel,G.box(0.48,0.50,0.22,0,10,0),0,0.92,-1.17)
 G.weld(gurgel)
 local puma=build({
@@ -105,7 +105,7 @@ local chevette=build({
     {-1.30,0.66,0.31,0.68,0.53,0.68},{-0.75,0.70,0.31,0.70,0.53,0.72},
     {-0.43,0.70,0.31,0.71,0.49,1.19,true},{0.38,0.70,0.31,0.71,0.49,1.19},
     {0.78,0.68,0.31,0.67,0.54,0.69,true},{1.30,0.63,0.31,0.63,0.52,0.63}
-},8,0.46,0.83,2,8,12,0.15)
+},15,0.46,0.83,2,9,12,0.15)
 -- Split-window Kombi: dedicated silhouette, inset windows and faceted round trim.
 local kombi=G.mesh()
 local function panel(a,b,c,d,color,nx,ny,nz)
@@ -215,7 +215,7 @@ for _,model in ipairs(m.models) do
     local faces=model.mesh.f
     for i=4,#faces,4 do
         if faces[i]==22 then faces[i]=10
-        elseif faces[i]==6 then faces[i]=1 end
+        elseif faces[i]==6 then faces[i]=10 end
     end
 end
 return m
