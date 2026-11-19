@@ -109,6 +109,10 @@ for i=0,T.segments-1 do
     local a,b=points[i],points[i+1];local dx,dz=b.x-a.x,b.z-a.z
     local s={x=(a.x+b.x)/2,y=0,z=(a.z+b.z)/2,mesh=G.mesh(),a=a,b=b,dx=dx,dz=dz,len2=dx*dx+dz*dz}
     s.heading=math.atan(s.dx,s.dz)
+    local dnx,dnz=b.nx-a.nx,b.nz-a.nz
+    local yaw=math.atan(-a.nz,a.nx)
+    s.drive={dnx,dnz,yaw,(math.atan(-b.nz,b.nx)-yaw+math.pi)%(math.pi*2)-math.pi,
+        2*(dx*dnx+dz*dnz),dnx*dnx+dnz*dnz}
     s.length=math.sqrt(s.len2);T.length=T.length+s.length
     s.radius=s.length/2+T.halfWidth+0.35
     s.raised=a.y>0 or b.y>0
@@ -138,6 +142,24 @@ function T.sample(progress)
 end
 function T.segmentLength(progress)
     return T.parts[math.floor(progress%T.segments)+1].length
+end
+-- Interpolate the actual road edge normals, not the discontinuous chord heading.
+function T.sampleLane(progress,lane)
+    local f=progress%T.segments;local i=math.floor(f);local u=f-i
+    local s=T.parts[i+1];local d=s.drive
+    return s.a.x+s.dx*u+(s.a.nx+d[1]*u)*lane,
+        s.a.z+s.dz*u+(s.a.nz+d[2]*u)*lane,
+        d[3]+d[4]*u,s.a.y+(s.b.y-s.a.y)*u
+end
+function T.advanceLane(total,distance,lane)
+    while true do
+        local whole=math.floor(total);local u=total-whole
+        local s=T.parts[whole%T.segments+1];local d=s.drive
+        local length=math.sqrt(math.max(0.000001,s.len2+lane*(d[5]+lane*d[6])))
+        local available=(1-u)*length
+        if distance<available then return total+distance/length,length end
+        distance=distance-available;total=whole+1
+    end
 end
 -- Spatial recovery avoids a full-course scan on every offroad physics substep.
 local cells={}

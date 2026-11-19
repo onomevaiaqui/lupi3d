@@ -1,5 +1,11 @@
 # Lupi Combat Rally 3D
 
+## Curvas dos adversários — 13.7
+
+Corrigido o salto dos rivais ao atravessar os segmentos da pista. A posição na faixa agora interpola as normais das bordas, e a orientação gira continuamente. O avanço considera o comprimento da faixa na curva e divide a distância corretamente quando atravessa uma junção. A IA continua sendo atualizada em todos os passos da física, sem pular quadros.
+
+Os alvos de velocidade/dificuldade e a física do jogador foram preservados. A medição local mostrou trajetória contínua em 4.120 junções das 15 pistas, incluindo a chegada. Veja [diagnóstico e testes](docs/CURVAS-IA-13.7.md). Teste: `lua .tools/check-ai-motion.lua`.
+
 ## Correção de desaceleração — 13.6
 
 Corrigida a recuperação da referência do trecho quando o carro volta a outra parte da pista, incluindo viadutos: uma referência antiga podia classificar asfalto como grama e reduzir a velocidade sem perda de vida. A busca usa uma grade espacial e considera a altura nos viadutos. Zebras passam a fazer parte da área de rodagem, com uma pequena tolerância de borda. O fim do nitro retorna gradualmente à velocidade normal, em vez de aplicar um corte instantâneo.

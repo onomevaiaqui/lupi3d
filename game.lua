@@ -1,5 +1,5 @@
 require "main"
-assert(Game.version=="13.6","Atualizacao incompleta: main.lua 13.6 esperado")
+assert(Game.version=="13.7","Atualizacao incompleta: main.lua 13.7 esperado")
 
 function update(frame)
     Game.step()

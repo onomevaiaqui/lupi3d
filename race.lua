@@ -223,15 +223,12 @@ function Race.step(r,dt,input)
                 local target=car.aiSpeed*boost*(car.stun>0 and 0.4 or 1)
                 if car.speed<target then car.speed=math.min(target,car.speed+car.model.accel*pace*cfg.rival_difficulty*h)
                 else car.speed=math.max(target,car.speed-cfg.brake*h) end
-                local length=r.track.segmentLength(car.total)
-                car.total=car.total+car.speed*h/length
-                car.progress=car.total%r.track.segments;car.laps=math.max(0,math.floor(car.total/r.track.segments))
-                local x,z,yaw,segmentLength,height=r.track.sample(car.progress)
-                car.segmentLength=segmentLength
                 if car.total>0 then
                     car.lane=car.lane+(car.targetLane-car.lane)*math.min(1,h*car.laneResponse)
                 end
-                car.x,car.z,car.yaw,car.y=x+math.cos(yaw)*car.lane,z-math.sin(yaw)*car.lane,yaw,height
+                car.total,car.segmentLength=r.track.advanceLane(car.total,car.speed*h,car.lane)
+                car.progress=car.total%r.track.segments;car.laps=math.max(0,math.floor(car.total/r.track.segments))
+                car.x,car.z,car.yaw,car.y=r.track.sampleLane(car.progress,car.lane)
                 if car.laps>=r.track.laps then
                     r.finishedOpponents=(r.finishedOpponents or 0)+1
                     car.finishOrder=r.finishedOpponents;car.done=true;car.speed=0
