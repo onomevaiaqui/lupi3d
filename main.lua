@@ -12,9 +12,10 @@ local Save=require "save"
 local audio=require "audio"
 local scenery=require "scenery"
 local garagePart,garageReturn,garageMessage=1,"select",""
-Game={version="13.3",state="menu",menu=1,selected=1,triangles=0,race=nil,detail=true}
+Game={version="13.4",state="menu",menu=1,selected=1,triangles=0,race=nil,detail=true}
 -- Fixed oblique top-down view; follows position, never the car's heading.
 local camera={x=0,y=18,z=0,yaw=math.atan(12,14),pitch=-math.atan(18/math.sqrt(340))}
+local gridMark
 local frame=0
 local titleTime=0
 local alphabet="ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 "
@@ -33,6 +34,20 @@ end
 function Game.startRace(id)
     audio.scene("race",true)
     Game.selected=id;Game.race=Race.new(id,Save.model,Save.parts,Save.name);Game.state="race"
+    local r=Game.race
+    renderer.begin(camera)
+    for _,part in ipairs(r.track.parts) do renderer.prepare(part,camera);renderer.prepare(part.trim,camera) end
+    for _,mark in ipairs(r.track.markings) do renderer.prepare(mark,camera) end
+    renderer.prepare(r.track.finish,camera)
+    for _,slot in ipairs(r.grid) do slot.mesh=gridMark;renderer.prepare(slot,camera) end
+    for _,obj in ipairs(r.track.decor) do renderer.prepare(obj,camera) end
+    for _,tree in ipairs(r.track.trees) do
+        local original=tree.mesh
+        tree.mesh=tree.basic;renderer.prepare(tree,camera)
+        tree.mesh=tree.detailMesh;renderer.prepare(tree,camera)
+        tree.mesh=original
+    end
+    for _,pickup in ipairs(r.combat.pickups) do renderer.prepare(pickup,camera) end
     if type(collectgarbage)=="function" then pcall(collectgarbage,"collect") end
 end
 local selectedWorld=1
@@ -146,7 +161,7 @@ end
 local function text(s,x,y,c) ui.print(s,x,y,colors.index[c or 9]) end
 local function panel()
     rect(40,38,400,190,10);rect(40,38,400,3,8)
-    text("LUPI COMBAT RALLY 13.3",122,53,15)
+    text("LUPI COMBAT RALLY 13.4",122,53,15)
 end
 local titleCamera={x=-1.90,y=1.83,z=-4.85,yaw=0,pitch=-0.075}
 local titleMesh=geometry.mesh()
@@ -403,26 +418,45 @@ end
 local dustMesh=geometry.mesh()
 geometry.quad(dustMesh,{-0.38,0,-0.50},{-0.58,0,0.38},{0.58,0,0.38},{0.38,0,-0.50},15)
 local dust={mesh=dustMesh,radius=1}
-local gridMark=geometry.mesh()
+gridMark=geometry.mesh()
 for _,x in ipairs({-0.93,0.84}) do
     geometry.quad(gridMark,{x,0,-1.42},{x,0,1.42},{x+0.09,0,1.42},{x+0.09,0,-1.42},9)
 end
 geometry.quad(gridMark,{-0.93,0,-1.42},{-0.93,0,-1.33},{0.93,0,-1.33},{0.93,0,-1.42},9)
+local function drawRoad(track,p,raised)
+    for _,part in ipairs(track.parts) do
+        if part.raised==raised then
+            renderer.submit(part)
+            local dx,dz=part.x-p.x,part.z-p.z
+            if dx*dx+dz*dz<225 then renderer.submit(part.trim) end
+        end
+    end
+end
+local function submitLevel(track,obj,upper,offset)
+    if (track.bridge and obj.y>(offset or 0) or false)==upper then renderer.submit(obj) end
+end
+local function drawObjects(r,upper)
+    local track=r.track
+    for _,item in ipairs(r.combat.pickups) do if item.cooldown==0 then submitLevel(track,item,upper) end end
+    for _,mine in ipairs(r.combat.mines) do if mine.active then submitLevel(track,mine,upper,0.12) end end
+    for _,car in ipairs(r.cars) do if car.respawn==0 then
+        submitLevel(track,car,upper)
+        if Game.detail and car.nitro>0 then
+            car.flame=car.flame or {mesh=scenery.flame,y=0,radius=3}
+            car.flame.x,car.flame.z,car.flame.yaw,car.flame.y=car.x,car.z,car.yaw,car.y;submitLevel(track,car.flame,upper)
+        end
+    end end
+    for _,b in ipairs(r.combat.blasts) do if b.active then submitLevel(track,b,upper,0.12) end end
+    for _,trace in ipairs(r.combat.traces) do if trace.active then submitLevel(track,trace,upper,0.65) end end
+    renderer.flush()
+end
 local function drawRace()
     local r=Game.race;local p=r.player;local track=r.track
     rect(0,20,480,208,track.theme[1])
     camera.x=p.x-12;camera.z=p.z-14;camera.y=18+p.y*0.4
     renderer.begin(camera)
-    local function drawRoad(raised)
-        for _,part in ipairs(track.parts) do
-            if part.raised==raised then
-                renderer.submit(part)
-                local dx,dz=part.x-p.x,part.z-p.z
-                if dx*dx+dz*dz<225 then renderer.submit(part.trim) end
-            end
-        end
-    end
-    drawRoad(false)
+
+    drawRoad(track,p,false)
     renderer.flush()
     if Game.detail then for _,mark in ipairs(track.markings) do renderer.submit(mark) end;renderer.flush() end
     renderer.submit(track.finish)
@@ -435,23 +469,7 @@ local function drawRace()
         tree.mesh=Game.detail and tree.detailMesh or tree.basic
         renderer.submit(tree)
     end
-    local function drawObjects(upper)
-    local function submit(obj, offset)
-        if (track.bridge and obj.y>(offset or 0) or false)==upper then renderer.submit(obj) end
-    end
-    for _,item in ipairs(r.combat.pickups) do if item.cooldown==0 then submit(item) end end
-    for _,mine in ipairs(r.combat.mines) do if mine.active then submit(mine,0.12) end end
-    for _,car in ipairs(r.cars) do if car.respawn==0 then
-        submit(car)
-        if Game.detail and car.nitro>0 then
-            car.flame=car.flame or {mesh=scenery.flame,y=0,radius=3}
-            car.flame.x,car.flame.z,car.flame.yaw,car.flame.y=car.x,car.z,car.yaw,car.y;submit(car.flame)
-        end
-    end end
-    for _,b in ipairs(r.combat.blasts) do if b.active then submit(b,0.12) end end
-    for _,trace in ipairs(r.combat.traces) do if trace.active then submit(trace,0.65) end end
-    renderer.flush()
-    end
+
     if Game.detail and p.speed>3 and p.respawn==0
         and (p.offroad or r.sliding) then
         local distance=1.6+(frame%12)*0.07
@@ -460,15 +478,15 @@ local function drawRace()
         dust.y,dust.yaw=p.y+0.06,p.yaw
         renderer.submit(dust)
     end
-    drawObjects(false)
+    drawObjects(r,false)
     if track.bridge then
-        drawRoad(true)
+        drawRoad(track,p,true)
         renderer.flush()
-        drawObjects(true)
+        drawObjects(r,true)
     end
     Game.triangles,Game.dropped=renderer.triangles,renderer.dropped
     rect(0,0,480,20,10);rect(0,228,480,42,10)
-    text("COMBAT RALLY 13.3 / "..r.id,10,6,15);text((Game.detail and "X ALTO " or "X LEVE ")..Game.triangles,282,6,9)
+    text("COMBAT RALLY 13.4 / "..r.id,10,6,15);text((Game.detail and "X ALTO " or "X LEVE ")..Game.triangles,282,6,9)
     text(Game.reported_fps and "FPS "..math.floor(Game.reported_fps+0.5) or "FPS --",390,6,9)
     text(string.format("%03d KM/H  VOLTA %d/%d  POS %d/6  VIDA %d",math.floor(p.speed*6+0.5),p.laps,track.laps,Race.position(r),p.hp),10,235,15)
     local item=p.weapon=="shot" and "TIRO" or p.weapon=="mine" and "MINA" or "SEM ARMA"

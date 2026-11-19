@@ -1,5 +1,5 @@
 {
-  "project": "Lupi Combat Rally 13.3",
+  "project": "Lupi Combat Rally 13.4",
   "files": [
     {
       "file": "colors.lua",
@@ -14,8 +14,8 @@
       "metadata": {
         "type": "lua_code"
       },
-      "bytes": 394,
-      "sha256": "09a5a896023f0e988f30ff564b1900ab27c2b049a768081e92e3101ecf7827ad"
+      "bytes": 426,
+      "sha256": "59667a1e9501859f0017651994c651fa7778ac057d81532a7c5baa12d4797cdd"
     },
     {
       "file": "game.lua",
@@ -23,7 +23,7 @@
         "type": "lua_code"
       },
       "bytes": 153,
-      "sha256": "7c21aa37f8667517bc8d375941e0edfb1b144a45c171f040f86d09252c9987be"
+      "sha256": "12962ca266bf9721aabb4f36ad7fea1141a0dac2d97a14e50a9920311387c8cf"
     },
     {
       "file": "geometry.lua",
@@ -54,16 +54,16 @@
       "metadata": {
         "type": "lua_code"
       },
-      "bytes": 22530,
-      "sha256": "2c9140527c2d6ed61b0365dabb9b83e799cda138c4bc3b849886e41716ea2b45"
+      "bytes": 23424,
+      "sha256": "3c604a01cb4a8880281de270a119ab34e70c8aaa6d957b994243c952f6ec4344"
     },
     {
       "file": "renderer.lua",
       "metadata": {
         "type": "lua_code"
       },
-      "bytes": 7511,
-      "sha256": "7d04785a25dedc8a4550f9551d78c7d53c5085b22fe8e3db5c9a68ef6b32f3bc"
+      "bytes": 10917,
+      "sha256": "a28b50410f5fcdffb506c1df485c44bf265b0378324919367329cd3e49c44ad6"
     },
     {
       "file": "race.lua",
@@ -222,5 +222,5 @@
       "sha256": "09ab62051f935bb3fe74421bf384e11c6b5ef79ae514ebdb306ab98e4cbd37b8"
     }
   ],
-  "totalBytes": 109172
+  "totalBytes": 113505
 }

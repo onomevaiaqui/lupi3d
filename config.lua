@@ -3,6 +3,7 @@ return {
     controller="snes", -- SNES: B=BTN_Z, A=BTN_G, L=BTN_Q, R=BTN_E, Y=BTN_F
     fallback_fps=60,
     rival_difficulty=1.15, -- 15% above the 13.1 AI pace; player physics unchanged
+    cache_static_geometry=true,
     projection=300,
     max_triangles=512, -- reusable triangle pool
     eye_height=0,

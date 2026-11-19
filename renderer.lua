@@ -4,42 +4,96 @@ local colors=require "colors"
 local floor,sin,cos=math.floor,math.sin,math.cos
 local projection=cfg.projection
 local NEAR=0.12
-local R={triangles=0,culled=0,dropped=0,vertices=0,input_triangles=0}
+local R={triangles=0,culled=0,dropped=0,vertices=0,input_triangles=0,cached_vertices=0,cache_builds=0}
 local pool,list={},{}
 for i=1,cfg.max_triangles do pool[i]={} end
 local count=0
 local camera,cy,sy,cp,sp
+local viewEpoch,lastYaw,lastPitch=0,nil,nil
 function R.begin(state)
     camera=state
-    cy,sy=cos(state.yaw),sin(state.yaw)
-    cp,sp=cos(state.pitch or 0),sin(state.pitch or 0)
+    if lastYaw~=state.yaw or lastPitch~=(state.pitch or 0) then
+        lastYaw,lastPitch=state.yaw,state.pitch or 0;viewEpoch=viewEpoch+1
+        cy,sy=cos(lastYaw),sin(lastYaw);cp,sp=cos(lastPitch),sin(lastPitch)
+    end
     R.triangles,R.culled,R.dropped,R.vertices,R.input_triangles=0,0,0,0,0
+    R.cached_vertices,R.cache_builds=0,0
     count=0
+end
+-- Prepared local vertices retain XYZ geometry; only perspective/translation repeat.
+-- Cache ownership follows each scene object, so previous courses can be collected.
+local function prepare(obj,state,cy,sy,cp,sp)
+    local caches=obj.viewCaches
+    if not caches then caches={};obj.viewCaches=caches end
+    local mesh=obj.mesh
+    local cached=caches[mesh]
+    if cached and cached.yaw==obj.yaw and cached.cameraYaw==state.yaw and cached.pitch==(state.pitch or 0) then
+        cached.epoch=lastYaw==state.yaw and lastPitch==(state.pitch or 0) and viewEpoch or nil
+        return cached
+    end
+    local v=mesh.v
+    cached={yaw=obj.yaw,cameraYaw=state.yaw,pitch=state.pitch or 0,epoch=lastYaw==state.yaw and lastPitch==(state.pitch or 0) and viewEpoch or nil}
+    local oc,os
+    if obj.yaw then oc,os=cos(obj.yaw),sin(obj.yaw) end
+    for i=1,#v,3 do
+        local x,y,z=v[i],v[i+1],v[i+2]
+        if oc then x,z=x*oc+z*os,-x*os+z*oc end
+        local forward=x*sy+z*cy
+        cached[i],cached[i+1],cached[i+2]=x*cy-z*sy,y*cp-forward*sp,y*sp+forward*cp
+    end
+    caches[mesh]=cached
+    R.cache_builds=R.cache_builds+1
+    return cached
+end
+function R.prepare(obj,state)
+    if not cfg.cache_static_geometry then return end
+    state=state or camera
+    if state.yaw==lastYaw and (state.pitch or 0)==lastPitch then return prepare(obj,state,cy,sy,cp,sp) end
+    return prepare(obj,state,cos(state.yaw),sin(state.yaw),cos(state.pitch or 0),sin(state.pitch or 0))
 end
 -- Projection is consumed before the next object is submitted.
 local px,py,pz,sx,syScreen={},{},{},{},{}
-local function project(obj,view)
-    local v=obj.mesh.v
-    local objectX,objectY,objectZ=obj.x,obj.y,obj.z
-    local cameraX,cameraY,cameraZ=camera.x,camera.y,camera.z
-    local eyeHeight=cfg.eye_height
-    local oc,os
-    if obj.yaw then oc,os=cos(obj.yaw),sin(obj.yaw) end
+local function projectCached(obj,v,side,height,depth)
     R.vertices=R.vertices+#v/3
+    R.cached_vertices=R.cached_vertices+#v/3
     R.input_triangles=R.input_triangles+#obj.mesh.f/4
+    local k=0
     for i=1,#v,3 do
-        local x,y,z=v[i],v[i+1]+objectY,v[i+2]
-        if oc then x,z=x*oc+z*os,-x*os+z*oc end
-        x,z=x+objectX,z+objectZ
-        if not view then
-            x,y,z=x-cameraX,y-cameraY-eyeHeight,z-cameraZ
-            local depth=x*sy+z*cy
-            x=x*cy-z*sy
-            y,z=y*cp-depth*sp,y*sp+depth*cp
-        end
-        local k=(i+2)/3
+        local x,y,z=v[i]+side,v[i+1]+height,v[i+2]+depth
+        k=k+1
         px[k],py[k],pz[k]=x,y,z
         if z>=NEAR then local s=projection/z;sx[k]=240+x*s;syScreen[k]=124-y*s end
+    end
+end
+local function project(obj,view,side,height,depth)
+    local v=obj.mesh.v
+    R.vertices=R.vertices+#v/3
+    R.input_triangles=R.input_triangles+#obj.mesh.f/4
+    local oc,os=1,0
+    if obj.yaw then oc,os=cos(obj.yaw),sin(obj.yaw) end
+    local k=0
+    if view then
+        for i=1,#v,3 do
+            local x,y,z=v[i]*oc+v[i+2]*os+obj.x,v[i+1]+obj.y,-v[i]*os+v[i+2]*oc+obj.z
+            k=k+1;px[k],py[k],pz[k]=x,y,z
+            if z>=NEAR then local scale=projection/z;sx[k]=240+x*scale;syScreen[k]=124-y*scale end
+        end
+        return
+    end
+    if not side then
+        local dx,dy,dz=obj.x-camera.x,obj.y-camera.y-cfg.eye_height,obj.z-camera.z
+        local forward=dx*sy+dz*cy
+        side,height,depth=dx*cy-dz*sy,dy*cp-forward*sp,dy*sp+forward*cp
+    end
+    -- Fuse object yaw with camera yaw once per object, not once per vertex.
+    local xx,xz=oc*cy+os*sy,os*cy-oc*sy
+    local zx,zz=oc*sy-os*cy,os*sy+oc*cy
+    for i=1,#v,3 do
+        local vx,vy,vz=v[i],v[i+1],v[i+2]
+        local forward=vx*zx+vz*zz
+        local x,y,z=vx*xx+vz*xz+side,vy*cp-forward*sp+height,vy*sp+forward*cp+depth
+        k=k+1;px[k],py[k],pz[k]=x,y,z
+        if z>=NEAR then local scale=projection/z;sx[k]=240+x*scale;syScreen[k]=124-y*scale end
     end
 end
 local function store(ax,ay,bx,by,dx,dy,color,depth)
@@ -75,30 +129,37 @@ local function queue(ax,ay,bx,by,dx,dy,color,depth)
     end
     screenX[1],screenY[1],screenX[2],screenY[2],screenX[3],screenY[3]=ax,ay,bx,by,dx,dy
     local n=3
+    -- Intersections cannot escape a boundary already containing all three vertices.
+    local needed=((ax<0 or bx<0 or dx<0) and 1 or 0)
+        | ((ax>479 or bx>479 or dx>479) and 2 or 0)
+        | ((ay<20 or by<20 or dy<20) and 4 or 0)
+        | ((ay>227 or by>227 or dy>227) and 8 or 0)
     for edge=1,4 do
-        local horizontal=edge<=2
-        local boundary=edge==1 and 0 or edge==2 and 479 or edge==3 and 20 or 227
-        local greater=edge==1 or edge==3
-        local m=0
-        local prev=n
-        for i=1,n do
-            local p=horizontal and screenX[prev] or screenY[prev]
-            local q=horizontal and screenX[i] or screenY[i]
-            local insideP=greater and p>=boundary or (not greater and p<=boundary)
-            local insideQ=greater and q>=boundary or (not greater and q<=boundary)
-            if insideP~=insideQ then
-                local t=(boundary-p)/(q-p)
-                m=m+1
-                outX[m]=screenX[prev]+(screenX[i]-screenX[prev])*t
-                outY[m]=screenY[prev]+(screenY[i]-screenY[prev])*t
-                if horizontal then outX[m]=boundary else outY[m]=boundary end
+        if needed & (1 << (edge-1))~=0 then
+            local horizontal=edge<=2
+            local boundary=edge==1 and 0 or edge==2 and 479 or edge==3 and 20 or 227
+            local greater=edge==1 or edge==3
+            local m=0
+            local prev=n
+            for i=1,n do
+                local p=horizontal and screenX[prev] or screenY[prev]
+                local q=horizontal and screenX[i] or screenY[i]
+                local insideP=greater and p>=boundary or (not greater and p<=boundary)
+                local insideQ=greater and q>=boundary or (not greater and q<=boundary)
+                if insideP~=insideQ then
+                    local t=(boundary-p)/(q-p)
+                    m=m+1
+                    outX[m]=screenX[prev]+(screenX[i]-screenX[prev])*t
+                    outY[m]=screenY[prev]+(screenY[i]-screenY[prev])*t
+                    if horizontal then outX[m]=boundary else outY[m]=boundary end
+                end
+                if insideQ then m=m+1; outX[m]=screenX[i]; outY[m]=screenY[i] end
+                prev=i
             end
-            if insideQ then m=m+1; outX[m]=screenX[i]; outY[m]=screenY[i] end
-            prev=i
+            screenX,outX=outX,screenX; screenY,outY=outY,screenY
+            n=m
+            if n<3 then return end
         end
-        screenX,outX=outX,screenX; screenY,outY=outY,screenY
-        n=m
-        if n<3 then return end
     end
     for i=2,n-1 do
         store(screenX[1],screenY[1],screenX[i],screenY[i],screenX[i+1],screenY[i+1],color,depth)
@@ -155,26 +216,33 @@ end
 
 local function farfirst(a,b) return a[8]>b[8] end
 function R.submit(obj,view)
-    if not view and obj.radius then
+    local side,height,depth
+    if not view and (obj.radius or obj.viewCaches and cfg.cache_static_geometry) then
         local dx,dy,dz=obj.x-camera.x,obj.y-camera.y-cfg.eye_height,obj.z-camera.z
         local forward=dx*sy+dz*cy
-        local depth=dy*sp+forward*cp
-        local height=dy*cp-forward*sp
-        local side=dx*cy-dz*sy
+        depth=dy*sp+forward*cp
+        height=dy*cp-forward*sp
+        side=dx*cy-dz*sy
         local r=obj.radius
-        if depth< -r or depth>(cfg.draw_distance or 38)+r
+        if r and (depth< -r or depth>(cfg.draw_distance or 38)+r
             or math.abs(side)>math.max(0,depth)*240/projection+r*1.5
             or height>math.max(0,depth)*104/projection+r*1.5
-            or height< -math.max(0,depth)*103/projection-r*1.5 then return end
+            or height< -math.max(0,depth)*103/projection-r*1.5) then return end
     end
-    project(obj,view);emit(obj)
+    if not view and obj.viewCaches and cfg.cache_static_geometry then
+        local cached=obj.viewCaches[obj.mesh]
+        if not cached or cached.epoch~=viewEpoch or cached.yaw~=obj.yaw then cached=prepare(obj,camera,cy,sy,cp,sp) end
+        projectCached(obj,cached,side,height,depth)
+    else project(obj,view,side,height,depth) end
+    emit(obj)
 end
 function R.flush()
     for i=#list,count+1,-1 do list[i]=nil end
     table.sort(list,farfirst)
+    local drawTriangle,index=ui.trisfill,colors.index
     for i=1,count do
         local t=list[i]
-        ui.trisfill(t[1],t[2],t[3],t[4],t[5],t[6],colors.index[t[7]])
+        drawTriangle(t[1],t[2],t[3],t[4],t[5],t[6],index[t[7]])
     end
     R.triangles=R.triangles+count
     count=0

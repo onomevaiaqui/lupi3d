@@ -1,5 +1,13 @@
 # Lupi Combat Rally 3D
 
+## Renderização otimizada para teste — 13.4
+
+O cenário estático tem transformações preparadas ao abrir a corrida; carros usam uma projeção que combina as rotações de objeto e câmera. O recorte pula as bordas já contendo o triângulo, e o desenho deixa de criar funções auxiliares a cada quadro. Modelos, polígonos, cores, pista e câmera permanecem iguais à 13.3.
+
+Na comparação local, o desenho ficou cerca de 10% mais rápido, com aumento de aproximadamente 169 KiB no maior uso de memória Lua observado. Os 127 enquadramentos/telas comparados não apresentaram diferenças de pixels na rasterização de teste. Isso não garante 60 FPS no Lupi: a implementação continua usando Lua e `ui.trisfill`, sem firmware especial ou modelos embutidos na flash.
+
+Veja [implementação, medições e roteiro de teste no console](docs/RENDER-13.4.md).
+
 ## Revisão visual — 13.3
 
 Asfalto mais escuro e uniforme, zebras vermelhas/brancas mais largas e marcações de três faixas mais legíveis. Os seis carros mantêm a contagem de polígonos, com vidros escuros, pintura mais definida, rodas com acabamento claro, Chevette em tom creme e Gurgel com teto claro. A paleta passou de 32 para 36 cores para separar terreno e vegetação, com iluminação fixa mais suave e sem sombras projetadas.
