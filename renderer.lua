@@ -4,7 +4,7 @@ local colors=require "colors"
 local floor,sin,cos=math.floor,math.sin,math.cos
 local projection=cfg.projection
 local NEAR=0.12
-local R={triangles=0,culled=0,dropped=0,vertices=0,input_triangles=0,cached_vertices=0,cache_builds=0}
+local R={triangles=0,culled=0,dropped=0,vertices=0,input_triangles=0,cached_vertices=0,cache_builds=0,objects=0,rejected=0,early_rejected=0}
 local pool,list={},{}
 for i=1,cfg.max_triangles do pool[i]={} end
 local count=0
@@ -18,6 +18,7 @@ function R.begin(state)
     end
     R.triangles,R.culled,R.dropped,R.vertices,R.input_triangles=0,0,0,0,0
     R.cached_vertices,R.cache_builds=0,0
+    R.objects,R.rejected,R.early_rejected=0,0,0
     count=0
 end
 -- Prepared local vertices retain XYZ geometry; only perspective/translation repeat.
@@ -35,12 +36,18 @@ local function prepare(obj,state,cy,sy,cp,sp)
     cached={yaw=obj.yaw,cameraYaw=state.yaw,pitch=state.pitch or 0,epoch=lastYaw==state.yaw and lastPitch==(state.pitch or 0) and viewEpoch or nil}
     local oc,os
     if obj.yaw then oc,os=cos(obj.yaw),sin(obj.yaw) end
+    local minx,miny,minz,maxx,maxy,maxz=math.huge,math.huge,math.huge,-math.huge,-math.huge,-math.huge
     for i=1,#v,3 do
         local x,y,z=v[i],v[i+1],v[i+2]
         if oc then x,z=x*oc+z*os,-x*os+z*oc end
         local forward=x*sy+z*cy
         cached[i],cached[i+1],cached[i+2]=x*cy-z*sy,y*cp-forward*sp,y*sp+forward*cp
+        local a,b,c=cached[i],cached[i+1],cached[i+2]
+        if a<minx then minx=a end;if a>maxx then maxx=a end
+        if b<miny then miny=b end;if b>maxy then maxy=b end
+        if c<minz then minz=c end;if c>maxz then maxz=c end
     end
+    cached.minx,cached.miny,cached.minz,cached.maxx,cached.maxy,cached.maxz=minx,miny,minz,maxx,maxy,maxz
     caches[mesh]=cached
     R.cache_builds=R.cache_builds+1
     return cached
@@ -58,6 +65,15 @@ local function projectCached(obj,v,side,height,depth)
     R.cached_vertices=R.cached_vertices+#v/3
     R.input_triangles=R.input_triangles+#obj.mesh.f/4
     local k=0
+    if depth+v.minz>=NEAR then
+        -- The whole cached object is in front of the near plane. Only depth
+        -- and screen positions are consumed by emit; XYZ scratch is unnecessary.
+        for i=1,#v,3 do
+            local z=v[i+2]+depth;local scale=projection/z;k=k+1
+            pz[k]=z;sx[k]=240+(v[i]+side)*scale;syScreen[k]=124-(v[i+1]+height)*scale
+        end
+        return
+    end
     for i=1,#v,3 do
         local x,y,z=v[i]+side,v[i+1]+height,v[i+2]+depth
         k=k+1
@@ -88,6 +104,16 @@ local function project(obj,view,side,height,depth)
     -- Fuse object yaw with camera yaw once per object, not once per vertex.
     local xx,xz=oc*cy+os*sy,os*cy-oc*sy
     local zx,zz=oc*sy-os*cy,os*sy+oc*cy
+    local r=obj.mesh.cullRadius
+    if r and depth-r>=NEAR then
+        for i=1,#v,3 do
+            local vx,vy,vz=v[i],v[i+1],v[i+2]
+            local forward=vx*zx+vz*zz
+            local z=vy*sp+forward*cp+depth;local scale=projection/z;k=k+1
+            pz[k]=z;sx[k]=240+(vx*xx+vz*xz+side)*scale;syScreen[k]=124-(vy*cp-forward*sp+height)*scale
+        end
+        return
+    end
     for i=1,#v,3 do
         local vx,vy,vz=v[i],v[i+1],v[i+2]
         local forward=vx*zx+vz*zz
@@ -215,9 +241,41 @@ local function emit(obj)
 end
 
 local function farfirst(a,b) return a[8]>b[8] end
+-- Conservative plane tests: a one-pixel guard keeps clipping-edge pixels intact.
+local leftNorm=math.sqrt(projection^2+241^2)
+local rightNorm=math.sqrt(projection^2+240^2)
+local topNorm=math.sqrt(projection^2+105^2)
+local bottomNorm=math.sqrt(projection^2+104^2)
+local function outsideBounds(b,x,y,z)
+    local far=z+b.maxz
+    return far<NEAR or projection*(x+b.maxx)+241*far<0
+        or 240*far-projection*(x+b.minx)<0
+        or 105*far-projection*(y+b.miny)<0
+        or 104*far+projection*(y+b.maxy)<0
+end
+function R.prepareMesh(mesh)
+    local r=mesh.cullRadius
+    if not r then
+        local max=0
+        for i=1,#mesh.v,3 do
+            local v=mesh.v;local d=v[i]^2+v[i+1]^2+v[i+2]^2
+            if d>max then max=d end
+        end
+        r=math.sqrt(max);mesh.cullRadius=r
+    end
+    return r
+end
+local function outsideSphere(mesh,x,y,z)
+    local r=mesh.cullRadius or R.prepareMesh(mesh)
+    return z+r<NEAR or projection*x+241*z+r*leftNorm<0
+        or 240*z-projection*x+r*rightNorm<0
+        or 105*z-projection*y+r*topNorm<0
+        or 104*z+projection*y+r*bottomNorm<0
+end
 function R.submit(obj,view)
+    R.objects=R.objects+1
     local side,height,depth
-    if not view and (obj.radius or obj.viewCaches and cfg.cache_static_geometry) then
+    if not view and (cfg.early_culling or obj.radius or obj.viewCaches and cfg.cache_static_geometry) then
         local dx,dy,dz=obj.x-camera.x,obj.y-camera.y-cfg.eye_height,obj.z-camera.z
         local forward=dx*sy+dz*cy
         depth=dy*sp+forward*cp
@@ -227,13 +285,21 @@ function R.submit(obj,view)
         if r and (depth< -r or depth>(cfg.draw_distance or 38)+r
             or math.abs(side)>math.max(0,depth)*240/projection+r*1.5
             or height>math.max(0,depth)*104/projection+r*1.5
-            or height< -math.max(0,depth)*103/projection-r*1.5) then return end
+            or height< -math.max(0,depth)*103/projection-r*1.5) then R.rejected=R.rejected+1;return end
     end
     if not view and obj.viewCaches and cfg.cache_static_geometry then
         local cached=obj.viewCaches[obj.mesh]
         if not cached or cached.epoch~=viewEpoch or cached.yaw~=obj.yaw then cached=prepare(obj,camera,cy,sy,cp,sp) end
+        if cfg.early_culling and outsideBounds(cached,side,height,depth) then
+            R.rejected=R.rejected+1;R.early_rejected=R.early_rejected+1;return
+        end
         projectCached(obj,cached,side,height,depth)
-    else project(obj,view,side,height,depth) end
+    else
+        if not view and cfg.early_culling and outsideSphere(obj.mesh,side,height,depth) then
+            R.rejected=R.rejected+1;R.early_rejected=R.early_rejected+1;return
+        end
+        project(obj,view,side,height,depth)
+    end
     emit(obj)
 end
 function R.flush()

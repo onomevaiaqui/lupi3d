@@ -4,6 +4,8 @@ return {
     fallback_fps=60,
     rival_difficulty=1.15, -- 15% above the 13.1 AI pace; player physics unchanged
     cache_static_geometry=true,
+    early_culling=true,
+    stagger_ai_decisions=true,
     projection=300,
     max_triangles=512, -- reusable triangle pool
     eye_height=0,

@@ -62,7 +62,7 @@ function Race.new(id,modelId,parts,name)
         local maxHP=(model.hp or 100)+upgrades[3]*20
         r.cars[i]={lane=lane,targetLane=lane*0.85,player=i==1,x=x,y=y,z=z,yaw=yaw,speed=0,progress=progress,laps=0,
             nextGate=0,offroad=false,done=false,model=performance,mesh=model.mesh,radius=2,modelId=models[i] or (i-1)%#mesh.models+1,parts=upgrades,
-            hp=maxHP,maxHP=maxHP,respawn=0,stun=0,nitro=0,cooldown=0,ammo=0,weapon=nil,
+            hp=maxHP,maxHP=maxHP,respawn=0,stun=0,nitro=0,cooldown=0,ammo=0,weapon=nil,bump=0,
             segmentLength=track.parts[track.segments].length,total=grid,
             aiSpeed=performance.speed*(0.73+stage*0.055)*(form[i-1] or 0)*pace*cfg.rival_difficulty,
             decision=(i-1)*0.04,aimChance=math.min(0.95,0.65+stage*0.10),laneResponse=0.6+upgrades[2]*0.12}
@@ -186,6 +186,7 @@ local function collide(r)
     end
 end
 function Race.step(r,dt,input)
+    r.physicsSteps,r.aiDecisions=0,0
     if r.finished then return end
     if r.countdown>0 then
         local previous=r.countdown
@@ -200,6 +201,7 @@ function Race.step(r,dt,input)
     r.sliding=input.brake and input.steer~=0
     local steps=math.max(1,math.ceil(dt*40));local h=dt/steps
     for _=1,steps do
+        r.physicsSteps=r.physicsSteps+1
         local p=r.player
         progressPlayer(r)
         if p.respawn==0 and not p.done then
@@ -222,7 +224,7 @@ function Race.step(r,dt,input)
             if math.abs(p.x)>r.track.bound or math.abs(p.z)>r.track.bound then p.x=math.max(-r.track.bound,math.min(r.track.bound,p.x));p.z=math.max(-r.track.bound,math.min(r.track.bound,p.z));p.speed=0 end
             progressPlayer(r)
         end
-        for _,car in ipairs(r.cars) do car.bump=math.max(0,(car.bump or 0)-h) end
+        for _,car in ipairs(r.cars) do if car.bump>0 then car.bump=math.max(0,car.bump-h) end end
         for i=2,#r.cars do
             local car=r.cars[i]
             if not car.done and car.respawn==0 then
@@ -258,7 +260,12 @@ function Race.step(r,dt,input)
     for i=2,#r.cars do
         local c=r.cars[i];c.decision=c.decision-dt
         if c.decision<=0 and not c.done then
-            c.decision=0.25
+            if cfg.stagger_ai_decisions then
+                -- Retain the original phase after a slow frame instead of
+                -- resetting every expired pilot to the same quarter-second.
+                c.decision=c.decision+(math.floor(-c.decision/0.25)+1)*0.25
+            else c.decision=0.25 end
+            r.aiDecisions=r.aiDecisions+1
             if c.ammo>0 and c.cooldown==0 and c.respawn==0 and math.random()<c.aimChance then
             local sy,cy=math.sin(c.yaw),math.cos(c.yaw)
             if c.weapon=="mine" then

@@ -26,7 +26,7 @@ local function worldOf(id)
 end
 local function new(id)
 assert(id>=1 and id<=#names)
-local T={id=id,name=names[id],world=worldOf(id),laps=laps[id],segments=({40,48,48,36,48,64,64,72,80,48,48,56,56,52,64})[id],bridge=id==2 or id==6 or id==8,quarry=id==4,halfWidth=6.7,parts={},trees={}}
+local T={id=id,name=names[id],world=worldOf(id),laps=laps[id],segments=({40,48,48,36,48,64,64,72,80,48,48,56,56,52,64})[id],bridge=id==2 or id==6 or id==8,quarry=id==4,halfWidth=6.7,parts={},trees={},groundParts={},raisedParts={}}
 local scale=({1.32,1.20,1.32,1.65,1.30,1.17,1.16,1.13,1.10,1.10,1.20,1.10,1.10,1.10,1.15})[id]*1.2
 T.bound=math.ceil(({55,55,55,55,60,70,78,85,95,70,75,90,84,82,90})[id]*scale)
 T.theme=themes[id]
@@ -135,6 +135,8 @@ for i=0,T.segments-1 do
         if id~=2 or s.x*s.x+s.z*s.z>100 then G.quad(s.trim.mesh,q[1],q[2],q[3],q[4],i%2==0 and T.theme[4] or 9) end
     end
     T.parts[i+1]=s
+    local layer=s.raised and T.raisedParts or T.groundParts
+    layer[#layer+1]=s
 end
 function T.sample(progress)
     local f=progress%T.segments;local i=math.floor(f);local u=f-i;local s=T.parts[i+1]
@@ -174,20 +176,25 @@ for i,s in ipairs(T.parts) do
         end
     end
 end
-function T.locate(x,z,hint,height)
-    local best,progress,bestScore=math.huge,0,math.huge
-    local function check(i)
+-- One scratch context per track; locate is synchronous and never recursive.
+-- This avoids allocating a closure plus its upvalues on every physics query.
+local best,progress,bestScore,queryX,queryZ,queryHeight
+local function check(i)
         local s=T.parts[i%T.segments+1]
-        local u=math.max(0,math.min(1,((x-s.a.x)*s.dx+(z-s.a.z)*s.dz)/s.len2))
-        local dx,dz=x-s.a.x-s.dx*u,z-s.a.z-s.dz*u
+        local u=((queryX-s.a.x)*s.dx+(queryZ-s.a.z)*s.dz)/s.len2
+        if u<0 then u=0 elseif u>1 then u=1 end
+        local dx,dz=queryX-s.a.x-s.dx*u,queryZ-s.a.z-s.dz*u
         local d=dx*dx+dz*dz
         local score=d
-        if T.bridge and height then
-            local dy=height-(s.a.y+(s.b.y-s.a.y)*u)
+        if T.bridge and queryHeight then
+            local dy=queryHeight-(s.a.y+(s.b.y-s.a.y)*u)
             score=score+dy*dy*4
         end
         if score<bestScore then best,progress,bestScore=d,(i%T.segments)+u,score end
-    end
+end
+function T.locate(x,z,hint,height)
+    best,progress,bestScore=math.huge,0,math.huge
+    queryX,queryZ,queryHeight=x,z,height
     if hint then for i=math.floor(hint)-4,math.floor(hint)+4 do check(i) end end
     if hint and bestScore>T.driveHalfWidth^2 then
         local column=cells[math.floor(x/16)]

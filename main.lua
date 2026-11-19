@@ -12,7 +12,7 @@ local Save=require "save"
 local audio=require "audio"
 local scenery=require "scenery"
 local garagePart,garageReturn,garageMessage=1,"select",""
-Game={version="13.8",state="menu",menu=1,selected=1,triangles=0,race=nil,detail=true}
+Game={version="13.9",state="menu",menu=1,selected=1,triangles=0,race=nil,detail=true}
 -- Fixed oblique top-down view; follows position, never the car's heading.
 local camera={x=0,y=18,z=0,yaw=math.atan(12,14),pitch=-math.atan(18/math.sqrt(340))}
 local gridMark
@@ -21,6 +21,8 @@ local titleTime=0
 local alphabet="ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 "
 local nameCursor,nameLetters,modelId=1,{},1
 local previous,current={},{}
+local raceInput,audioInput={},{}
+Game.profile={}
 local function pressed(k) return current[k] and not previous[k] end
 local function held(k)
     if k==nil then return false end
@@ -36,6 +38,13 @@ function Game.startRace(id)
     audio.scene("race",true)
     Game.selected=id;Game.race=Race.new(id,Save.model,Save.parts,Save.name);Game.state="race"
     local r=Game.race
+    for _,car in ipairs(r.cars) do
+        renderer.prepareMesh(car.mesh)
+        car.flame={mesh=scenery.flame,y=0,radius=3}
+    end
+    renderer.prepareMesh(scenery.flame);renderer.prepareMesh(scenery.blast)
+    for _,mine in ipairs(r.combat.mines) do renderer.prepareMesh(mine.mesh) end
+    for _,trace in ipairs(r.combat.traces) do renderer.prepareMesh(trace.mesh) end
     renderer.begin(camera)
     for _,part in ipairs(r.track.parts) do renderer.prepare(part,camera);renderer.prepare(part.trim,camera) end
     for _,mark in ipairs(r.track.markings) do renderer.prepare(mark,camera) end
@@ -81,7 +90,9 @@ function Game.step(dt)
     current.detail,current.test=xHeld and cfg.controller=="snes",xHeld
     if Game.state=="menu" then
         titleTime=(titleTime+dt)%12
-        if pressed("test") then audio.test() end
+        if current.test and current.selectItem then
+            if pressed("test") or pressed("selectItem") then Game.diagnostics=not Game.diagnostics end
+        elseif pressed("test") then audio.test() end
         if pressed("up") or pressed("down") then Game.menu=3-Game.menu;audio.play("menu") end
         if pressed("ok") then
             if Game.menu==1 then nameLetters={1,37,37,37,37,37,37,37};nameCursor=1;modelId=1;Game.state="name";audio.play("confirm")
@@ -135,7 +146,10 @@ function Game.step(dt)
         if pressed("detail") then Game.detail=not Game.detail end
         if pressed("reset") then Game.startRace(Game.selected)
         else
-            Race.step(Game.race,dt,{gas=current.ok,brake=current.brake,fire=pressed("fire"),select=pressed("selectItem"),steer=(current.right and 1 or 0)-(current.left and 1 or 0)})
+            raceInput.gas,raceInput.brake=current.ok,current.brake
+            raceInput.fire,raceInput.select=pressed("fire"),pressed("selectItem")
+            raceInput.steer=(current.right and 1 or 0)-(current.left and 1 or 0)
+            Race.step(Game.race,dt,raceInput)
             if Game.race.finished then Game.result() end
         end
     elseif Game.state=="podium" then
@@ -152,7 +166,8 @@ function Game.step(dt)
         elseif pressed("ok") then selectWorld() end
     end
     audio.scene(Game.state=="race" and "race" or "menu")
-    audio.update(dt,Game.state=="race" and Game.race or nil,{brake=current.brake,steer=(current.right and 1 or 0)-(current.left and 1 or 0)})
+    audioInput.brake=current.brake;audioInput.steer=(current.right and 1 or 0)-(current.left and 1 or 0)
+    audio.update(dt,Game.state=="race" and Game.race or nil,audioInput)
     previous,current=current,previous
 end
 local function rect(x,y,w,h,c) ui.rectfill(x,y,x+w,y+h,colors.index[c]) end
@@ -165,7 +180,7 @@ end
 local function text(s,x,y,c) ui.print(s,x,y,colors.index[c or 9]) end
 local function panel()
     rect(40,38,400,190,10);rect(40,38,400,3,8)
-    text("LUPI COMBAT RALLY 13.8",122,53,15)
+    text("LUPI COMBAT RALLY 13.9",122,53,15)
 end
 local titleCamera={x=-1.90,y=1.83,z=-4.85,yaw=0,pitch=-0.075}
 local titleMesh=geometry.mesh()
@@ -428,12 +443,10 @@ for _,x in ipairs({-0.93,0.84}) do
 end
 geometry.quad(gridMark,{-0.93,0,-1.42},{-0.93,0,-1.33},{0.93,0,-1.33},{0.93,0,-1.42},9)
 local function drawRoad(track,p,raised)
-    for _,part in ipairs(track.parts) do
-        if part.raised==raised then
+    for _,part in ipairs(raised and track.raisedParts or track.groundParts) do
             renderer.submit(part)
             local dx,dz=part.x-p.x,part.z-p.z
             if dx*dx+dz*dz<225 then renderer.submit(part.trim) end
-        end
     end
 end
 local function submitLevel(track,obj,upper,offset)
@@ -446,7 +459,6 @@ local function drawObjects(r,upper)
     for _,car in ipairs(r.cars) do if car.respawn==0 then
         submitLevel(track,car,upper)
         if Game.detail and car.nitro>0 then
-            car.flame=car.flame or {mesh=scenery.flame,y=0,radius=3}
             car.flame.x,car.flame.z,car.flame.yaw,car.flame.y=car.x,car.z,car.yaw,car.y;submitLevel(track,car.flame,upper)
         end
     end end
@@ -490,7 +502,7 @@ local function drawRace()
     end
     Game.triangles,Game.dropped=renderer.triangles,renderer.dropped
     rect(0,0,480,20,10);rect(0,228,480,42,10)
-    text("COMBAT RALLY 13.8 / "..r.id,10,6,15);text((Game.detail and "X ALTO " or "X LEVE ")..Game.triangles,282,6,9)
+    text("COMBAT RALLY 13.9 / "..r.id,10,6,15);text((Game.detail and "X ALTO " or "X LEVE ")..Game.triangles,282,6,9)
     text(Game.reported_fps and "FPS "..math.floor(Game.reported_fps+0.5) or "FPS --",390,6,9)
     text(string.format("%03d KM/H  VOLTA %d/%d  POS %d/6  VIDA %d",math.floor(p.speed*6+0.5),p.laps,track.laps,Race.position(r),p.hp),10,235,15)
     local item=p.weapon=="shot" and "TIRO" or p.weapon=="mine" and "MINA" or "SEM ARMA"
@@ -530,7 +542,9 @@ local function drawTrophy()
     text("B / Y: MENU",177,249,9)
 end
 function Game.draw()
-    colors.register();ui.camera(0,0);ui.clip(0,0,480,270);ui.cls(colors.index[1])
+    colors.register();ui.camera(0,0);ui.clip(0,0,480,270)
+    -- Race terrain and the two HUD bars already overwrite the whole framebuffer.
+    if Game.state~="race" then ui.cls(colors.index[1]) end
     if Game.state=="race" then drawRace()
     elseif Game.state=="garage" then drawGarage()
     elseif Game.state=="menu" then drawMenu()
@@ -539,4 +553,20 @@ function Game.draw()
     elseif Game.state=="trophy" then drawTrophy()
     elseif Game.state=="select" then drawSelect()
     else drawResult() end
+    if Game.diagnostics then
+        local p=Game.profile;p.frames=(p.frames or 0)+1
+        if p.frames%30==1 and type(ui.stat)=="function" then
+            local ok,value=pcall(ui.stat,0);if ok and type(value)=="number" then p.memory=value end
+            ok,value=pcall(ui.stat,1);if ok and type(value)=="number" then p.cpu=value end
+        end
+        if Game.state=="race" then
+            p.vertices,p.triangles,p.objects,p.rejected=renderer.vertices,renderer.triangles,renderer.objects,renderer.rejected
+            p.earlyRejected,p.cacheBuilds=renderer.early_rejected,renderer.cache_builds
+            p.ai,p.physics=Game.race.aiDecisions or 0,Game.race.physicsSteps or 0
+            rect(5,24,310,42,10)
+            text(string.format("CPU %s%% LUA %s KB",p.cpu and math.floor(p.cpu+0.5) or "--",p.memory and math.floor(p.memory/1024+0.5) or "--"),10,28,9)
+            text(string.format("OBJ %d FORA %d VERT %d TRI %d",p.objects,p.rejected,p.vertices,p.triangles),10,40,9)
+            text(string.format("IA %d FIS %d CACHE %d DESC %d",p.ai,p.physics,p.cacheBuilds,p.earlyRejected),10,52,9)
+        else text("DIAGNOSTICO LIGADO: X+R",280,6,9) end
+    end
 end

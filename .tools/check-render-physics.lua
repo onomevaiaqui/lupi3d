@@ -3,6 +3,7 @@ local modules={'colors','config','game','geometry','car','track','main','rendere
 local function snapshot(path)
  for _,name in ipairs(modules)do package.loaded[name]=nil end
  package.path=path..'/?.lua;'..root
+ require('config').stagger_ai_decisions=false
  local Race=require 'race';local all={}
  for id=1,15 do
   math.randomseed(701);local r=Race.new(id,6,{2,1,2},'TESTE');r.countdown=0
