@@ -89,19 +89,21 @@ function C.step(c,cars,dt)
     for _,p in ipairs(c.pickups) do p.cooldown=math.max(0,p.cooldown-dt) end
     for _,car in ipairs(cars) do
         if car.player then
-            car.hitNotice=math.max(0,(car.hitNotice or 0)-dt)
-            car.nitroNotice=math.max(0,(car.nitroNotice or 0)-dt)
+            if car.hitNotice and car.hitNotice>0 then car.hitNotice=math.max(0,car.hitNotice-dt) end
+            if car.nitroNotice and car.nitroNotice>0 then car.nitroNotice=math.max(0,car.nitroNotice-dt) end
             if car.nitro>0 and car.nitro<=dt then car.nitroNotice=1 end
         end
-        car.nitro=math.max(0,car.nitro-dt);car.cooldown=math.max(0,car.cooldown-dt);car.stun=math.max(0,car.stun-dt)
+        if car.nitro>0 then car.nitro=math.max(0,car.nitro-dt) end
+        if car.cooldown>0 then car.cooldown=math.max(0,car.cooldown-dt) end
+        if car.stun>0 then car.stun=math.max(0,car.stun-dt) end
         if car.respawn>0 then
             car.respawn=math.max(0,car.respawn-dt)
             if car.respawn==0 then car.hp=car.maxHP or 100;car.stun=0;car.speed=0 end
         elseif not car.done then
-            for _,p in ipairs(c.pickups) do
+            for _,p in ipairs(c.pickups) do if p.cooldown==0 then
                 local x,z=p.x-car.x,p.z-car.z
-                if p.cooldown==0 and x*x+z*z<3.4 and math.abs(p.y-car.y)<1.5 then C.collect(car,p.kind);p.cooldown=9;break end
-            end
+                if x*x+z*z<3.4 and math.abs(p.y-car.y)<1.5 then C.collect(car,p.kind);p.cooldown=9;break end
+            end end
         end
     end
     for _,m in ipairs(c.mines) do if m.active then

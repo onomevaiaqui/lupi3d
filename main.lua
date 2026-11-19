@@ -12,7 +12,7 @@ local Save=require "save"
 local audio=require "audio"
 local scenery=require "scenery"
 local garagePart,garageReturn,garageMessage=1,"select",""
-Game={version="13.7",state="menu",menu=1,selected=1,triangles=0,race=nil,detail=true}
+Game={version="13.8",state="menu",menu=1,selected=1,triangles=0,race=nil,detail=true}
 -- Fixed oblique top-down view; follows position, never the car's heading.
 local camera={x=0,y=18,z=0,yaw=math.atan(12,14),pitch=-math.atan(18/math.sqrt(340))}
 local gridMark
@@ -20,7 +20,8 @@ local frame=0
 local titleTime=0
 local alphabet="ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 "
 local nameCursor,nameLetters,modelId=1,{},1
-local previous={}
+local previous,current={},{}
+local function pressed(k) return current[k] and not previous[k] end
 local function held(k)
     if k==nil then return false end
     local v=ui.btn(k,0);return v==true or type(v)=="number" and v>0
@@ -73,8 +74,11 @@ function Game.step(dt)
     dt=math.max(0,math.min(dt or timestep(),0.125))
     local gas,brake,fire,back,reset,selectItem=BTN_Z,BTN_G,BTN_F,BTN_F,BTN_Q,BTN_E
     if cfg.controller=="lupinho" then brake,fire,back,reset,selectItem=BTN_X,BTN_F,BTN_Q,BTN_Q,BTN_E end
-    local current={up=held(UP),down=held(DOWN),left=held(LEFT),right=held(RIGHT),ok=held(gas),back=held(back),fire=held(fire),brake=held(brake),reset=held(reset),selectItem=held(selectItem),detail=held(BTN_X) and cfg.controller=="snes",test=held(BTN_X)}
-    local function pressed(k) return current[k] and not previous[k] end
+    local xHeld=held(BTN_X)
+    current.up,current.down,current.left,current.right=held(UP),held(DOWN),held(LEFT),held(RIGHT)
+    current.ok,current.back,current.fire,current.brake=held(gas),held(back),held(fire),held(brake)
+    current.reset,current.selectItem=held(reset),held(selectItem)
+    current.detail,current.test=xHeld and cfg.controller=="snes",xHeld
     if Game.state=="menu" then
         titleTime=(titleTime+dt)%12
         if pressed("test") then audio.test() end
@@ -149,7 +153,7 @@ function Game.step(dt)
     end
     audio.scene(Game.state=="race" and "race" or "menu")
     audio.update(dt,Game.state=="race" and Game.race or nil,{brake=current.brake,steer=(current.right and 1 or 0)-(current.left and 1 or 0)})
-    previous=current
+    previous,current=current,previous
 end
 local function rect(x,y,w,h,c) ui.rectfill(x,y,x+w,y+h,colors.index[c]) end
 local lampWidths={3,5,6,7,7,8,8,8,8,8,8,7,7,6,5,3}
@@ -161,7 +165,7 @@ end
 local function text(s,x,y,c) ui.print(s,x,y,colors.index[c or 9]) end
 local function panel()
     rect(40,38,400,190,10);rect(40,38,400,3,8)
-    text("LUPI COMBAT RALLY 13.7",122,53,15)
+    text("LUPI COMBAT RALLY 13.8",122,53,15)
 end
 local titleCamera={x=-1.90,y=1.83,z=-4.85,yaw=0,pitch=-0.075}
 local titleMesh=geometry.mesh()
@@ -486,7 +490,7 @@ local function drawRace()
     end
     Game.triangles,Game.dropped=renderer.triangles,renderer.dropped
     rect(0,0,480,20,10);rect(0,228,480,42,10)
-    text("COMBAT RALLY 13.7 / "..r.id,10,6,15);text((Game.detail and "X ALTO " or "X LEVE ")..Game.triangles,282,6,9)
+    text("COMBAT RALLY 13.8 / "..r.id,10,6,15);text((Game.detail and "X ALTO " or "X LEVE ")..Game.triangles,282,6,9)
     text(Game.reported_fps and "FPS "..math.floor(Game.reported_fps+0.5) or "FPS --",390,6,9)
     text(string.format("%03d KM/H  VOLTA %d/%d  POS %d/6  VIDA %d",math.floor(p.speed*6+0.5),p.laps,track.laps,Race.position(r),p.hp),10,235,15)
     local item=p.weapon=="shot" and "TIRO" or p.weapon=="mine" and "MINA" or "SEM ARMA"

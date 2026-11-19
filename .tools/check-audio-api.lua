@@ -24,6 +24,14 @@ A.update(0.5,r,{brake=false,steer=0});assert(calls[#calls]=="music/engine_high")
 A.update(1,r,{brake=true,steer=0});assert(calls[#calls]=="music/brake")
 A.update(0.3,r,{brake=false,steer=0});assert(calls[#calls]=="music/engine_high")
 r.player.nitro=5;A.update(1,r,{brake=false,steer=0});assert(calls[#calls]=="music/nitro")
+-- One held curve should not keep restarting the music stream every 0.8 seconds.
+A.scene('race',true);r.player.nitro=0
+local function brakeCount()local n=0;for _,path in ipairs(calls)do if path=='music/brake'then n=n+1 end end;return n end
+local initial=brakeCount()
+for i=1,300 do A.update(1/60,r,{brake=false,steer=1})end
+assert(brakeCount()==initial+1,'Held steering repeatedly restarted audio')
+A.update(1/60,r,{brake=false,steer=0});A.update(1,r,{brake=false,steer=1})
+assert(brakeCount()==initial+2,'A new curve must still trigger its cue')
 local oldLoop=music.loop;music.loop=function() error("missing audio asset") end
 A.play("win");assert(A.error and A.lastError:match("missing audio asset"))
 local retry=A.retry;A.play("win");assert(A.retry==retry)

@@ -73,7 +73,7 @@ function A.status()
 end
 function A.scene(mode,force)
     A.mode=mode
-    if force then A.hold=0;A.priority=0;A.current=nil end
+    if force then A.hold=0;A.priority=0;A.current=nil;A.rubbing=false end
 end
 function A.play(event,x,z)
     if x and A.lx and (x-A.lx)^2+(z-A.lz)^2>1024 then return end
@@ -95,12 +95,15 @@ function A.update(dt,r,input)
     A.testTimer=math.max(0,(A.testTimer or 0)-dt)
     A.hold=math.max(0,A.hold-dt);A.change=math.max(0,A.change-dt);A.brake=math.max(0,A.brake-dt)
     if r then A.lx,A.lz=r.player.x,r.player.z end
+    local rubbing=false
     if r and r.countdown==0 and not r.finished then
         local p=r.player
-        if input and (input.brake and p.speed>3 or input.steer~=0 and p.speed>11) and A.brake==0 then
+        rubbing=input and (input.brake and p.speed>3 or input.steer~=0 and p.speed>11) or false
+        if rubbing and not A.rubbing and A.brake==0 then
             A.brake=0.8;A.play("brake")
         end
     end
+    A.rubbing=rubbing
     if A.hold>0 then return end
     local returning=A.priority>0;A.priority=0
     if backend()=="SFX" then

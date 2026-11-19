@@ -9,7 +9,7 @@ local function valid(mesh)
   assert(mesh.f[i+3]>=0 and mesh.f[i+3]<#colors.palette)
  end
 end
-local expected={82,92,104,110,106,158}
+local expected={82,86,94,104,100,158}
 for i,m in ipairs(models)do valid(m.mesh);assert(#m.mesh.f/4==expected[i],'Car polygon budget changed')end
 assert(S.tree~=S.broadleaf and S.broadleaf~=S.palm and S.scrub~=S.broadleaf)
 for _,mesh in ipairs({S.tree,S.broadleaf,S.palm,S.scrub})do valid(mesh);assert(#mesh.f/4<=20)end

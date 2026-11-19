@@ -74,6 +74,9 @@ function Race.new(id,modelId,parts,name)
 end
 local function progressPlayer(r)
     local p=r.player
+    if p.locateStable and p.x==p.locatedX and p.z==p.locatedZ and p.y==p.locatedY and p.progress==p.locatedProgress then return end
+    r.locateQueries=(r.locateQueries or 0)+1
+    local oldHeight=p.y
     local previous=p.progress
     local track=r.track
     local progress,distance=track.locate(p.x,p.z,previous,p.y)
@@ -121,6 +124,9 @@ local function progressPlayer(r)
         local fraction=progress-last%track.segments
         p.total=last+(fraction>=0 and fraction<1 and fraction or 0)
     end
+    -- A repeated query has the same candidate window and layer scoring only here.
+    p.locateStable=math.floor(previous)==math.floor(progress) and oldHeight==p.y
+    p.locatedX,p.locatedZ,p.locatedY,p.locatedProgress=p.x,p.z,p.y,p.progress
 end
 local function position(r)
     local n=1
@@ -144,9 +150,10 @@ end
 local function moveSide(car,x,z)
     car.x,car.z=car.x+x,car.z+z
     if not car.player then
-        local forward=x*math.sin(car.yaw)+z*math.cos(car.yaw)
+        local sy,cy=math.sin(car.yaw),math.cos(car.yaw)
+        local forward=x*sy+z*cy
         car.total=car.total+forward/car.segmentLength
-        car.lane=math.max(-5.8,math.min(5.8,car.lane+x*math.cos(car.yaw)-z*math.sin(car.yaw)))
+        car.lane=math.max(-5.8,math.min(5.8,car.lane+x*cy-z*sy))
     end
 end
 local function collide(r)
@@ -253,16 +260,17 @@ function Race.step(r,dt,input)
         if c.decision<=0 and not c.done then
             c.decision=0.25
             if c.ammo>0 and c.cooldown==0 and c.respawn==0 and math.random()<c.aimChance then
+            local sy,cy=math.sin(c.yaw),math.cos(c.yaw)
             if c.weapon=="mine" then
                 for _,other in ipairs(r.cars) do if other~=c then
                     local dx,dz=other.x-c.x,other.z-c.z
-                    if dx*dx+dz*dz<100 and dx*math.sin(c.yaw)+dz*math.cos(c.yaw)<0 then combat.fire(r.combat,c,r.cars);break end
+                    if dx*dx+dz*dz<100 and dx*sy+dz*cy<0 then combat.fire(r.combat,c,r.cars);break end
                 end end
             elseif c.weapon=="shot" then
                 for _,other in ipairs(r.cars) do if other~=c then
                     local dx,dz=other.x-c.x,other.z-c.z
-                    if dx*dx+dz*dz<225 and dx*math.sin(c.yaw)+dz*math.cos(c.yaw)>0
-                        and math.abs(dx*math.cos(c.yaw)-dz*math.sin(c.yaw))<0.85
+                    if dx*dx+dz*dz<225 and dx*sy+dz*cy>0
+                        and math.abs(dx*cy-dz*sy)<0.85
                         and math.abs(other.y-c.y)<1.5 then combat.fire(r.combat,c,r.cars);break end
                 end end
             end

@@ -47,7 +47,17 @@ function G.weld(mesh)
         end
         remap[(i+2)/3]=index
     end
-    for i=1,#mesh.f,4 do for j=0,2 do mesh.f[i+j]=remap[mesh.f[i+j]] end end
+    local faces={}
+    for i=1,#mesh.f,4 do
+        local a,b,c=remap[mesh.f[i]],remap[mesh.f[i+1]],remap[mesh.f[i+2]]
+        local ai,bi,ci=a*3-2,b*3-2,c*3-2
+        local ux,uy,uz=vertices[bi]-vertices[ai],vertices[bi+1]-vertices[ai+1],vertices[bi+2]-vertices[ai+2]
+        local vx,vy,vz=vertices[ci]-vertices[ai],vertices[ci+1]-vertices[ai+1],vertices[ci+2]-vertices[ai+2]
+        if uy*vz-uz*vy~=0 or uz*vx-ux*vz~=0 or ux*vy-uy*vx~=0 then
+            faces[#faces+1],faces[#faces+2],faces[#faces+3],faces[#faces+4]=a,b,c,mesh.f[i+3]
+        end
+    end
+    mesh.f=faces
     mesh.v=vertices
 end
 return G

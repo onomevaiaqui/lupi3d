@@ -1,5 +1,5 @@
 {
-  "project": "Lupi Combat Rally 13.7",
+  "project": "Lupi Combat Rally 13.8",
   "files": [
     {
       "file": "colors.lua",
@@ -23,15 +23,15 @@
         "type": "lua_code"
       },
       "bytes": 153,
-      "sha256": "f5efb79aa7444370ec1f2a5ced2d7ca3f90a27034f1b4d8e0366be07a3f7bcb7"
+      "sha256": "e77c1f378a37b3618cdaf085694602a2732ed392d84b2dc08f976a49d5866867"
     },
     {
       "file": "geometry.lua",
       "metadata": {
         "type": "lua_code"
       },
-      "bytes": 2390,
-      "sha256": "a24ee2c87e748b450b2df73eaecd3b63850257b339d10f4ad324f0b9b8224115"
+      "bytes": 2889,
+      "sha256": "a030269e3fce6c6385593b101bfa5700722afca8605949bb5a4adedc15378cca"
     },
     {
       "file": "car.lua",
@@ -54,8 +54,8 @@
       "metadata": {
         "type": "lua_code"
       },
-      "bytes": 23718,
-      "sha256": "517e37be6c67dba47176f456301b3bdb8ad4bc44fed5c145e50d23efec5b243c"
+      "bytes": 23850,
+      "sha256": "73de0742482d04d8ded3267aca23c78f1eb74004ff636d9fb5068f449965eeb0"
     },
     {
       "file": "renderer.lua",
@@ -70,16 +70,16 @@
       "metadata": {
         "type": "lua_code"
       },
-      "bytes": 12525,
-      "sha256": "eea8be9ae3d98c8507eedb5b7593e872b7750690c8ce45fd4e2f135d997e5ad9"
+      "bytes": 12942,
+      "sha256": "5717d2af022fda198c548d757f96a44998c1431244dc6283394b134424e03121"
     },
     {
       "file": "combat.lua",
       "metadata": {
         "type": "lua_code"
       },
-      "bytes": 5736,
-      "sha256": "d0803cfbc39d6352c56535c1df449c4352994801468bb17e7e7060156b2dc155"
+      "bytes": 5916,
+      "sha256": "0b41b25c60050de845b7172653983b2a5f423bf8185ba6d09ed3e73ef3e07851"
     },
     {
       "file": "save.lua",
@@ -94,16 +94,16 @@
       "metadata": {
         "type": "lua_code"
       },
-      "bytes": 6353,
-      "sha256": "d60058c26d5eb9b14c2bb8f30ea68d2d19a5c527243e477959e8d6d78b71d864"
+      "bytes": 6466,
+      "sha256": "4625ffb56833ff7bf4ad3f5b93ccd27be988440c564803d1c42a17372162f1ac"
     },
     {
       "file": "scenery.lua",
       "metadata": {
         "type": "lua_code"
       },
-      "bytes": 10959,
-      "sha256": "3c53f1a1569fab130903708690720d7f1f06287b5d8ea8d2f89b2640a9b70dec"
+      "bytes": 12618,
+      "sha256": "38be782135c7e3d00d629995ded88aa0a697cd186827d9d6c8a50d28901f88dc"
     },
     {
       "file": "maps.lua",
@@ -222,5 +222,5 @@
       "sha256": "09ab62051f935bb3fe74421bf384e11c6b5ef79ae514ebdb306ab98e4cbd37b8"
     }
   ],
-  "totalBytes": 116294
+  "totalBytes": 119294
 }

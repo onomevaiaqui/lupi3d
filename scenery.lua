@@ -118,6 +118,43 @@ local monument=landmark({{2.8,0.45,1.5,0,0.225,0,12},{0.48,2.8,0.55,0,1.6,0,9},
     {1.1,0.16,0.22,0.48,2.65,0,1}})
 local cityFeature={rio,liberdade,itaipu,andes,andes,harbor,S.quarryRock,harbor,
     landmarks[2],S.house,harbor,S.quarryRock,landmarks[3],monument,andes}
+-- One-course art experiment: closed XYZ silhouettes, never individual voxels.
+-- Omit buried bottom faces; every visible surface remains actual geometry.
+local function block(out,w,h,d,x,y,z,front,side,top)
+    local box=G.box(w,h,d,front,side,top)
+    while #box.f>40 do box.f[#box.f]=nil end
+    G.append(out,box,x,y,z)
+end
+S.blockBirch=G.mesh()
+block(S.blockBirch,0.42,3,0.42,0,1.5,0,9,12,9)
+block(S.blockBirch,3.4,1.8,2.8,0,3.55,0,34,33,32)
+block(S.blockBirch,2.1,0.9,1.9,-0.3,4.8,0.1,34,33,32)
+S.blockStone=G.mesh()
+block(S.blockStone,2.4,1.1,1.9,0,0.55,0,11,27,12)
+block(S.blockStone,1.25,0.6,1.3,-0.35,1.4,0,11,27,12)
+S.blockCabin=G.mesh()
+block(S.blockCabin,3.8,2.4,3.2,0,1.2,0,13,29,15)
+block(S.blockCabin,4.2,0.38,3.6,0,2.58,0,7,23,8)
+G.quad(S.blockCabin,{-0.35,0,-1.61},{-0.35,1.6,-1.61},{0.35,1.6,-1.61},{0.35,0,-1.61},10)
+for _,x in ipairs({-1.2,1.2}) do
+    G.quad(S.blockCabin,{x-0.3,1.2,-1.61},{x-0.3,1.85,-1.61},{x+0.3,1.85,-1.61},{x+0.3,1.2,-1.61},6)
+end
+local function blockCourse(T)
+    if T.id~=8 then return end
+    T.artStyle="BOSQUE EM BLOCOS"
+    T.theme={32,T.theme[2],T.theme[3],T.theme[4]}
+    -- Warm bridge fascia reuses its existing faces, with no added rail geometry.
+    for _,part in ipairs(T.parts) do if part.raised then
+        for i=4,#part.mesh.f,4 do if part.mesh.f[i]==11 then part.mesh.f[i]=29 end end
+    end end
+    for _,tree in ipairs(T.trees) do
+        tree.basic=S.blockBirch;tree.detailMesh=S.blockBirch;tree.radius=5
+    end
+    for i,obj in ipairs(T.decor) do
+        obj.mesh=i%4==0 and S.blockCabin or i%3==0 and S.blockStone or S.blockBirch
+        obj.radius=5;obj.yaw=0
+    end
+end
 function S.populate(T)
     T.decor={};T.markings={}
     for i,s in ipairs(T.parts) do
@@ -177,6 +214,7 @@ function S.populate(T)
         local _,distance=T.locate(tx,tz)
         if distance>(T.halfWidth+2)^2 then tree.x,tree.z=tx,tz end
     end
+    blockCourse(T)
 end
 for _,mesh in pairs(S) do
     if type(mesh)=="table" and mesh.v and mesh.f then G.weld(mesh) end
