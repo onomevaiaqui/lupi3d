@@ -1,3 +1,4 @@
+require('./check-icon.cjs');
 const fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypto');
 const root=path.resolve(__dirname,'..'),out=path.join(root,'.build/race-3d-release');
 fs.mkdirSync(out,{recursive:true});
@@ -23,5 +24,5 @@ const files=entries.map((entry,i)=>{
 });
 fs.writeFileSync(path.join(out,'lupi_manifest.txt'),manifest);
 const totalBytes=files.reduce((sum,f)=>sum+f.bytes,Buffer.byteLength(manifest));
-fs.writeFileSync(path.join(root,'BUILD.json'),JSON.stringify({project:'Lupi Combat Rally 13.4',files,totalBytes},null,2)+'\n');
+fs.writeFileSync(path.join(root,'BUILD.json'),JSON.stringify({project:'Lupi Combat Rally 13.5',files,totalBytes},null,2)+'\n');
 console.log('3D race release ready:',out,totalBytes,'bytes');

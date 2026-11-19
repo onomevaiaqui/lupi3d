@@ -1,5 +1,9 @@
 # Lupi Combat Rally 3D
 
+## Correção da sincronização — 13.5
+
+O pipeline recusou o ícone experimental de 128 × 64. O `icon.gif` voltou ao formato documentado de **64 × 32**, com a mesma paleta fixa e animação já validadas. O build agora verifica esse asset antes de preparar o pacote. As otimizações 3D da 13.4 permanecem intactas.
+
 ## Renderização otimizada para teste — 13.4
 
 O cenário estático tem transformações preparadas ao abrir a corrida; carros usam uma projeção que combina as rotações de objeto e câmera. O recorte pula as bordas já contendo o triângulo, e o desenho deixa de criar funções auxiliares a cada quadro. Modelos, polígonos, cores, pista e câmera permanecem iguais à 13.3.
@@ -36,7 +40,7 @@ Consulte [dificuldade, parâmetros e referências](docs/DIFICULDADE.md). Teste: 
 
 ## Ícone animado do catálogo
 
-O `icon.gif` na raiz foi validado no console na versão 12.9: **128 × 64 pixels**, 12 quadros de 120 ms, repetição infinita, sem transparência e **uma única paleta fixa de 16 entradas em toda a animação**. A imagem preenche o quadro inteiro. A compressão usa LZW com código inicial de 8 bits.
+O `icon.gif` na raiz foi restaurado na 13.5 ao perfil validado na 12.8: **64 × 32 pixels**, 12 quadros de 120 ms, repetição infinita, sem transparência e **uma única paleta fixa de 16 entradas em toda a animação**. A imagem preenche o quadro inteiro. A compressão usa LZW com código inicial de 8 bits.
 
 Consulte o [guia para criar ícones em outros jogos](docs/ICONE-CATALOGO.md) para conhecer o perfil completo, a organização dos arquivos, a exportação e os limites ainda não determinados. Valide o arquivo com `node .tools/check-icon.cjs`.
 

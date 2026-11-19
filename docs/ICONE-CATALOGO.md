@@ -1,10 +1,12 @@
 # Ícone animado para o catálogo do Lupi
 
-O `icon.gif` do Combat Rally foi confirmado no console na versão **12.9**, em **128 × 64 pixels**. Este documento descreve um perfil que funcionou no aparelho, e não uma especificação oficial do firmware.
+O perfil atual do Combat Rally é **64 × 32 pixels**, restaurado na versão **13.5** a partir do ícone já validado na 12.8. Use esse tamanho para novos jogos.
 
-## Atualização da documentação oficial (10/11/2026)
+## Limite confirmado pelo pipeline (19/11/2026)
 
-A [documentação de assets do firmware 0.6.8](https://lupi.api.br/docs/assets.html) agora especifica `icon.gif` com tamanho exato de **64 × 32** e até 16 cores, incluindo transparência. O perfil de **128 × 64** abaixo foi confirmado pelo usuário no console nas versões 12.9 em diante, mas não corresponde ao tamanho oficialmente documentado. Para um jogo novo, prefira 64 × 32 se precisar seguir o contrato público; 128 × 64 deve ser tratado como compatibilidade observada neste aparelho. O Rally mantém o ícone funcionando, sem reconvertê-lo nesta revisão.
+O log real de sincronização rejeitou o arquivo de 128 × 64: `GIF canvas 128x64 exceeds 64x64`. Para animações em geral, o pipeline limita o canvas a 64 × 64; para o **ícone do catálogo**, a [documentação oficial](https://lupi.api.br/docs/assets.html) exige o tamanho exato de **64 × 32** e até 16 cores, incluindo transparência.
+
+O usuário havia observado a exibição de 128 × 64 em um teste anterior, mas isso não garantiu sua aceitação na conversão atual. **Não reutilize o perfil experimental de 128 × 64.** O build e o teste de descoberta agora executam a validação do ícone antes de preparar o pacote.
 
 ## Perfil validado para reutilizar
 
@@ -12,7 +14,7 @@ A [documentação de assets do firmware 0.6.8](https://lupi.api.br/docs/assets.h
 | --- | --- |
 | Arquivo | `icon.gif`, em minúsculas, na raiz do repositório |
 | Formato | GIF89a animado |
-| Resolução | 128 × 64 pixels, proporção 2:1 |
+| Resolução | 64 × 32 pixels, proporção 2:1 |
 | Cores | Paleta indexada de 16 entradas, **idêntica em todos os quadros** |
 | Transparência | Desativada |
 | Quadros | 12 |
@@ -21,9 +23,9 @@ A [documentação de assets do firmware 0.6.8](https://lupi.api.br/docs/assets.h
 | Repetição | Infinita, extensão NETSCAPE2.0 com contador 0 |
 | Descarte de quadro | Método 1: manter o quadro anterior (`do not dispose`) |
 | Compressão | LZW com tamanho inicial de código de 8 bits |
-| Área de cada quadro | Imagem completa de 128 × 64, posição x=0, y=0 |
+| Área de cada quadro | Imagem completa de 64 × 32, posição x=0, y=0 |
 | Entrelaçamento | Desativado |
-| Tamanho do arquivo validado | 14.098 bytes, aproximadamente 13,8 KiB |
+| Tamanho do arquivo validado | 6.354 bytes, aproximadamente 6,2 KiB |
 
 O primeiro quadro usa a paleta global de 16 entradas. Os seguintes repetem a mesma tabela como paleta local, inclusive com **as mesmas cores nos mesmos índices**. Não basta limitar cada quadro separadamente a 16 cores: a tabela deve permanecer igual durante toda a animação.
 
@@ -51,11 +53,11 @@ O Rally não usa um campo `icon:` no YAML nem uma chamada Lua para mostrar essa 
 
 ## Como preparar a animação
 
-1. Capture quadros do jogo em resolução maior que a do ícone. Gere a versão de 128 × 64 a partir dessas capturas; ampliar um GIF de 64 × 32 não recupera detalhes.
+1. Capture quadros do jogo em resolução maior que a do ícone. Gere a versão de 64 × 32 a partir dessas capturas. Não amplie o canvas acima desse tamanho para tentar ganhar nitidez: priorize enquadramento próximo e formas legíveis.
 2. Recorte a cena na proporção 2:1 e preencha toda a imagem. Evite faixas pretas, HUD pequeno e texto difícil de ler. Aproxime os personagens ou veículos para que sejam reconhecíveis no catálogo.
 3. Escolha **uma única paleta** de até 16 cores para a animação inteira. Ela pode vir da arte do seu jogo; não há evidência de que seja obrigatório usar as cores do Trumpsrun. No teste confirmado do Rally, usamos as mesmas cores desse exemplo funcional.
 4. Converta todos os quadros usando essa paleta fixa, com os mesmos índices. Desative a criação de paletas independentes por quadro. A exportação pode reorganizar índices: confira o GIF final, não apenas as imagens de entrada.
-5. Exporte 12 quadros completos, opacos, em 128 × 64, com atraso de 120 ms e repetição infinita. Preserve LZW com código inicial de 8 bits; alguns exportadores escolhem automaticamente 4 bits para imagens com 16 cores.
+5. Exporte 12 quadros completos, opacos, em 64 × 32, com atraso de 120 ms e repetição infinita. Preserve LZW com código inicial de 8 bits; alguns exportadores escolhem automaticamente 4 bits para imagens com 16 cores.
 6. Decodifique o GIF exportado para conferir cores, movimento e preenchimento. Um GIF abrir no computador não garante compatibilidade com o console.
 7. Salve como `icon.gif` na raiz, publique na branch padrão e atualize a versão em `lupi.yaml`, mantendo coerentes os números de versão usados pelo projeto. Confirme a exibição no catálogo do console.
 
@@ -79,9 +81,9 @@ O limite de 32 KiB do script é um **orçamento adotado pelo projeto**, não um 
 - As tentativas com mudanças de tamanho, compressão e retângulos dos quadros não resolveram sozinhas a ausência do ícone.
 - O arquivo passou a aparecer na versão 12.7 depois que todos os quadros passaram a repetir a mesma paleta. O anterior tinha 16 paletas diferentes, somando 59 cores na animação. Esse resultado aponta para a paleta fixa como a condição decisiva neste teste, sem provar a implementação interna do firmware.
 - A versão 12.8 confirmou a imagem preenchendo a área, sem faixas, em 64 × 32.
-- A versão 12.9 confirmou o funcionamento em 128 × 64. Portanto, 64 × 32 não é o máximo demonstrado pelo aparelho.
+- Na versão 12.9, o usuário observou a exibição de 128 × 64; depois, o pipeline de sincronização rejeitou esse canvas. A 13.5 retorna ao perfil documentado de 64 × 32.
 
-Não foram determinados o tamanho máximo de imagem, o máximo de cores ou quadros, o limite de bytes nem o comportamento de atualização em todos os firmwares. Para novos jogos, comece pelo perfil validado e altere uma variável por vez.
+A documentação estabelece 64 × 32 e até 16 cores para o ícone, e até 64 × 64 para GIFs em geral. O limite de bytes e o comportamento de atualização em todos os firmwares não foram determinados. Para novos jogos, comece pelo perfil validado e altere uma variável por vez.
 
 ## Se o ícone não aparecer
 
