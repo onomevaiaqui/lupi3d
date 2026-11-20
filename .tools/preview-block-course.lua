@@ -19,6 +19,10 @@ for view,progress in ipairs({0,8,20,44,68}) do
   c.x,c.z,c.yaw,c.y=r.track.sampleLane(progress+(j-1)*0.4,lane)
   c.speed=12
  end
+ if arg[1]=='hud' then
+  require('combat').collect(r.player,'shot');require('combat').collect(r.player,'mine')
+  if view==4 then require('combat').select(r.player) end
+ end
  file=assert(open('.tools/block-course-'..view..'.csv','w'))
  Game.draw();file:close()
  assert(Game.dropped==0,'Triangle pool overflow')

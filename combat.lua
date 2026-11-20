@@ -51,9 +51,10 @@ local function blast(c,x,z,y)
     if c then for _,b in ipairs(c.blasts) do if not b.active then b.active=true;b.x=x;b.z=z;b.y=y+0.12;b.ttl=0.4;break end end end
     audio.play("explosion",x,z)
 end
-local function damage(car,amount,c)
+local function damage(car,amount,c,kind)
     if car.respawn>0 or car.done then return end
     car.hp=math.max(0,car.hp-amount);car.speed=car.speed*0.45;car.stun=0.55
+    if car.player then car.slowCause,car.slowNotice=kind=="mine" and "ATINGIDO: MINA" or kind=="shot" and "ATINGIDO: TIRO" or "ATINGIDO",1.2 end
     if car.player then car.hitNotice=1.2;audio.play("hit") end
     if car.hp==0 then blast(c,car.x,car.z,car.y);car.respawn=2;car.weapon=nil;car.ammo=0;car.stock=nil;car.nitro=0;car.speed=0 end
 end
@@ -68,7 +69,7 @@ function C.fire(c,car,cars)
             local along=x*dx+z*dz;local side=x*dz-z*dx
             if along>0 and along<nearest and math.abs(side)<0.85 and math.abs(other.y-car.y)<1.5 then nearest,best=along,other end
         end end
-        if best then damage(best,35,c) end
+        if best then damage(best,35,c,"shot") end
         for _,t in ipairs(c.traces) do if not t.active then
             t.active=true;t.x=car.x;t.z=car.z;t.y=car.y+0.65;t.yaw=car.yaw;t.ttl=0.09;break
         end end
@@ -112,7 +113,7 @@ function C.step(c,cars,dt)
         elseif m.arm==0 then
             for _,car in ipairs(cars) do if car.respawn==0 and not car.done then
                 local x,z=car.x-m.x,car.z-m.z
-                if x*x+z*z<1.3 and math.abs(m.y-car.y)<1.5 then damage(car,50,c);if car.hp>0 then blast(c,m.x,m.z,car.y) end;m.active=false;break end
+                if x*x+z*z<1.3 and math.abs(m.y-car.y)<1.5 then damage(car,50,c,"mine");if car.hp>0 then blast(c,m.x,m.z,car.y) end;m.active=false;break end
             end end
         end
     end end

@@ -198,6 +198,7 @@ function Race.step(r,dt,input)
     r.time=r.time+dt
     r.throttle,r.braking=input.gas,input.brake
     r.player.shortcutNotice=math.max(0,(r.player.shortcutNotice or 0)-dt)
+    if r.player.slowNotice and r.player.slowNotice>0 then r.player.slowNotice=math.max(0,r.player.slowNotice-dt) end
     r.sliding=input.brake and input.steer~=0
     local steps=math.max(1,math.ceil(dt*40));local h=dt/steps
     for _=1,steps do
@@ -205,6 +206,7 @@ function Race.step(r,dt,input)
         local p=r.player
         progressPlayer(r)
         if p.respawn==0 and not p.done then
+            local beforeSpeed=p.speed
             local boost=p.nitro>0 and 1.1 or 1
             local model=p.model
             local accel=input.brake and -cfg.brake or input.gas and model.accel*boost*pace or -1.8
@@ -219,9 +221,18 @@ function Race.step(r,dt,input)
                 if p.speed>cap then p.speed=math.max(cap,p.speed-9*h) end
             end
             if p.stun>0 then p.speed=math.min(p.speed,4) end
+            if p.speed<beforeSpeed-0.000001 then
+                p.slowCause=p.stun>0 and (p.slowCause or "ATINGIDO") or input.brake and "FREIO"
+                    or p.offroad and "FORA DA PISTA" or beforeSpeed>roadCap and "LIMITE / FIM DO NITRO"
+                    or not input.gas and "ACELERADOR SOLTO" or "LIMITE DE VELOCIDADE"
+                p.slowNotice=1.2
+            end
             p.yaw=(p.yaw+input.steer*model.steer*math.min(p.speed/5,1)*h+math.pi)%(2*math.pi)-math.pi
             p.x=p.x+math.sin(p.yaw)*p.speed*h;p.z=p.z+math.cos(p.yaw)*p.speed*h
-            if math.abs(p.x)>r.track.bound or math.abs(p.z)>r.track.bound then p.x=math.max(-r.track.bound,math.min(r.track.bound,p.x));p.z=math.max(-r.track.bound,math.min(r.track.bound,p.z));p.speed=0 end
+            if math.abs(p.x)>r.track.bound or math.abs(p.z)>r.track.bound then
+                p.x=math.max(-r.track.bound,math.min(r.track.bound,p.x));p.z=math.max(-r.track.bound,math.min(r.track.bound,p.z));p.speed=0
+                p.slowCause,p.slowNotice="LIMITE DO CENARIO",1.2
+            end
             progressPlayer(r)
         end
         for _,car in ipairs(r.cars) do if car.bump>0 then car.bump=math.max(0,car.bump-h) end end

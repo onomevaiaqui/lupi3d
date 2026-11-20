@@ -12,7 +12,7 @@ local Save=require "save"
 local audio=require "audio"
 local scenery=require "scenery"
 local garagePart,garageReturn,garageMessage=1,"select",""
-Game={version="13.9",state="menu",menu=1,selected=1,triangles=0,race=nil,detail=true}
+Game={version="14.0",state="menu",menu=1,selected=1,triangles=0,race=nil,detail=true}
 -- Fixed oblique top-down view; follows position, never the car's heading.
 local camera={x=0,y=18,z=0,yaw=math.atan(12,14),pitch=-math.atan(18/math.sqrt(340))}
 local gridMark
@@ -180,7 +180,7 @@ end
 local function text(s,x,y,c) ui.print(s,x,y,colors.index[c or 9]) end
 local function panel()
     rect(40,38,400,190,10);rect(40,38,400,3,8)
-    text("LUPI COMBAT RALLY 13.9",122,53,15)
+    text("LUPI COMBAT RALLY 14.0",122,53,15)
 end
 local titleCamera={x=-1.90,y=1.83,z=-4.85,yaw=0,pitch=-0.075}
 local titleMesh=geometry.mesh()
@@ -466,6 +466,44 @@ local function drawObjects(r,upper)
     for _,trace in ipairs(r.combat.traces) do if trace.active then submitLevel(track,trace,upper,0.65) end end
     renderer.flush()
 end
+-- Seven-segment digits use the native rectangle primitive, without new assets.
+local digitMasks={0x3f,0x06,0x5b,0x4f,0x66,0x6d,0x7d,0x07,0x7f,0x6f}
+local digitSegments={{2,0,6,2},{8,2,2,7},{8,11,2,7},{2,18,6,2},{0,11,2,7},{0,2,2,7},{2,9,6,2}}
+local function speedDigit(value,x,y)
+    local mask=digitMasks[value+1]
+    for i,s in ipairs(digitSegments) do
+        if mask & (1 << (i-1))~=0 then rect(x+s[1],y+s[2],s[3],s[4],15) end
+    end
+end
+local function drawRaceHud(r)
+    local p=r.player
+    local speed=math.max(0,math.min(999,math.floor(p.speed*6+0.5)))
+    speedDigit(math.floor(speed/100),10,233)
+    speedDigit(math.floor(speed/10)%10,24,233)
+    speedDigit(speed%10,38,233)
+    text("KM/H",54,240,9)
+    rect(10,259,72,3,3)
+    local fill=math.floor(72*math.min(1,p.speed/(p.model.speed*1.15*1.1)))
+    if fill>0 then rect(10,259,fill,3,p.nitro>0 and 1 or 8) end
+    text("VOLTA "..p.laps.."/"..r.track.laps,99,234,9)
+    text("POS "..Race.position(r).."/6",182,234,15)
+    text("VIDA "..p.hp,99,253,p.hp<35 and 7 or 9)
+    rect(160,256,71,3,3)
+    local health=math.floor(71*p.hp/p.maxHP)
+    if health>0 then rect(160,256,health,3,p.hp<35 and 7 or 14) end
+    local shot=p.stock and p.stock.shot or (p.weapon=="shot" and p.ammo or 0)
+    local mine=p.stock and p.stock.mine or (p.weapon=="mine" and p.ammo or 0)
+    local shotColor=shot>0 and (p.weapon=="shot" and 8 or 9) or 11
+    local mineColor=mine>0 and (p.weapon=="mine" and 8 or 9) or 11
+    for i=0,2 do rect(258+i*4,235,2,8,shotColor) end
+    rect(361,239,10,4,mineColor);rect(365,235,2,4,mineColor)
+    text("TIRO "..shot,276,236,shotColor)
+    text("MINA "..mine,378,236,mineColor)
+    if p.ammo>0 then rect(p.weapon=="shot" and 256 or 359,247,87,2,8) end
+    local active=p.ammo>0 and (p.weapon=="shot" and "TIRO" or "MINA") or "SEM ITEM"
+    text("Y: "..active,256,255,9);text("R: TROCAR",378,255,9)
+    if p.nitro>0 then text("NITRO +10%",212,6,1) end
+end
 local function drawRace()
     local r=Game.race;local p=r.player;local track=r.track
     rect(0,20,480,208,track.theme[1])
@@ -502,11 +540,9 @@ local function drawRace()
     end
     Game.triangles,Game.dropped=renderer.triangles,renderer.dropped
     rect(0,0,480,20,10);rect(0,228,480,42,10)
-    text("COMBAT RALLY 13.9 / "..r.id,10,6,15);text((Game.detail and "X ALTO " or "X LEVE ")..Game.triangles,282,6,9)
+    text("COMBAT RALLY 14.0 / "..r.id,10,6,15);text((Game.detail and "X ALTO " or "X LEVE ")..Game.triangles,282,6,9)
     text(Game.reported_fps and "FPS "..math.floor(Game.reported_fps+0.5) or "FPS --",390,6,9)
-    text(string.format("%03d KM/H  VOLTA %d/%d  POS %d/6  VIDA %d",math.floor(p.speed*6+0.5),p.laps,track.laps,Race.position(r),p.hp),10,235,15)
-    local item=p.weapon=="shot" and "TIRO" or p.weapon=="mine" and "MINA" or "SEM ARMA"
-    text(item.." "..p.ammo..(p.nitro>0 and "  NITRO +10%" or "").." | B GAS A FREIO Y USAR R TROCAR L RESET",10,255,9)
+    drawRaceHud(r)
     if r.countdown>0 or r.time<1 then
         rect(190,44,100,28,10)
         local stage=r.countdown>1 and 1 or r.countdown>0 and 2 or 3
@@ -514,10 +550,11 @@ local function drawRace()
         text(stage==3 and "JA!" or stage==2 and "ATENCAO" or "PREPARE",213,78,15)
     end
     if p.respawn>0 then text("CARRO DESTRUIDO / RETORNANDO",133,116,7)
-    elseif (p.hitNotice or 0)>0 then text("ATINGIDO / RECUPERANDO",174,210,7)
+    elseif (p.hitNotice or 0)>0 then text(p.slowCause or "ATINGIDO / RECUPERANDO",174,210,7)
     elseif (p.shortcutNotice or 0)>0 then text("ATALHO / CONTAGEM ZERADA",150,210,7)
     elseif p.offroad then text("GRAMA",215,210,8)
     elseif r.braking then text("FREIO",215,210,8)
+    elseif (p.slowNotice or 0)>0 then text(p.slowCause,174,210,8)
     elseif (p.nitroNotice or 0)>0 then text("NITRO ENCERRADO",192,210,9)
     elseif r.time>1 and p.speed>1 and not r.throttle then text("ACELERADOR SOLTO",189,210,9) end
 end
