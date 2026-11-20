@@ -130,9 +130,9 @@ local function store(ax,ay,bx,by,dx,dy,color,depth)
     if ax<0 then ax=0 elseif ax>479 then ax=479 end
     if bx<0 then bx=0 elseif bx>479 then bx=479 end
     if dx<0 then dx=0 elseif dx>479 then dx=479 end
-    if ay<20 then ay=20 elseif ay>227 then ay=227 end
-    if by<20 then by=20 elseif by>227 then by=227 end
-    if dy<20 then dy=20 elseif dy>227 then dy=227 end
+    if ay<0 then ay=0 elseif ay>269 then ay=269 end
+    if by<0 then by=0 elseif by>269 then by=269 end
+    if dy<0 then dy=0 elseif dy>269 then dy=269 end
     local area=(bx-ax)*(dy-ay)-(by-ay)*(dx-ax)
     if area==0 then return end
     if area<0 then bx,by,dx,dy=dx,dy,bx,by end
@@ -147,9 +147,9 @@ end
 local screenX,screenY,outX,outY={},{},{},{}
 local function queue(ax,ay,bx,by,dx,dy,color,depth)
     if (ax<0 and bx<0 and dx<0) or (ax>479 and bx>479 and dx>479)
-        or (ay<20 and by<20 and dy<20) or (ay>227 and by>227 and dy>227) then return end
+        or (ay<0 and by<0 and dy<0) or (ay>269 and by>269 and dy>269) then return end
     if ax>=0 and ax<=479 and bx>=0 and bx<=479 and dx>=0 and dx<=479
-        and ay>=20 and ay<=227 and by>=20 and by<=227 and dy>=20 and dy<=227 then
+        and ay>=0 and ay<=269 and by>=0 and by<=269 and dy>=0 and dy<=269 then
         store(ax,ay,bx,by,dx,dy,color,depth)
         return
     end
@@ -158,12 +158,12 @@ local function queue(ax,ay,bx,by,dx,dy,color,depth)
     -- Intersections cannot escape a boundary already containing all three vertices.
     local needed=((ax<0 or bx<0 or dx<0) and 1 or 0)
         | ((ax>479 or bx>479 or dx>479) and 2 or 0)
-        | ((ay<20 or by<20 or dy<20) and 4 or 0)
-        | ((ay>227 or by>227 or dy>227) and 8 or 0)
+        | ((ay<0 or by<0 or dy<0) and 4 or 0)
+        | ((ay>269 or by>269 or dy>269) and 8 or 0)
     for edge=1,4 do
         if needed & (1 << (edge-1))~=0 then
             local horizontal=edge<=2
-            local boundary=edge==1 and 0 or edge==2 and 479 or edge==3 and 20 or 227
+            local boundary=edge==1 and 0 or edge==2 and 479 or edge==3 and 0 or 269
             local greater=edge==1 or edge==3
             local m=0
             local prev=n
@@ -244,14 +244,14 @@ local function farfirst(a,b) return a[8]>b[8] end
 -- Conservative plane tests: a one-pixel guard keeps clipping-edge pixels intact.
 local leftNorm=math.sqrt(projection^2+241^2)
 local rightNorm=math.sqrt(projection^2+240^2)
-local topNorm=math.sqrt(projection^2+105^2)
-local bottomNorm=math.sqrt(projection^2+104^2)
+local topNorm=math.sqrt(projection^2+125^2)
+local bottomNorm=math.sqrt(projection^2+146^2)
 local function outsideBounds(b,x,y,z)
     local far=z+b.maxz
     return far<NEAR or projection*(x+b.maxx)+241*far<0
         or 240*far-projection*(x+b.minx)<0
-        or 105*far-projection*(y+b.miny)<0
-        or 104*far+projection*(y+b.maxy)<0
+        or 125*far-projection*(y+b.miny)<0
+        or 146*far+projection*(y+b.maxy)<0
 end
 function R.prepareMesh(mesh)
     local r=mesh.cullRadius
@@ -269,8 +269,8 @@ local function outsideSphere(mesh,x,y,z)
     local r=mesh.cullRadius or R.prepareMesh(mesh)
     return z+r<NEAR or projection*x+241*z+r*leftNorm<0
         or 240*z-projection*x+r*rightNorm<0
-        or 105*z-projection*y+r*topNorm<0
-        or 104*z+projection*y+r*bottomNorm<0
+        or 125*z-projection*y+r*topNorm<0
+        or 146*z+projection*y+r*bottomNorm<0
 end
 function R.submit(obj,view)
     R.objects=R.objects+1
@@ -284,8 +284,8 @@ function R.submit(obj,view)
         local r=obj.radius
         if r and (depth< -r or depth>(cfg.draw_distance or 38)+r
             or math.abs(side)>math.max(0,depth)*240/projection+r*1.5
-            or height>math.max(0,depth)*104/projection+r*1.5
-            or height< -math.max(0,depth)*103/projection-r*1.5) then R.rejected=R.rejected+1;return end
+            or height>math.max(0,depth)*124/projection+r*1.5
+            or height< -math.max(0,depth)*145/projection-r*1.5) then R.rejected=R.rejected+1;return end
     end
     if not view and obj.viewCaches and cfg.cache_static_geometry then
         local cached=obj.viewCaches[obj.mesh]

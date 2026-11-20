@@ -12,7 +12,7 @@ local Save=require "save"
 local audio=require "audio"
 local scenery=require "scenery"
 local garagePart,garageReturn,garageMessage=1,"select",""
-Game={version="14.0",state="menu",menu=1,selected=1,triangles=0,race=nil,detail=true}
+Game={version="14.1",state="menu",menu=1,selected=1,triangles=0,race=nil,detail=true}
 -- Fixed oblique top-down view; follows position, never the car's heading.
 local camera={x=0,y=18,z=0,yaw=math.atan(12,14),pitch=-math.atan(18/math.sqrt(340))}
 local gridMark
@@ -180,7 +180,7 @@ end
 local function text(s,x,y,c) ui.print(s,x,y,colors.index[c or 9]) end
 local function panel()
     rect(40,38,400,190,10);rect(40,38,400,3,8)
-    text("LUPI COMBAT RALLY 14.0",122,53,15)
+    text("LUPI COMBAT RALLY 14.1",122,53,15)
 end
 local titleCamera={x=-1.90,y=1.83,z=-4.85,yaw=0,pitch=-0.075}
 local titleMesh=geometry.mesh()
@@ -466,47 +466,86 @@ local function drawObjects(r,upper)
     for _,trace in ipairs(r.combat.traces) do if trace.active then submitLevel(track,trace,upper,0.65) end end
     renderer.flush()
 end
--- Seven-segment digits use the native rectangle primitive, without new assets.
-local digitMasks={0x3f,0x06,0x5b,0x4f,0x66,0x6d,0x7d,0x07,0x7f,0x6f}
-local digitSegments={{2,0,6,2},{8,2,2,7},{8,11,2,7},{2,18,6,2},{0,11,2,7},{0,2,2,7},{2,9,6,2}}
-local function speedDigit(value,x,y)
-    local mask=digitMasks[value+1]
-    for i,s in ipairs(digitSegments) do
-        if mask & (1 << (i-1))~=0 then rect(x+s[1],y+s[2],s[3],s[4],15) end
+-- Original solid italic numerals, compiled once into merged rectangle runs.
+-- No font assets or new palette entries; no glyph tables allocated in draw.
+local digitRows={
+ {"01110","11011","11011","11011","11011","11011","01110"},
+ {"00110","01110","00110","00110","00110","00110","11111"},
+ {"11110","00011","00011","01110","11000","11000","11111"},
+ {"11110","00011","00011","01110","00011","00011","11110"},
+ {"11011","11011","11011","11111","00011","00011","00011"},
+ {"11111","11000","11000","11110","00011","00011","11110"},
+ {"01110","11000","11000","11110","11011","11011","01110"},
+ {"11111","00011","00110","00110","01100","01100","01100"},
+ {"01110","11011","11011","01110","11011","11011","01110"},
+ {"01110","11011","11011","01111","00011","00011","01110"}}
+local numberGlyphs={}
+for _,scale in ipairs({2}) do
+    local glyphs={};numberGlyphs[scale]=glyphs
+    for digit,rows in ipairs(digitRows) do
+        local runs={};glyphs[digit]=runs
+        for row,bits in ipairs(rows) do
+            local col=1
+            while col<=5 do
+                if bits:sub(col,col)=="1" then
+                    local first=col
+                    repeat col=col+1 until col>5 or bits:sub(col,col)~="1"
+                    local x=(first-1)*scale+math.floor((7-row)/3)
+                    local y=(row-1)*scale;local width=(col-first)*scale
+                    local merged=false
+                    for _,run in ipairs(runs) do
+                        if run[1]==x and run[3]==width and run[2]+run[4]==y then
+                            run[4]=run[4]+scale;merged=true;break
+                        end
+                    end
+                    if not merged then runs[#runs+1]={x,y,width,scale} end
+                else col=col+1 end
+            end
+        end
     end
+end
+local function hudDigit(value,x,y,scale,color)
+    for _,run in ipairs(numberGlyphs[scale][value+1]) do rect(x+run[1]+1,y+run[2]+1,run[3],run[4],0) end
+    for _,run in ipairs(numberGlyphs[scale][value+1]) do rect(x+run[1],y+run[2],run[3],run[4],color or 9) end
+end
+local function hudSpeed(speed)
+    hudDigit(speed%10,423,245,2)
+    if speed>=10 then hudDigit(math.floor(speed/10)%10,411,245,2) end
+    if speed>=100 then hudDigit(math.floor(speed/100),399,245,2) end
+end
+local function hudLabel(s,x,y,color)
+    text(s,x+1,y+1,0);text(s,x,y,color or 9)
+end
+local function iconRect(x,y,w,h,color)
+    rect(x+1,y+1,w,h,0);rect(x,y,w,h,color)
 end
 local function drawRaceHud(r)
     local p=r.player
     local speed=math.max(0,math.min(999,math.floor(p.speed*6+0.5)))
-    speedDigit(math.floor(speed/100),10,233)
-    speedDigit(math.floor(speed/10)%10,24,233)
-    speedDigit(speed%10,38,233)
-    text("KM/H",54,240,9)
-    rect(10,259,72,3,3)
-    local fill=math.floor(72*math.min(1,p.speed/(p.model.speed*1.15*1.1)))
-    if fill>0 then rect(10,259,fill,3,p.nitro>0 and 1 or 8) end
-    text("VOLTA "..p.laps.."/"..r.track.laps,99,234,9)
-    text("POS "..Race.position(r).."/6",182,234,15)
-    text("VIDA "..p.hp,99,253,p.hp<35 and 7 or 9)
-    rect(160,256,71,3,3)
-    local health=math.floor(71*p.hp/p.maxHP)
-    if health>0 then rect(160,256,health,3,p.hp<35 and 7 or 14) end
+    -- Floating indicators only: no panels, fixed bars or opaque backgrounds.
+    local lap=math.min(r.track.laps,p.laps+1)
+    hudLabel("VOLTA "..lap.."/"..r.track.laps,12,12)
+    hudLabel("POS "..Race.position(r).."/6",340,12)
+    hudLabel("VIDA "..p.hp,414,12,p.hp<35 and 7 or 9)
+    hudSpeed(speed);hudLabel("KM/H",445,251)
     local shot=p.stock and p.stock.shot or (p.weapon=="shot" and p.ammo or 0)
     local mine=p.stock and p.stock.mine or (p.weapon=="mine" and p.ammo or 0)
     local shotColor=shot>0 and (p.weapon=="shot" and 8 or 9) or 11
     local mineColor=mine>0 and (p.weapon=="mine" and 8 or 9) or 11
-    for i=0,2 do rect(258+i*4,235,2,8,shotColor) end
-    rect(361,239,10,4,mineColor);rect(365,235,2,4,mineColor)
-    text("TIRO "..shot,276,236,shotColor)
-    text("MINA "..mine,378,236,mineColor)
-    if p.ammo>0 then rect(p.weapon=="shot" and 256 or 359,247,87,2,8) end
-    local active=p.ammo>0 and (p.weapon=="shot" and "TIRO" or "MINA") or "SEM ITEM"
-    text("Y: "..active,256,255,9);text("R: TROCAR",378,255,9)
-    if p.nitro>0 then text("NITRO +10%",212,6,1) end
+    -- Bullet casing and stepped round mine, with quantities beside each icon.
+    iconRect(16,245,2,2,shotColor);iconRect(15,247,4,7,shotColor);iconRect(14,254,6,2,shotColor)
+    iconRect(64,245,2,3,mineColor);iconRect(62,248,6,2,mineColor)
+    iconRect(60,250,10,4,mineColor);iconRect(62,254,6,2,mineColor)
+    hudLabel("x"..shot,26,249,shotColor);hudLabel("x"..mine,76,249,mineColor)
+    if p.ammo>0 then
+        local x=p.weapon=="shot" and 12 or 58
+        rect(x+1,261,29,1,0);rect(x,260,29,1,8)
+    end
+    if p.nitro>0 then hudLabel("NITRO +10%",204,12,1) end
 end
 local function drawRace()
     local r=Game.race;local p=r.player;local track=r.track
-    rect(0,20,480,208,track.theme[1])
+    rect(0,0,480,270,track.theme[1])
     camera.x=p.x-12;camera.z=p.z-14;camera.y=18+p.y*0.4
     renderer.begin(camera)
 
@@ -539,9 +578,6 @@ local function drawRace()
         drawObjects(r,true)
     end
     Game.triangles,Game.dropped=renderer.triangles,renderer.dropped
-    rect(0,0,480,20,10);rect(0,228,480,42,10)
-    text("COMBAT RALLY 14.0 / "..r.id,10,6,15);text((Game.detail and "X ALTO " or "X LEVE ")..Game.triangles,282,6,9)
-    text(Game.reported_fps and "FPS "..math.floor(Game.reported_fps+0.5) or "FPS --",390,6,9)
     drawRaceHud(r)
     if r.countdown>0 or r.time<1 then
         rect(190,44,100,28,10)
@@ -580,7 +616,7 @@ local function drawTrophy()
 end
 function Game.draw()
     colors.register();ui.camera(0,0);ui.clip(0,0,480,270)
-    -- Race terrain and the two HUD bars already overwrite the whole framebuffer.
+    -- Race terrain overwrites the whole framebuffer before the floating HUD.
     if Game.state~="race" then ui.cls(colors.index[1]) end
     if Game.state=="race" then drawRace()
     elseif Game.state=="garage" then drawGarage()
